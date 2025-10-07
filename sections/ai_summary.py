@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout, QLabel, QPushButton, QSizePolicy, QWidget, QVBoxLayout
 )
 
-class select_graph_module(QPushButton):
+class AI_Menu_button(QPushButton):
     def __init__(self):
         super().__init__()
         self.setStyleSheet("""
@@ -17,8 +17,8 @@ class select_graph_module(QPushButton):
                     );
             color: black;
         """)
-
-        self.label = QLabel("Select Graphing Module")
+        
+        self.label = QLabel("AI Menu")
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label.setStyleSheet("""
@@ -35,7 +35,7 @@ class select_graph_module(QPushButton):
         layout.addWidget(self.label)
         layout.setContentsMargins(5, 0, 5, 0)  
 
-class select_graph(QPushButton):
+class Summarize_Dataset_button(QPushButton):
     def __init__(self):
         super().__init__()
         self.setStyleSheet("""
@@ -50,7 +50,7 @@ class select_graph(QPushButton):
             color: black;
         """)
 
-        self.label = QLabel("Select Type of Graph")
+        self.label = QLabel("Summarize Dataset")
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label.setStyleSheet("""
@@ -65,14 +65,48 @@ class select_graph(QPushButton):
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.label)
-        layout.setContentsMargins(5, 0, 5, 0) 
+        layout.setContentsMargins(5, 0, 5, 0)  
 
-class GraphParameter_TopBar(QWidget):
+class Cleaning_Suggestions_button(QPushButton):
     def __init__(self):
         super().__init__()
+        self.setStyleSheet("""
+            background: qlineargradient(
+                        x1:0, y1:1,
+                        x2:0, y2:0,
+                        stop:0.02 rgba(131, 125, 255, 1),
+                        stop:0.36 rgba(97, 97, 255, 1),
+                        stop:0.66 rgba(31, 162, 255, 1),
+                        stop:1 rgba(0, 212, 255, 1)
+                    );
+            color: black;
+        """)
+
+        self.label = QLabel("Cleaning Suggestions")
+        self.label.setWordWrap(True)
+        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.label.setStyleSheet("""
+            font-family: "SF Pro Display";
+            font-weight: 600;
+            border-radius: 16px;
+        """) 
+        self.label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+        self.setMinimumHeight(35)
+        self.label.setMinimumHeight(25)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.label)
+        layout.setContentsMargins(5, 0, 5, 0)  
+
+class AI_Summary_TopBar(QWidget):
+    def __init__(self):
+        super().__init__()
+        
         layout = QHBoxLayout()
-        layout.addWidget(select_graph_module())
-        layout.addWidget(select_graph())
+        layout.addWidget(AI_Menu_button(),stretch=1)
+        layout.addWidget(Summarize_Dataset_button(),stretch=1)
+        layout.addWidget(Cleaning_Suggestions_button(),stretch=1)
         layout.setContentsMargins(5,5,5,5) 
         layout.setSpacing(5)
 
@@ -87,18 +121,17 @@ class GraphParameter_TopBar(QWidget):
         self.setFixedWidth(350)
         self.setLayout(layout)
 
-class GraphParameter_Section(QWidget):
+class AI_Summary_section(QWidget):
     def __init__(self):
         super().__init__()
         self.setStyleSheet("""
             background: white;
             border-radius: 24px;
         """)
-
         self.setFixedWidth(350)
-        
+
         layout = QVBoxLayout()
-        layout.addWidget(GraphParameter_TopBar())
+        layout.addWidget(AI_Summary_TopBar())
         layout.addStretch()
         layout.setContentsMargins(0,0,0,0) 
         layout.setSpacing(0)
