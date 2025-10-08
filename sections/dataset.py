@@ -1,11 +1,79 @@
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QAbstractTableModel, Qt
 from PyQt6.QtWidgets import (
-    QHBoxLayout, QLabel, QPushButton, QSizePolicy, QWidget, QVBoxLayout
+    QFileDialog, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QTableView, QWidget, QVBoxLayout
 )
+import pandas as pd
 
-class import_replace_dataset_button(QPushButton):
+class PrepareDataset(QAbstractTableModel):
+    def __init__(self, df):
+        super().__init__()
+        self.df = df
+
+    def rowCount(self, parent=None):
+        return len(self.df)
+
+    def columnCount(self, parent=None):
+        return len(self.df.columns)
+
+    def data(self, index, role=Qt.ItemDataRole.DisplayRole):
+        if not index.isValid():
+            return None
+
+        value = self.df.iat[index.row(), index.column()]
+
+        if role == Qt.ItemDataRole.DisplayRole:
+            return str(value)
+
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
+            return Qt.AlignmentFlag.AlignCenter
+        return None
+
+    def headerData(self, section, orientation, role=Qt.ItemDataRole.DisplayRole):
+        if role == Qt.ItemDataRole.DisplayRole:
+            if orientation == Qt.Orientation.Horizontal:
+                return str(self.df.columns[section])
+            else:
+                return str(section + 1)
+        return None
+        
+class displayDataset(QTableView):
     def __init__(self):
         super().__init__()
+
+        # nicer stylesheet
+        self.setStyleSheet("""
+            QTableView {
+                border-radius: 24px;
+                background: white;
+                border: 2px solid black;
+                font-family: "SF Pro Display";
+                font-size: 11pt;
+                color: black;
+                margin: 10px;
+                padding: 10px;           
+            }
+            QHeaderView::section {
+                background-color: white;
+                border: 1px solid black;
+                color: black;
+                padding: 4px;
+                font-weight: bold;
+                margin: 10px;
+            }
+        """)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+    def import_file(self,file_path):
+        self.model = PrepareDataset(pd.read_csv(file_path))
+        self.setModel(self.model)
+        self.verticalHeader().setVisible(False)
+        self.setShowGrid(True)
+        self.setSortingEnabled(False)
+
+class import_replace_dataset_button(QPushButton):
+    def __init__(self,dataset_table):
+        super().__init__()
+        self.dataset_table = dataset_table
         self.setStyleSheet("""
             background: qlineargradient(
                         x1:0, y1:1,
@@ -34,6 +102,15 @@ class import_replace_dataset_button(QPushButton):
         layout = QVBoxLayout(self)
         layout.addWidget(self.label)
         layout.setContentsMargins(5, 0, 5, 0)  
+
+        self.clicked.connect(self.select_file)
+
+    def select_file(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Open CSV", "", "CSV Files (*.csv)"
+        )
+        if (file_path):
+            self.dataset_table.import_file(file_path)
 
 class enter_datapoints_button(QPushButton):
     def __init__(self):
@@ -100,11 +177,11 @@ class column_management_button(QPushButton):
         layout.setContentsMargins(5, 0, 5, 0)
 
 class Dataset_TopBar(QWidget):
-    def __init__(self):
+    def __init__(self,table):
         super().__init__()
         
         layout = QHBoxLayout()
-        layout.addWidget(import_replace_dataset_button())
+        layout.addWidget(import_replace_dataset_button(table))
         layout.addWidget(enter_datapoints_button())
         layout.addWidget(column_management_button())
         layout.setContentsMargins(5,5,5,5) 
@@ -130,11 +207,13 @@ class Dataset_Section(QWidget):
         """)
         self.setFixedWidth(350)
 
+        self.dataset_table = displayDataset()
+
         layout = QVBoxLayout()
-        layout.addWidget(Dataset_TopBar())
-        layout.addStretch()
+        layout.addWidget(Dataset_TopBar(self.dataset_table))
+        layout.addWidget(self.dataset_table)
         layout.setContentsMargins(0,0,0,0) 
-        layout.setSpacing(0)
+        layout.setSpacing(5)
 
         self.setLayout(layout)
 
