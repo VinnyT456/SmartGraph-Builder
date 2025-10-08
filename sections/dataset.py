@@ -1,8 +1,9 @@
 from PyQt6.QtCore import QAbstractTableModel, Qt
 from PyQt6.QtWidgets import (
-    QFileDialog, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QTableView, QWidget, QVBoxLayout
+    QComboBox, QFileDialog, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QTableView, QWidget, QVBoxLayout
 )
 import pandas as pd
+import os
 
 class PrepareDataset(QAbstractTableModel):
     def __init__(self, df):
@@ -40,12 +41,10 @@ class displayDataset(QTableView):
     def __init__(self):
         super().__init__()
 
-        # nicer stylesheet
         self.setStyleSheet("""
             QTableView {
                 border-radius: 24px;
                 background: white;
-                border: 2px solid black;
                 font-family: "SF Pro Display";
                 font-size: 11pt;
                 color: black;
@@ -69,6 +68,26 @@ class displayDataset(QTableView):
         self.verticalHeader().setVisible(False)
         self.setShowGrid(True)
         self.setSortingEnabled(False)
+        self.setStyleSheet("""
+            QTableView {
+                border-radius: 24px;
+                background: white;
+                border: 2px solid black;
+                font-family: "SF Pro Display";
+                font-size: 11pt;
+                color: black;
+                margin: 10px;
+                padding: 10px;           
+            }
+            QHeaderView::section {
+                background-color: white;
+                border: 1px solid black;
+                color: black;
+                padding: 4px;
+                font-weight: bold;
+                margin: 10px;
+            }
+        """)
 
 class import_replace_dataset_button(QPushButton):
     def __init__(self,dataset_table):
@@ -109,6 +128,20 @@ class import_replace_dataset_button(QPushButton):
         file_path, _ = QFileDialog.getOpenFileName(
             self, "Open CSV", "", "CSV Files (*.csv)"
         )
+        dataset = pd.read_csv(file_path)
+
+        folder_path = "dataset"
+
+        if (not os.path.exists(folder_path)):
+            os.mkdir(folder_path)
+
+        if os.listdir(folder_path):
+            for file in os.listdir(folder_path):
+                if (not file.startswith("user_dataset")):
+                    os.remove(f"{folder_path}/{file}")
+
+        dataset.to_csv("dataset/user_dataset.csv",index=False)
+        file_path = "dataset/user_dataset.csv"
         if (file_path):
             self.dataset_table.import_file(file_path)
 
