@@ -1,8 +1,22 @@
+import dis
 from turtle import undo
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
-    QHBoxLayout, QLabel, QPushButton, QSizePolicy, QWidget, QGridLayout, QVBoxLayout
+    QHBoxLayout, QLabel, QPushButton, QSizePolicy, QWidget, QVBoxLayout
 )
+
+class displayCode(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setFixedWidth(620)
+        self.setMinimumHeight(100)
+        self.setStyleSheet("""
+            QWidget{
+                border-radius: 24px;
+                border: 2px solid black;
+            }
+        """)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
 class new_graph_button(QPushButton):
     def __init__(self):
@@ -317,6 +331,7 @@ class Graph_Section(QWidget):
         layout = QVBoxLayout()
         layout.addWidget(Graph_TopBar())
         layout.addStretch()
+        layout.addWidget(displayCode())
         layout.setContentsMargins(0,0,0,0) 
         layout.setSpacing(0)
 
