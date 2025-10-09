@@ -1,10 +1,81 @@
+from re import S
 from PyQt6.QtCore import QAbstractTableModel, Qt
 from PyQt6.QtWidgets import (
-    QComboBox, QFileDialog, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QTableView, QWidget, QVBoxLayout
+    QWIDGETSIZE_MAX, QDialog, QFileDialog, QHBoxLayout, QInputDialog, QLabel, QPushButton, QSizePolicy, QTableView, QWidget, QVBoxLayout
 )
 import pandas as pd
 import os
 
+class DatapointWindow(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("Enter the x/y datapoints")
+        self.setFixedHeight(300)
+        self.setFixedWidth(500)
+
+        self.setStyleSheet("""
+            background: qlineargradient(
+                        x1:0, y1:1,
+                        x2:0, y2:0,
+                        stop:0.02 rgba(131, 125, 255, 1),
+                        stop:0.36 rgba(97, 97, 255, 1),
+                        stop:0.66 rgba(31, 162, 255, 1),
+                        stop:1 rgba(0, 212, 255, 1)
+                    );
+            color: black;
+        """)
+
+        layout = QVBoxLayout()
+
+        self.x_datapoints = QWidget()
+        self.x_datapoints.setObjectName("X_data")
+        self.x_datapoints.setStyleSheet("""
+            QWidget#X_data{
+                background: white;
+                border: 1px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        self.y_datapoints = QWidget()
+        self.y_datapoints.setObjectName("Y_data")
+        self.y_datapoints.setStyleSheet("""
+            QWidget#Y_data{
+                background: white;
+                border: 1px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        self.submit_button = QPushButton("Submit")
+        self.submit_button.setStyleSheet("""
+            QPushButton{  
+                background: white;
+                border: 1px solid black;
+                border-radius: 24px;
+                font-family: "SF Pro Display";
+                font-size: 32px;
+                font-weight: 600;
+            }
+        """)
+
+        self.x_datapoints.setFixedHeight(100)
+        self.y_datapoints.setFixedHeight(100)
+        self.submit_button.setFixedHeight(50)
+        self.submit_button.setFixedWidth(200)
+
+        layout.addWidget(self.x_datapoints)
+        layout.addWidget(self.y_datapoints)
+        layout.addWidget(self.submit_button,alignment=Qt.AlignmentFlag.AlignCenter)
+        layout.setContentsMargins(10,10,10,10)
+        layout.setSpacing(10)
+        self.setLayout(layout)
+
+        self.submit_button.clicked.connect(self.create_dataset)
+
+    def create_dataset(self):
+        pass
 class PrepareDataset(QAbstractTableModel):
     def __init__(self, df):
         super().__init__()
@@ -176,6 +247,11 @@ class enter_datapoints_button(QPushButton):
         layout = QVBoxLayout(self)
         layout.addWidget(self.label)
         layout.setContentsMargins(5, 0, 5, 0)  
+
+        self.clicked.connect(self.enter_datapoints)
+
+    def enter_datapoints(self):
+        DatapointWindow().exec()
 
 class column_management_button(QPushButton):
     def __init__(self):
