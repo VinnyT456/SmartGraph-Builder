@@ -1,14 +1,18 @@
 from re import S
 from PyQt6.QtCore import QAbstractTableModel, Qt
 from PyQt6.QtWidgets import (
-    QWIDGETSIZE_MAX, QDialog, QFileDialog, QHBoxLayout, QInputDialog, QLabel, QPushButton, QSizePolicy, QTableView, QWidget, QVBoxLayout
+    QWIDGETSIZE_MAX, QDialog, QFileDialog, QHBoxLayout, QInputDialog, QLabel, QLineEdit, QPushButton, QSizePolicy, QTableView, QWidget, QVBoxLayout
 )
 import pandas as pd
 import os
 
+from scipy.sparse import data
+
 class DatapointWindow(QDialog):
-    def __init__(self):
+    def __init__(self,dataset_table):
         super().__init__()
+
+        self.dataset_table = dataset_table
 
         self.setWindowTitle("Enter the x/y datapoints")
         self.setFixedHeight(300)
@@ -28,21 +32,37 @@ class DatapointWindow(QDialog):
 
         layout = QVBoxLayout()
 
-        self.x_datapoints = QWidget()
+        self.x_datapoints = QLineEdit()
+        self.x_datapoints.setPlaceholderText("X:")
         self.x_datapoints.setObjectName("X_data")
         self.x_datapoints.setStyleSheet("""
-            QWidget#X_data{
+            QLineEdit#X_data{
                 background: white;
+                font-size: 24pt;
                 border: 1px solid black;
                 border-radius: 24px;
             }
         """)
 
-        self.y_datapoints = QWidget()
+        self.y_datapoints = QLineEdit()
+        self.y_datapoints.setPlaceholderText("Y:")
         self.y_datapoints.setObjectName("Y_data")
         self.y_datapoints.setStyleSheet("""
-            QWidget#Y_data{
+            QLineEdit#Y_data{
                 background: white;
+                font-size: 24pt;
+                border: 1px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        self.z_datapoints = QLineEdit()
+        self.z_datapoints.setPlaceholderText("Z:")
+        self.z_datapoints.setObjectName("Z_data")
+        self.z_datapoints.setStyleSheet("""
+            QLineEdit#Z_data{
+                background: white;
+                font-size: 24pt;
                 border: 1px solid black;
                 border-radius: 24px;
             }
@@ -60,13 +80,15 @@ class DatapointWindow(QDialog):
             }
         """)
 
-        self.x_datapoints.setFixedHeight(100)
-        self.y_datapoints.setFixedHeight(100)
-        self.submit_button.setFixedHeight(50)
+        self.x_datapoints.setFixedHeight(60)
+        self.y_datapoints.setFixedHeight(60)
+        self.z_datapoints.setFixedHeight(60)
+        self.submit_button.setFixedHeight(60)
         self.submit_button.setFixedWidth(200)
 
         layout.addWidget(self.x_datapoints)
         layout.addWidget(self.y_datapoints)
+        layout.addWidget(self.z_datapoints)
         layout.addWidget(self.submit_button,alignment=Qt.AlignmentFlag.AlignCenter)
         layout.setContentsMargins(10,10,10,10)
         layout.setSpacing(10)
@@ -75,7 +97,50 @@ class DatapointWindow(QDialog):
         self.submit_button.clicked.connect(self.create_dataset)
 
     def create_dataset(self):
-        pass
+        x_points = self.x_datapoints.text().strip()
+        y_points = self.y_datapoints.text().strip()
+        z_points = self.z_datapoints.text().strip()
+
+        if (x_points or y_points or z_points):
+
+            if ("," in x_points):
+                x_points = list(map(int,x_points.split(",")))
+            if (" " in x_points):
+                x_points = list(map(int,x_points.split(" ")))
+
+            if ("," in y_points):
+                y_points = list(map(int,y_points.split(",")))
+            if (" " in y_points):
+                y_points = list(map(int,y_points.split(" ")))
+
+            if ("," in z_points):
+                z_points = list(map(int,z_points.split(",")))
+            if (" " in z_points):
+                z_points = list(map(int,z_points.split(" ")))
+
+            df = pd.DataFrame({
+                "X": x_points,
+                "Y": y_points,
+                "Z": z_points,
+            })
+
+            folder_path = "dataset"
+
+            if (not os.path.exists(folder_path)):
+                os.mkdir(folder_path)
+
+            if os.listdir(folder_path):
+                for file in os.listdir(folder_path):
+                    if (not file.startswith("user_dataset")):
+                        os.remove(f"{folder_path}/{file}")
+
+            df.to_csv("dataset/user_dataset.csv",index=False)
+
+            file_path = "dataset/user_dataset.csv"
+            if (file_path):
+                self.dataset_table.import_file(file_path)
+            self.close()
+
 class PrepareDataset(QAbstractTableModel):
     def __init__(self, df):
         super().__init__()
@@ -199,26 +264,28 @@ class import_replace_dataset_button(QPushButton):
         file_path, _ = QFileDialog.getOpenFileName(
             self, "Open CSV", "", "CSV Files (*.csv)"
         )
-        dataset = pd.read_csv(file_path)
-
-        folder_path = "dataset"
-
-        if (not os.path.exists(folder_path)):
-            os.mkdir(folder_path)
-
-        if os.listdir(folder_path):
-            for file in os.listdir(folder_path):
-                if (not file.startswith("user_dataset")):
-                    os.remove(f"{folder_path}/{file}")
-
-        dataset.to_csv("dataset/user_dataset.csv",index=False)
-        file_path = "dataset/user_dataset.csv"
         if (file_path):
-            self.dataset_table.import_file(file_path)
+            dataset = pd.read_csv(file_path)
+
+            folder_path = "dataset"
+
+            if (not os.path.exists(folder_path)):
+                os.mkdir(folder_path)
+
+            if os.listdir(folder_path):
+                for file in os.listdir(folder_path):
+                    if (not file.startswith("user_dataset")):
+                        os.remove(f"{folder_path}/{file}")
+
+            dataset.to_csv("dataset/user_dataset.csv",index=False)
+            file_path = "dataset/user_dataset.csv"
+            if (file_path):
+                self.dataset_table.import_file(file_path)
 
 class enter_datapoints_button(QPushButton):
-    def __init__(self):
+    def __init__(self,dataset_table):
         super().__init__()
+        self.dataset_table = dataset_table
         self.setStyleSheet("""
             background: qlineargradient(
                         x1:0, y1:1,
@@ -251,7 +318,8 @@ class enter_datapoints_button(QPushButton):
         self.clicked.connect(self.enter_datapoints)
 
     def enter_datapoints(self):
-        DatapointWindow().exec()
+        data_point_window = DatapointWindow(self.dataset_table)
+        data_point_window.exec()
 
 class column_management_button(QPushButton):
     def __init__(self):
@@ -291,7 +359,7 @@ class Dataset_TopBar(QWidget):
         
         layout = QHBoxLayout()
         layout.addWidget(import_replace_dataset_button(table))
-        layout.addWidget(enter_datapoints_button())
+        layout.addWidget(enter_datapoints_button(table))
         layout.addWidget(column_management_button())
         layout.setContentsMargins(5,5,5,5) 
         layout.setSpacing(5)
