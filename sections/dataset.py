@@ -1,12 +1,19 @@
-from re import S
 from PyQt6.QtCore import QAbstractTableModel, Qt
 from PyQt6.QtWidgets import (
-    QWIDGETSIZE_MAX, QDialog, QFileDialog, QHBoxLayout, QInputDialog, QLabel, QLineEdit, QPushButton, QSizePolicy, QTableView, QWidget, QVBoxLayout
+    QDialog, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QPushButton, QSizePolicy, QTableView, QWidget, QVBoxLayout
 )
 import pandas as pd
 import os
 
-from scipy.sparse import data
+class ColumnManagementWindow(QDialog):
+    def __init__(self,dataset_table):
+        super().__init__()
+
+        self.dataset_table = dataset_table
+
+        self.setWindowTitle("Column Management")
+        self.setFixedHeight(500)
+        self.setFixedWidth(500)
 
 class DatapointWindow(QDialog):
     def __init__(self,dataset_table):
@@ -172,6 +179,17 @@ class PrepareDataset(QAbstractTableModel):
             else:
                 return str(section + 1)
         return None
+
+    def flags(self, index):
+        return Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
+
+    def setHeaderData(self, section, orientation, value, role=Qt.ItemDataRole.EditRole):
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.EditRole:
+            old_name = self._df.columns[section]
+            self._df.rename(columns={old_name: value}, inplace=True)
+            self.headerDataChanged.emit(orientation, section, section)
+            return True
+        return False
         
 class displayDataset(QTableView):
     def __init__(self):
@@ -181,6 +199,7 @@ class displayDataset(QTableView):
             QTableView {
                 border-radius: 24px;
                 background: white;
+                border: 2px solid black;
                 font-family: "SF Pro Display";
                 font-size: 11pt;
                 color: black;
@@ -204,26 +223,6 @@ class displayDataset(QTableView):
         self.verticalHeader().setVisible(False)
         self.setShowGrid(True)
         self.setSortingEnabled(False)
-        self.setStyleSheet("""
-            QTableView {
-                border-radius: 24px;
-                background: white;
-                border: 2px solid black;
-                font-family: "SF Pro Display";
-                font-size: 11pt;
-                color: black;
-                margin: 10px;
-                padding: 10px;           
-            }
-            QHeaderView::section {
-                background-color: white;
-                border: 1px solid black;
-                color: black;
-                padding: 4px;
-                font-weight: bold;
-                margin: 10px;
-            }
-        """)
 
 class import_replace_dataset_button(QPushButton):
     def __init__(self,dataset_table):
@@ -322,7 +321,7 @@ class enter_datapoints_button(QPushButton):
         data_point_window.exec()
 
 class column_management_button(QPushButton):
-    def __init__(self):
+    def __init__(self,dataset_table):
         super().__init__()
         self.setStyleSheet("""
             background: qlineargradient(
@@ -335,6 +334,8 @@ class column_management_button(QPushButton):
                     );
             color: black;
         """)
+
+        self.dataset_table = dataset_table
 
         self.label = QLabel("Column Management")
         self.label.setWordWrap(True)
@@ -353,6 +354,12 @@ class column_management_button(QPushButton):
         layout.addWidget(self.label)
         layout.setContentsMargins(5, 0, 5, 0)
 
+        self.clicked.connect(self.open_column_management_window)
+
+    def open_column_management_window(self):
+        column_management = ColumnManagementWindow(self.dataset_table)
+        column_management.exec()
+
 class Dataset_TopBar(QWidget):
     def __init__(self,table):
         super().__init__()
@@ -360,7 +367,7 @@ class Dataset_TopBar(QWidget):
         layout = QHBoxLayout()
         layout.addWidget(import_replace_dataset_button(table))
         layout.addWidget(enter_datapoints_button(table))
-        layout.addWidget(column_management_button())
+        layout.addWidget(column_management_button(table))
         layout.setContentsMargins(5,5,5,5) 
         layout.setSpacing(5)
 
