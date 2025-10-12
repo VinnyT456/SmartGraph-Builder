@@ -18,6 +18,7 @@ class AI_Menu_button(QPushButton):
             color: black;
         """)
         
+        #Create a new label with the text AI Menu and format it
         self.label = QLabel("AI Menu")
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -28,9 +29,11 @@ class AI_Menu_button(QPushButton):
         """) 
         self.label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
+        #Control the size of the button and text to ensure it fits together
         self.setMinimumHeight(35)
         self.label.setMinimumHeight(25)
 
+        #Put the label onto the button
         layout = QVBoxLayout(self)
         layout.addWidget(self.label)
         layout.setContentsMargins(5, 0, 5, 0)  
@@ -50,6 +53,7 @@ class Summarize_Dataset_button(QPushButton):
             color: black;
         """)
 
+        #Create a new label with the text Summarize Dataset and format it
         self.label = QLabel("Summarize Dataset")
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -60,9 +64,11 @@ class Summarize_Dataset_button(QPushButton):
         """) 
         self.label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
+        #Control the size of the button and text to ensure it fits together
         self.setMinimumHeight(35)
         self.label.setMinimumHeight(25)
 
+        #Put the label onto the button
         layout = QVBoxLayout(self)
         layout.addWidget(self.label)
         layout.setContentsMargins(5, 0, 5, 0)  
@@ -82,6 +88,7 @@ class Cleaning_Suggestions_button(QPushButton):
             color: black;
         """)
 
+        #Create a new label with the text Cleaning Suggestions and format it
         self.label = QLabel("Cleaning Suggestions")
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -92,9 +99,11 @@ class Cleaning_Suggestions_button(QPushButton):
         """) 
         self.label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
+        #Control the size of the button and text to ensure it fits together
         self.setMinimumHeight(35)
         self.label.setMinimumHeight(25)
 
+        #Put the label onto the button
         layout = QVBoxLayout(self)
         layout.addWidget(self.label)
         layout.setContentsMargins(5, 0, 5, 0)  
@@ -103,6 +112,7 @@ class AI_Summary_TopBar(QWidget):
     def __init__(self):
         super().__init__()
         
+        #Create a horizontal bar to put all the buttons on and equally put it
         layout = QHBoxLayout()
         layout.addWidget(AI_Menu_button(),stretch=1)
         layout.addWidget(Summarize_Dataset_button(),stretch=1)
@@ -110,6 +120,7 @@ class AI_Summary_TopBar(QWidget):
         layout.setContentsMargins(5,5,5,5) 
         layout.setSpacing(5)
 
+        #Set the style for the buttons
         self.setStyleSheet("""
             QPushButton{
                 border-radius: 16px;
@@ -117,6 +128,7 @@ class AI_Summary_TopBar(QWidget):
             }
         """)
 
+        #Control the size of the top bar and format it.
         self.setFixedHeight(40)
         self.setFixedWidth(350)
         self.setLayout(layout)
@@ -124,19 +136,23 @@ class AI_Summary_TopBar(QWidget):
 class AI_Summary_section(QWidget):
     def __init__(self):
         super().__init__()
+        #Format the section and control the size of it
         self.setStyleSheet("""
             background: white;
             border-radius: 24px;
         """)
         self.setFixedWidth(350)
 
+        #Add the Top Bar to the section and add stretch to place it on the top
         layout = QVBoxLayout()
         layout.addWidget(AI_Summary_TopBar())
         layout.addStretch()
         layout.setContentsMargins(0,0,0,0) 
         layout.setSpacing(0)
 
+        #Apply the layout
         self.setLayout(layout)
 
+        #Ensure that the widget is drawn on the main window
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
