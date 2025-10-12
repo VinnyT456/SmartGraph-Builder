@@ -3,11 +3,8 @@ from PyQt6.QtCore import QAbstractTableModel, Qt
 from PyQt6.QtWidgets import (
     QDialog, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QPushButton, QSizePolicy, QTableView, QWidget, QVBoxLayout
 )
-from numpy import float64, int64, number
 import pandas as pd
 import os
-
-from pandas.core.generic import dt
 
 class ColumnManagementWindow(QDialog):
     def __init__(self,dataset_table):
@@ -141,7 +138,7 @@ class DatapointWindow(QDialog):
                 "X": x_points,
                 "Y": y_points,
                 "Z": z_points,
-            },dtype=float64)
+            },dtype=float)
 
             folder_path = "dataset"
 
@@ -383,43 +380,66 @@ class column_management_button(QPushButton):
 class Dataset_TopBar(QWidget):
     def __init__(self,table):
         super().__init__()
+
+        self.dataset_table = table
         
         layout = QHBoxLayout()
-        layout.addWidget(import_replace_dataset_button(table))
-        layout.addWidget(enter_datapoints_button(table))
-        layout.addWidget(column_management_button(table))
+        layout.addWidget(import_replace_dataset_button(self.dataset_table))
+        layout.addWidget(enter_datapoints_button(self.dataset_table))
+        layout.addWidget(column_management_button(self.dataset_table))
         layout.setContentsMargins(5,5,5,5) 
         layout.setSpacing(5)
 
         self.setStyleSheet("""
+            QWidget{
+                background: white;
+                border-radius: 24px;
+            }
             QPushButton{
                 border-radius: 16px;
                 padding: 2px; 
             }
         """)
 
-        self.setFixedHeight(40)
+        self.setFixedHeight(50)
         self.setFixedWidth(350)
         self.setLayout(layout)
 
-class Dataset_Section(QWidget):
-    def __init__(self):
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+class Dataset_Table(QWidget):
+    def __init__(self,table):
         super().__init__()
         self.setStyleSheet("""
             background: white;
             border-radius: 24px;
         """)
-        self.setFixedWidth(350)
 
-        self.dataset_table = displayDataset()
+        self.dataset_table = table
 
         layout = QVBoxLayout()
-        layout.addWidget(Dataset_TopBar(self.dataset_table))
         layout.addWidget(self.dataset_table)
         layout.setContentsMargins(0,0,0,0) 
         layout.setSpacing(5)
 
+        self.setFixedWidth(350)
         self.setLayout(layout)
 
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+class Dataset_Section(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setFixedWidth(350)
+
+        self.dataset = displayDataset()
+        self.dataset_topbar = Dataset_TopBar(self.dataset)
+        self.dataset_table = Dataset_Table(self.dataset)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.dataset_topbar)
+        layout.addSpacing(5)
+        layout.addWidget(self.dataset_table)
+        layout.setContentsMargins(0,0,0,0) 
+
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)

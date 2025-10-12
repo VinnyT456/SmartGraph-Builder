@@ -11,55 +11,97 @@ idx = 0
 
 SEABORN_PLOTS = {
     "Scatter Plot":{
-        "Image":"sample_graphs/scatter_plot.png"
+        "Image":"sample_graphs/scatter_plot.png",
+        "x-axis_data_type":["float"],
+        "y-axis_data_type":["float"],
+        "parameters":[""]
     },
     "Line Plot":{
-        "Image":"sample_graphs/line_plot.png"
+        "Image":"sample_graphs/line_plot.png",
+        "x-axis_data_type":["float","int"],
+        "y-axis_data_type":["float","int"],
+        "parameters":{},
     },
     "Regression Plot":{
-        "Image":"sample_graphs/regression_plot.png"
+        "Image":"sample_graphs/regression_plot.png",
+        "x-axis_data_type":["float"],
+        "y-axis_data_type":["float"],
+        "parameters":{},
     },
     "Bar Plot":{
-        "Image":"sample_graphs/bar_plot.png"
+        "Image":"sample_graphs/bar_plot.png",
+        "x-axis_data_type":["object","category"],
+        "y-axis_data_type":["float","int"],
+        "parameters":{},
     },
     "Count Plot":{
-        "Image":"sample_graphs/count_plot.png"
+        "Image":"sample_graphs/count_plot.png",
+        "x-axis_data_type":["object","category"],
+        "parameters":{},
     },
     "Box Plot":{
-        "Image":"sample_graphs/box_plot.png"
+        "Image":"sample_graphs/box_plot.png",
+        "x-axis_data_type":["object","category"],
+        "y-axis_data_type":["float","int"],
+        "parameters":{},
     },
     "Violin Plot":{
-        "Image":"sample_graphs/violin_plot.png"
+        "Image":"sample_graphs/violin_plot.png",
+        "x-axis_data_type":["object","category"],
+        "y-axis_data_type":["float","int"],
+        "parameters":{},
     },
     "Swarm Plot":{
-        "Image":"sample_graphs/swarm_plot.png"
+        "Image":"sample_graphs/swarm_plot.png",
+        "x-axis_data_type":["object","category"],
+        "y-axis_data_type":["float","int"],
+        "parameters":{},
     },
     "Strip Plot":{
-        "Image":"sample_graphs/strip_plot.png"
+        "Image":"sample_graphs/strip_plot.png",
+        "x-axis_data_type":["object","category"],
+        "y-axis_data_type":["float","int"],
+        "parameters":{},
     },
     "Histogram":{
-        "Image":"sample_graphs/histogram.png"
+        "Image":"sample_graphs/histogram.png",
+        "x-axis_data_type":["float","int"],
+        "parameters":{},
     },
     "KDE Plot":{
-        "Image":"sample_graphs/kde_plot.png"
+        "Image":"sample_graphs/kde_plot.png",
+        "x-axis_data_type":["float"],
+        "parameters":{},
     },
     "ECDF Plot":{
-        "Image":"sample_graphs/ecdf_plot.png"
+        "Image":"sample_graphs/ecdf_plot.png",
+        "x-axis_data_type":["float","int"],
+        "parameters":{},
     },
     "Rug Plot":{
-        "Image":"sample_graphs/rug_plot.png"
+        "Image":"sample_graphs/rug_plot.png",
+        "x-axis_data_type":["float","int"],
+        "parameters":{},
     },
     "Heatmap":{
-        "Image":"sample_graphs/heatmap.png"
+        "Image":"sample_graphs/heatmap.png",
+        "x-axis_data_type":["float","int"],
+        "y-axis_data_type":["float","int"],
     },
     "Pair Plot":{
-        "Image":"sample_graphs/pair_plot.png"
+        "Image":"sample_graphs/pair_plot.png",
+        "x-axis_data_type":["float","int"],
+        "y-axis_data_type":["float","int"],
     },
     "Joint Plot":{
-        "Image":"sample_graphs/joint_plot.png"
+        "Image":"sample_graphs/joint_plot.png",
+        "x-axis_data_type":["float","int"],
+        "y-axis_data_type":["float","int"],
     },
     "Cluster Map":{
-        "Image":"sample_graphs/cluster_map.png"
+        "Image":"sample_graphs/cluster_map.png",
+        "x-axis_data_type":["object","category"],
+        "y-axis_data_type":["object","category"],
     },
 }
 
@@ -136,8 +178,8 @@ class select_graph_window(QDialog):
         self.graph_images = graph_images
 
         self.setWindowTitle("Select Your Graph")
-        self.setFixedHeight(500)
-        self.setFixedWidth(600)
+        self.setFixedHeight(600)
+        self.setFixedWidth(700)
 
         self.setStyleSheet("""
             background: qlineargradient(
@@ -221,7 +263,7 @@ class select_graph_window(QDialog):
                 background: transparent;
                 border-radius: 24px;
                 font-family: "SF Pro Display";
-                font-size: 32px;
+                font-size: 54px;
                 font-weight: 600;
             }
         """)
@@ -236,7 +278,7 @@ class select_graph_window(QDialog):
                 border: 1px solid black;
                 border-radius: 24px;
                 font-family: "SF Pro Display";
-                font-size: 32px;
+                font-size: 54px;
                 font-weight: 600;
             }
         """)    
@@ -252,7 +294,7 @@ class select_graph_window(QDialog):
                 background: transparent;
                 border-radius: 24px;
                 font-family: "SF Pro Display";
-                font-size: 32px;
+                font-size: 54px;
                 font-weight: 600;
             }
         """)
@@ -267,7 +309,7 @@ class select_graph_window(QDialog):
                 border: 1px solid black;
                 border-radius: 24px;
                 font-family: "SF Pro Display";
-                font-size: 32px;
+                font-size: 54px;
                 font-weight: 600;
             }
         """)    
@@ -277,19 +319,19 @@ class select_graph_window(QDialog):
         self.next_graph.setLayout(next_graph_layout)
 
         self.graph_name.setFixedHeight(60)
-        self.graph_name.setFixedWidth(400)
+        self.graph_name.setFixedWidth(500)
 
-        self.graph_image.setFixedHeight(350)
-        self.graph_image.setFixedWidth(400)
+        self.graph_image.setFixedHeight(450)
+        self.graph_image.setFixedWidth(500)
 
         self.select_button.setFixedHeight(50)
-        self.select_button.setFixedWidth(200)
+        self.select_button.setFixedWidth(300)
 
-        self.previous_graph.setFixedHeight(60)
-        self.previous_graph.setFixedWidth(60)
+        self.previous_graph.setFixedHeight(70)
+        self.previous_graph.setFixedWidth(70)
         
-        self.next_graph.setFixedHeight(60)
-        self.next_graph.setFixedWidth(60)
+        self.next_graph.setFixedHeight(70)
+        self.next_graph.setFixedWidth(70)
 
         vertical_layout = QVBoxLayout()
         vertical_layout.addWidget(self.graph_name,alignment=Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
@@ -398,18 +440,23 @@ class GraphParameter_TopBar(QWidget):
         layout.setSpacing(5)
 
         self.setStyleSheet("""
+            QWidget{
+                background: white;
+                border-radius: 24px;
+            }
             QPushButton{
                 border-radius: 16px;
                 padding: 2px; 
             }
         """)
 
-        self.setFixedHeight(40)
+        self.setFixedHeight(50)
         self.setFixedWidth(350)
         self.setLayout(layout)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
-class GraphParameter_Section(QWidget):
-    def __init__(self):
+class GraphParameter_Table(QWidget):
+    def __init__(self,graph_parameters):
         super().__init__()
         self.setStyleSheet("""
             background: white;
@@ -418,15 +465,28 @@ class GraphParameter_Section(QWidget):
 
         self.setFixedWidth(350)
 
-        self.graph_parameter_table = graph_parameter_table()
+        self.graph_parameters = graph_parameters
         
         layout = QVBoxLayout()
-        layout.addWidget(GraphParameter_TopBar())
-        layout.addWidget(self.graph_parameter_table)
+        layout.addWidget(self.graph_parameters)
         layout.setContentsMargins(0,0,0,0) 
         layout.setSpacing(5)
 
         self.setLayout(layout)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+class GraphParameter_Section(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        self.graph_parameters = graph_parameter_table()
+        self.graph_parameters_topbar = GraphParameter_TopBar()
+        self.graph_parameters_table = GraphParameter_Table(self.graph_parameters)
+
+        layout = QVBoxLayout(self) 
+        layout.addWidget(self.graph_parameters_topbar)
+        layout.addSpacing(5)
+        layout.addWidget(self.graph_parameters_table)
+        layout.setContentsMargins(0,0,0,0) 
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)

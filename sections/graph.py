@@ -310,15 +310,15 @@ class Graph_TopBar(QWidget):
         layout.setSpacing(5)
 
         #Control the size of the box and apply the layout to the Top Bar
-        self.setFixedHeight(45)
+        self.setFixedHeight(50)
         self.setFixedWidth(620)
         self.setLayout(layout)
 
         #Format the Top bar and the buttons on it
-        self.setObjectName("GraphTopBar")
         self.setStyleSheet("""
-            QWidget#GraphTopBar{
-                border-radius: 16px;
+            QWidget{
+                background: white;
+                border-radius: 24px;
             }
             QPushButton{
                 border-radius: 16px;
@@ -329,8 +329,7 @@ class Graph_TopBar(QWidget):
         #Ensure the everything is properly drawn on the main window
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         
-
-class Graph_Section(QWidget):
+class Graph_Display(QWidget):
     def __init__(self):
         super().__init__()
         self.setStyleSheet("""
@@ -341,16 +340,22 @@ class Graph_Section(QWidget):
         #Control the size of the section
         self.setFixedWidth(620)
 
-        #Add the top bar to the Graph Section on the main window
-        layout = QVBoxLayout()
-        layout.addWidget(Graph_TopBar())
-        layout.addStretch()
-        layout.setContentsMargins(0,0,0,0) 
-        layout.setSpacing(0)
-
-        #Apply the layout to the section
-        self.setLayout(layout)
-
         #Ensure that everything is properly drawn onto the main window
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+class Graph_Section(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setFixedWidth(620)
+
+        self.graph_topbar = Graph_TopBar()
+        self.display_graph = Graph_Display()
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.graph_topbar)
+        layout.addSpacing(5)
+        layout.addWidget(self.display_graph)
+        layout.setContentsMargins(0,0,0,0) 
+
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)

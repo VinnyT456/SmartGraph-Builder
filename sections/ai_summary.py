@@ -122,6 +122,10 @@ class AI_Summary_TopBar(QWidget):
 
         #Set the style for the buttons
         self.setStyleSheet("""
+            QWidget{
+                background: white;
+                border-radius: 24px;
+            }
             QPushButton{
                 border-radius: 16px;
                 padding: 2px; 
@@ -129,11 +133,13 @@ class AI_Summary_TopBar(QWidget):
         """)
 
         #Control the size of the top bar and format it.
-        self.setFixedHeight(40)
+        self.setFixedHeight(50)
         self.setFixedWidth(350)
         self.setLayout(layout)
 
-class AI_Summary_section(QWidget):
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+class AI_Summary(QWidget):
     def __init__(self):
         super().__init__()
         #Format the section and control the size of it
@@ -143,16 +149,21 @@ class AI_Summary_section(QWidget):
         """)
         self.setFixedWidth(350)
 
-        #Add the Top Bar to the section and add stretch to place it on the top
-        layout = QVBoxLayout()
-        layout.addWidget(AI_Summary_TopBar())
-        layout.addStretch()
-        layout.setContentsMargins(0,0,0,0) 
-        layout.setSpacing(0)
-
-        #Apply the layout
-        self.setLayout(layout)
-
         #Ensure that the widget is drawn on the main window
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+class AI_Summary_Section(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setFixedWidth(350)
+
+        self.ai_summary_topbar = AI_Summary_TopBar()
+        self.ai_summary = AI_Summary()
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.ai_summary_topbar)
+        layout.addSpacing(5)
+        layout.addWidget(self.ai_summary)
+        layout.setContentsMargins(0,0,0,0) 
+
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)

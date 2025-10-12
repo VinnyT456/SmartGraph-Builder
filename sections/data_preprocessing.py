@@ -172,17 +172,23 @@ class Data_Preprocessing_TopBar(QWidget):
         layout.setSpacing(5)
 
         self.setStyleSheet("""
+            QWidget{
+                background: white;
+                border-radius: 24px;
+            }
             QPushButton{
                 border-radius: 16px;
                 padding: 2px; 
             }
         """)
 
-        self.setFixedHeight(40)
+        self.setFixedHeight(50)
         self.setFixedWidth(350)
         self.setLayout(layout)
 
-class DataPreprocessing_Section(QWidget):
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+class Data_Preprocessing_Table(QWidget):
     def __init__(self):
         super().__init__()
         self.setStyleSheet("""
@@ -191,14 +197,22 @@ class DataPreprocessing_Section(QWidget):
         """)
 
         self.setFixedWidth(350)
-        
-        layout = QVBoxLayout()
-        layout.addWidget(Data_Preprocessing_TopBar())
-        layout.addStretch()
-        layout.setContentsMargins(0,0,0,0) 
-        layout.setSpacing(0)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
-        self.setLayout(layout)
+class DataPreprocessing_Section(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        self.data_preprocessing_topbar = Data_Preprocessing_TopBar()
+        self.data_preprocessing_table = Data_Preprocessing_Table()
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.data_preprocessing_topbar)
+        layout.addSpacing(5)
+        layout.addWidget(self.data_preprocessing_table)
+
+        layout.setContentsMargins(0,0,0,0) 
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+        
