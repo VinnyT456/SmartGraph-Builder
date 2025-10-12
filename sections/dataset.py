@@ -1,9 +1,13 @@
+import re
 from PyQt6.QtCore import QAbstractTableModel, Qt
 from PyQt6.QtWidgets import (
     QDialog, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QPushButton, QSizePolicy, QTableView, QWidget, QVBoxLayout
 )
+from numpy import float64, int64, number
 import pandas as pd
 import os
+
+from pandas.core.generic import dt
 
 class ColumnManagementWindow(QDialog):
     def __init__(self,dataset_table):
@@ -108,28 +112,36 @@ class DatapointWindow(QDialog):
         y_points = self.y_datapoints.text().strip()
         z_points = self.z_datapoints.text().strip()
 
-        if (x_points or y_points or z_points):
+        x_valid_input = self.valid_inputs(x_points)
+        y_valid_input = self.valid_inputs(y_points)
+        z_valid_input = self.valid_inputs(z_points)
 
-            if ("," in x_points):
-                x_points = list(map(int,x_points.split(",")))
-            if (" " in x_points):
-                x_points = list(map(int,x_points.split(" ")))
+        if (x_valid_input and y_valid_input and z_valid_input):
 
-            if ("," in y_points):
-                y_points = list(map(int,y_points.split(",")))
-            if (" " in y_points):
-                y_points = list(map(int,y_points.split(" ")))
+            length = max(len(re.sub(r"[ ,]", "",x_points)),len(re.sub(r"[ ,]", "",y_points)),len(re.sub(r"[ ,]", "",z_points)))
 
-            if ("," in z_points):
-                z_points = list(map(int,z_points.split(",")))
-            if (" " in z_points):
-                z_points = list(map(int,z_points.split(" ")))
+            if (length == 0):
+                return
+
+            if (x_points == ""):
+                x_points = ("0 " * length).strip()
+            if (y_points == ""):
+                y_points = ("0 " * length).strip()
+            if (z_points == ""):
+                z_points = ("0 " * length).strip()
+
+            if (len(x_points) != len(y_points) != len(z_points)):
+                return 
+
+            x_points = list(map(float,x_points.replace(","," ").split(" ")))
+            y_points = list(map(float,y_points.replace(","," ").split(" ")))
+            z_points = list(map(float,z_points.replace(","," ").split(" ")))
 
             df = pd.DataFrame({
                 "X": x_points,
                 "Y": y_points,
                 "Z": z_points,
-            })
+            },dtype=float64)
 
             folder_path = "dataset"
 
@@ -147,6 +159,15 @@ class DatapointWindow(QDialog):
             if (file_path):
                 self.dataset_table.import_file(file_path)
             self.close()
+
+    def valid_inputs(self,user_input):
+        numbers = user_input.split()
+        try:
+            for num in numbers:
+                float(num)
+            return True
+        except ValueError:
+            return False
 
 class PrepareDataset(QAbstractTableModel):
     def __init__(self, df):
@@ -353,7 +374,6 @@ class column_management_button(QPushButton):
         layout = QVBoxLayout(self)
         layout.addWidget(self.label)
         layout.setContentsMargins(5, 0, 5, 0)
-
         self.clicked.connect(self.open_column_management_window)
 
     def open_column_management_window(self):
