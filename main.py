@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
 )
 
-from sections.ai_summary import AI_Summary_section
+from sections.ai_summary import AI_Summary_Section
 from sections.dataset import Dataset_Section
 from sections.graph import Graph_Section
 from sections.graph_parameter import GraphParameter_Section
@@ -32,7 +32,7 @@ class MainWindow(QMainWindow):
         #Create a vertical box layout and add the dataset and AI summary section in it
         dataset_ai_layout = QVBoxLayout()
         dataset_ai_layout.addWidget(Dataset_Section(),stretch=6)
-        dataset_ai_layout.addWidget(AI_Summary_section(),stretch=4)
+        dataset_ai_layout.addWidget(AI_Summary_Section(),stretch=4)
         dataset_ai_layout.setContentsMargins(0,0,0,0)
         dataset_ai_layout.setSpacing(20)
 
