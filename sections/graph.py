@@ -1,22 +1,7 @@
-import dis
-from turtle import undo
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QHBoxLayout, QLabel, QPushButton, QSizePolicy, QWidget, QVBoxLayout
 )
-
-class displayCode(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setFixedWidth(620)
-        self.setMinimumHeight(100)
-        self.setStyleSheet("""
-            QWidget{
-                border-radius: 24px;
-                border: 2px solid black;
-            }
-        """)
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
 class new_graph_button(QPushButton):
     def __init__(self):
@@ -34,6 +19,7 @@ class new_graph_button(QPushButton):
             color: black;
         """)
 
+        #Create a new label with the text New Graph and format it
         self.label = QLabel("New Graph")
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -44,9 +30,11 @@ class new_graph_button(QPushButton):
         """) 
         self.label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
+        #Control the size of the button and the label to ensure they fit together
         self.setMinimumHeight(35)
         self.label.setMinimumHeight(25)
 
+        #Add the text onto the button and format it in order for it to fit
         layout = QVBoxLayout(self)
         layout.addWidget(self.label)
         layout.setContentsMargins(5, 0, 5, 0)  
@@ -67,6 +55,7 @@ class undo_button(QPushButton):
             color: black;
         """)
 
+        #Create a new label with the text Undo and format it
         self.label = QLabel("Undo")
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -77,9 +66,11 @@ class undo_button(QPushButton):
         """) 
         self.label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
+        #Control the size of the button and the label to ensure they fit together
         self.setMinimumHeight(35)
         self.label.setMinimumHeight(25)
 
+        #Add the text onto the button and format it in order for it to fit
         layout = QVBoxLayout(self)
         layout.addWidget(self.label)
         layout.setContentsMargins(5, 0, 5, 0)  
@@ -100,6 +91,7 @@ class clear_button(QPushButton):
             color: black;
         """)
 
+        #Create a new label with the text Clear and format it
         self.label = QLabel("Clear")
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -110,9 +102,11 @@ class clear_button(QPushButton):
         """) 
         self.label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
+        #Control the size of the button and the label to ensure they fit together
         self.setMinimumHeight(35)
         self.label.setMinimumHeight(25)
 
+        #Add the text onto the button and format it in order for it to fit
         layout = QVBoxLayout(self)
         layout.addWidget(self.label)
         layout.setContentsMargins(5, 0, 5, 0)  
@@ -133,6 +127,7 @@ class previous_graph_button(QPushButton):
             color: black;
         """)
 
+        #Create a new label with the text Previous Graph and format it
         self.label = QLabel("Previous Graph")
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -143,9 +138,11 @@ class previous_graph_button(QPushButton):
         """) 
         self.label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
+        #Control the size of the button and the label to ensure they fit together
         self.setMinimumHeight(35)
         self.label.setMinimumHeight(25)
 
+        #Add the text onto the button and format it in order for it to fit
         layout = QVBoxLayout(self)
         layout.addWidget(self.label)
         layout.setContentsMargins(5, 0, 5, 0)  
@@ -166,6 +163,7 @@ class zoom_in_button(QPushButton):
             color: black;
         """)
 
+        #Create a new label with the text Zoom In and format it
         self.label = QLabel("Zoom In")
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -176,9 +174,11 @@ class zoom_in_button(QPushButton):
         """) 
         self.label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
+        #Control the size of the button and the label to ensure they fit together
         self.setMinimumHeight(35)
         self.label.setMinimumHeight(25)
 
+        #Add the text onto the button and format it in order for it to fit
         layout = QVBoxLayout(self)
         layout.addWidget(self.label)
         layout.setContentsMargins(5, 0, 5, 0)  
@@ -199,6 +199,7 @@ class zoom_out_button(QPushButton):
             color: black;
         """)
 
+        #Create a new label with the text Zoom Out and format it
         self.label = QLabel("Zoom Out")
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -209,9 +210,11 @@ class zoom_out_button(QPushButton):
         """) 
         self.label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
+        #Control the size of the button and the label to ensure they fit together
         self.setMinimumHeight(35)
         self.label.setMinimumHeight(25)
 
+        #Add the text onto the button and format it in order for it to fit
         layout = QVBoxLayout(self)
         layout.addWidget(self.label)
         layout.setContentsMargins(5, 0, 5, 0)  
@@ -232,6 +235,7 @@ class copy_code_button(QPushButton):
             color: black;
         """)
 
+        #Create a new label with the text Copy Code and format it
         self.label = QLabel("Copy Code")
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -242,9 +246,11 @@ class copy_code_button(QPushButton):
         """) 
         self.label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
+        #Control the size of the button and the label to ensure they fit together
         self.setMinimumHeight(35)
         self.label.setMinimumHeight(25)
 
+        #Add the text onto the button and format it in order for it to fit
         layout = QVBoxLayout(self)
         layout.addWidget(self.label)
         layout.setContentsMargins(5, 0, 5, 0)  
@@ -265,6 +271,7 @@ class export_graph_button(QPushButton):
             color: black;
         """)
 
+        #Create a new label with the text Export Graph and format it
         self.label = QLabel("Export Graph")
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -275,9 +282,11 @@ class export_graph_button(QPushButton):
         """) 
         self.label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
+        #Control the size of the button and the label to ensure they fit together
         self.setMinimumHeight(35)
         self.label.setMinimumHeight(25)
 
+        #Add the text onto the button and format it in order for it to fit
         layout = QVBoxLayout(self)
         layout.addWidget(self.label)
         layout.setContentsMargins(5, 0, 5, 0)  
@@ -286,6 +295,7 @@ class Graph_TopBar(QWidget):
     def __init__(self):
         super().__init__()
         
+        #Put all the buttons together in a horizontal box and format
         layout = QHBoxLayout()
         layout.addWidget(new_graph_button(),stretch=1)
         layout.addWidget(undo_button(),stretch=1)
@@ -299,12 +309,13 @@ class Graph_TopBar(QWidget):
         layout.setContentsMargins(5,5,5,5) 
         layout.setSpacing(5)
 
+        #Control the size of the box and apply the layout to the Top Bar
         self.setFixedHeight(45)
         self.setFixedWidth(620)
         self.setLayout(layout)
 
+        #Format the Top bar and the buttons on it
         self.setObjectName("GraphTopBar")
-
         self.setStyleSheet("""
             QWidget#GraphTopBar{
                 border-radius: 16px;
@@ -315,6 +326,7 @@ class Graph_TopBar(QWidget):
             }
         """)
 
+        #Ensure the everything is properly drawn on the main window
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         
 
@@ -326,16 +338,19 @@ class Graph_Section(QWidget):
             border-radius: 24px;
         """)
 
+        #Control the size of the section
         self.setFixedWidth(620)
 
+        #Add the top bar to the Graph Section on the main window
         layout = QVBoxLayout()
         layout.addWidget(Graph_TopBar())
         layout.addStretch()
-        layout.addWidget(displayCode())
         layout.setContentsMargins(0,0,0,0) 
         layout.setSpacing(0)
 
+        #Apply the layout to the section
         self.setLayout(layout)
 
+        #Ensure that everything is properly drawn onto the main window
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
