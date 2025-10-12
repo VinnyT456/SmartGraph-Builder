@@ -227,7 +227,6 @@ class select_graph_window(QDialog):
         """)
 
         self.previous_graph = QPushButton()
-        self.previous_graph.setShortcut("Left")
         self.previous_graph.setObjectName("Previous_Graph")
         left_shortcut = QShortcut(QKeySequence("Left"), self) 
         left_shortcut.activated.connect(self.previous_graph.click)
@@ -324,7 +323,7 @@ class select_graph_window(QDialog):
 
     def view_next_graph(self):
         global idx
-        idx -= 1
+        idx += 1
         idx %= len(self.available_graphs)
         self.graph_label.setText(self.available_graphs[idx])
         self.update_graph_image()
