@@ -1,7 +1,7 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QKeySequence, QPixmap, QShortcut
 from PyQt6.QtWidgets import (
-    QDialog, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QWidget, QVBoxLayout
+    QDialog, QGridLayout, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QWidget, QVBoxLayout
 )
 import pandas as pd
 
@@ -14,69 +14,93 @@ SEABORN_PLOTS = {
         "Image":"sample_graphs/scatter_plot.png",
         "x-axis_data_type":["float"],
         "y-axis_data_type":["float"],
-        "parameters":[""]
+        "parameters":["x-axis","y-axis","axis title","title",
+                    "legend","grid","hue", "style", "size", 
+                    "palette","alpha", "marker", "s", "edgecolor"]
     },
     "Line Plot":{
         "Image":"sample_graphs/line_plot.png",
         "x-axis_data_type":["float","int"],
         "y-axis_data_type":["float","int"],
-        "parameters":{},
+        "parameters":["x-axis","y-axis","axis title","title",
+                    "legend","grid","hue","style","size",
+                    "palette","alpha","linewidth","marker","linestyle"],
     },
     "Regression Plot":{
         "Image":"sample_graphs/regression_plot.png",
         "x-axis_data_type":["float"],
         "y-axis_data_type":["float"],
-        "parameters":{},
+        "parameters":["x-axis","y-axis","axis title","title",
+                    "legend","grid","color","marker","scatter",
+                    "fit_reg","ci","line_kws","scatter_kws","truncate"],
     },
     "Bar Plot":{
         "Image":"sample_graphs/bar_plot.png",
         "x-axis_data_type":["object","category"],
         "y-axis_data_type":["float","int"],
-        "parameters":{},
+        "parameters":["x-axis","y-axis","axis title","title",
+                    "legend","grid","hue","palette","errorbar",
+                    "ci","capsize","orient","estimator","width"],
     },
     "Count Plot":{
         "Image":"sample_graphs/count_plot.png",
         "x-axis_data_type":["object","category"],
-        "parameters":{},
+        "parameters":["x-axis","y-axis","axis title","title",
+                    "legend","grid","hue","palette","orient",
+                    "order","hue_order","dodge","width","saturation"],
     },
     "Box Plot":{
         "Image":"sample_graphs/box_plot.png",
         "x-axis_data_type":["object","category"],
         "y-axis_data_type":["float","int"],
-        "parameters":{},
+        "parameters":["x-axis","y-axis","axis title","title",
+                    "legend","grid","hue","palette","orient",
+                    "order","hue_order","width","fliersize","linewidth"],
     },
     "Violin Plot":{
         "Image":"sample_graphs/violin_plot.png",
         "x-axis_data_type":["object","category"],
         "y-axis_data_type":["float","int"],
-        "parameters":{},
+        "parameters":["x-axis","y-axis","axis title","title",
+                    "legend","grid","hue","palette","orient",
+                    "order","hue_order","bw","inner","linewidth"],
     },
     "Swarm Plot":{
         "Image":"sample_graphs/swarm_plot.png",
         "x-axis_data_type":["object","category"],
         "y-axis_data_type":["float","int"],
-        "parameters":{},
+        "parameters":["x-axis","y-axis","axis title","title",
+                    "legend","grid","hue","palette","size",
+                    "dodge","orient","marker","alpha","linewidth"],
     },
     "Strip Plot":{
         "Image":"sample_graphs/strip_plot.png",
         "x-axis_data_type":["object","category"],
         "y-axis_data_type":["float","int"],
-        "parameters":{},
+        "parameters":["x-axis","y-axis","axis title","title",
+                    "legend","grid","hue","palette","size",
+                    "jitter","dodge","orient","alpha","linewidth"],
     },
     "Histogram":{
         "Image":"sample_graphs/histogram.png",
         "x-axis_data_type":["float","int"],
-        "parameters":{},
+        "parameters":["x-axis","y-axis","axis title","title",
+                    "legend","grid","bins","binwidth","stat",
+                    "kde","hue","multiple","element","palette"],
     },
     "KDE Plot":{
         "Image":"sample_graphs/kde_plot.png",
         "x-axis_data_type":["float"],
-        "parameters":{},
+        "parameters":["x-axis","y-axis","axis title","title",
+                    "legend","grid","fill","bw_adjust","cut",
+                    "clip","hue","multiple","palette","alpha"],
     },
     "ECDF Plot":{
         "Image":"sample_graphs/ecdf_plot.png",
         "x-axis_data_type":["float","int"],
-        "parameters":{},
+        "parameters":["x-axis","y-axis","axis title","title",
+                    "legend","grid","hue","stat","complementary",
+                    "palette","alpha","marker","linewidth","orientation"],
     },
     "Rug Plot":{
         "Image":"sample_graphs/rug_plot.png",
@@ -104,19 +128,68 @@ SEABORN_PLOTS = {
         "y-axis_data_type":["object","category"],
     },
 }
-
 class graph_parameter_table(QWidget):
     def __init__(self):
         super().__init__()
+
+        # Outer container (rounded white box)
         self.setStyleSheet("""
-            QWidget {
+            QWidget#ParamTable {
                 border-radius: 24px;
-                background: white;
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+            }
+            QPushButton {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
                 border: 2px solid black;
-                margin: 10px;
-                padding: 10px;           
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 18px;
+                padding: 6px;
+                color: black;
             }
         """)
+        self.setObjectName("ParamTable")
+        self.layout = QGridLayout(self)
+        self.layout.setContentsMargins(10, 10, 10, 10)
+        self.layout.setSpacing(10)
+
+        self.buttons = []
+
+    def update_parameter_buttons(self):
+        self.parameters = SEABORN_PLOTS[selected_graph].get("parameters",[])
+
+        for btn in self.buttons:
+            self.layout.removeWidget(btn)
+            btn.deleteLater()
+        self.buttons.clear()
+
+        for row in range(7):
+            for col in range(2):
+                button = QPushButton(f"{self.parameters[row*2+col]}")
+                button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+                self.layout.addWidget(button, row, col)
+                self.buttons.append(button)
+
+
+        # Make the grid expand evenly
+        for row in range(7):
+            self.layout.setRowStretch(row, 1)
+        for col in range(2):
+            self.layout.setColumnStretch(col, 1)
+
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
 class select_graph_module(QPushButton):
@@ -124,13 +197,13 @@ class select_graph_module(QPushButton):
         super().__init__()
         self.setStyleSheet("""
             background: qlineargradient(
-                        x1:0, y1:1,
-                        x2:0, y2:0,
-                        stop:0.02 rgba(131, 125, 255, 1),
-                        stop:0.36 rgba(97, 97, 255, 1),
-                        stop:0.66 rgba(31, 162, 255, 1),
-                        stop:1 rgba(0, 212, 255, 1)
-                    );
+                x1:0, y1:1,
+                x2:0, y2:0,
+                stop:0.02 rgba(131, 125, 255, 1),
+                stop:0.36 rgba(97, 97, 255, 1),
+                stop:0.66 rgba(31, 162, 255, 1),
+                stop:1 rgba(0, 212, 255, 1)
+            );
             color: black;
         """)
 
@@ -171,11 +244,12 @@ class select_graph_module(QPushButton):
         graph_module = self.graph_module[self.graph_module_idx]
 
 class select_graph_window(QDialog):
-    def __init__(self,available_graphs,graph_images):
+    def __init__(self,available_graphs,graph_images,graph_parameter_table):
         super().__init__()
 
         self.available_graphs = available_graphs
         self.graph_images = graph_images
+        self.graph_parameter_table = graph_parameter_table
 
         self.setWindowTitle("Select Your Graph")
         self.setFixedHeight(600)
@@ -183,13 +257,13 @@ class select_graph_window(QDialog):
 
         self.setStyleSheet("""
             background: qlineargradient(
-                        x1:0, y1:1,
-                        x2:0, y2:0,
-                        stop:0.02 rgba(131, 125, 255, 1),
-                        stop:0.36 rgba(97, 97, 255, 1),
-                        stop:0.66 rgba(31, 162, 255, 1),
-                        stop:1 rgba(0, 212, 255, 1)
-                    );
+                x1:0, y1:1,
+                x2:0, y2:0,
+                stop:0.02 rgba(131, 125, 255, 1),
+                stop:0.36 rgba(97, 97, 255, 1),
+                stop:0.66 rgba(31, 162, 255, 1),
+                stop:1 rgba(0, 212, 255, 1)
+            );
             color: black;
         """)
 
@@ -197,7 +271,12 @@ class select_graph_window(QDialog):
         self.graph_label.setWordWrap(True)
         self.graph_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.graph_label.setStyleSheet("""
-            background: white;
+            background: qlineargradient(
+                x1:0, y1:0, x2:1, y2:0,
+                stop:0 #f5f5ff,
+                stop:0.5 #f7f5fc,
+                stop:1 #f0f0ff
+            );
             font-family: "SF Pro Display";
             font-weight: 600;
             border-radius: 16px;
@@ -208,7 +287,12 @@ class select_graph_window(QDialog):
         self.graph_name.setObjectName("Graph_Name")
         self.graph_name.setStyleSheet("""
             QWidget#Graph_Name{
-                background: white;
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
                 border: 1px solid black;
                 border-radius: 24px;
                 font-family: "SF Pro Display";
@@ -225,7 +309,12 @@ class select_graph_window(QDialog):
         self.graph_image.setObjectName("Graph_Image")
         self.graph_image.setStyleSheet("""
             QWidget#Graph_Image{
-                background: white;
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
                 border: 1px solid black;
                 border-radius: 24px;
             }
@@ -247,7 +336,12 @@ class select_graph_window(QDialog):
         enter_shortcut.activated.connect(self.select_button.click)  
         self.select_button.setStyleSheet("""
             QPushButton#Select_Button{  
-                background: white;
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
                 border: 1px solid black;
                 border-radius: 24px;
                 font-family: "SF Pro Display";
@@ -274,7 +368,12 @@ class select_graph_window(QDialog):
         left_shortcut.activated.connect(self.previous_graph.click)
         self.previous_graph.setStyleSheet("""
             QPushButton#Previous_Graph{  
-                background: white;
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
                 border: 1px solid black;
                 border-radius: 24px;
                 font-family: "SF Pro Display";
@@ -305,7 +404,12 @@ class select_graph_window(QDialog):
         self.next_graph.setObjectName("Next_Graph")
         self.next_graph.setStyleSheet("""
             QPushButton#Next_Graph{  
-                background: white;
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
                 border: 1px solid black;
                 border-radius: 24px;
                 font-family: "SF Pro Display";
@@ -373,6 +477,7 @@ class select_graph_window(QDialog):
     def select_graph(self):
         global selected_graph
         selected_graph = self.available_graphs[idx]
+        self.graph_parameter_table.update_parameter_buttons()
         self.close() 
 
     def update_graph_image(self):
@@ -383,7 +488,7 @@ class select_graph_window(QDialog):
         self.image_label.setPixmap(pixmap)
 
 class select_graph(QPushButton):
-    def __init__(self):
+    def __init__(self,graph_parameter_table):
         super().__init__()
         self.setStyleSheet("""
             background: qlineargradient(
@@ -396,6 +501,8 @@ class select_graph(QPushButton):
                     );
             color: black;
         """)
+
+        self.graph_parameter_table = graph_parameter_table
     
         self.label = QLabel("Select Type of Graph")
         self.label.setWordWrap(True)
@@ -419,7 +526,7 @@ class select_graph(QPushButton):
     def open_select_graph_window(self):
         if (graph_module != ''):
             graph_images = [i["Image"] for i in list(SEABORN_PLOTS.values())]
-            select_graph_window(list(SEABORN_PLOTS.keys()),graph_images).exec()
+            select_graph_window(list(SEABORN_PLOTS.keys()),graph_images,self.graph_parameter_table).exec()
             if (selected_graph != ''):
                 self.label.setText(selected_graph)
                 self.label.setStyleSheet("""
@@ -430,18 +537,26 @@ class select_graph(QPushButton):
                 """) 
 
 class GraphParameter_TopBar(QWidget):
-    def __init__(self):
+    def __init__(self,graph_parameter_table):
         super().__init__()
 
         layout = QHBoxLayout()
         layout.addWidget(select_graph_module())
-        layout.addWidget(select_graph())
+        layout.addWidget(select_graph(graph_parameter_table))
         layout.setContentsMargins(5,5,5,5) 
         layout.setSpacing(5)
 
+        self.setObjectName("graph_parameter_topbar")
+
         self.setStyleSheet("""
-            QWidget{
-                background: white;
+            QWidget#graph_parameter_topbar{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid #c0c0ff;
                 border-radius: 24px;
             }
             QPushButton{
@@ -459,7 +574,13 @@ class GraphParameter_Table(QWidget):
     def __init__(self,graph_parameters):
         super().__init__()
         self.setStyleSheet("""
-            background: white;
+            background: qlineargradient(
+                x1:0, y1:0, x2:1, y2:0,
+                stop:0 #f5f5ff,
+                stop:0.5 #f7f5fc,
+                stop:1 #f0f0ff
+            );
+            border: 2px solid #d0d0ff;
             border-radius: 24px;
         """)
 
@@ -480,7 +601,7 @@ class GraphParameter_Section(QWidget):
         super().__init__()
 
         self.graph_parameters = graph_parameter_table()
-        self.graph_parameters_topbar = GraphParameter_TopBar()
+        self.graph_parameters_topbar = GraphParameter_TopBar(self.graph_parameters)
         self.graph_parameters_table = GraphParameter_Table(self.graph_parameters)
 
         layout = QVBoxLayout(self) 

@@ -45,7 +45,12 @@ class DatapointWindow(QDialog):
         self.x_datapoints.setObjectName("X_data")
         self.x_datapoints.setStyleSheet("""
             QLineEdit#X_data{
-                background: white;
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
                 font-size: 24pt;
                 border: 1px solid black;
                 border-radius: 24px;
@@ -57,7 +62,12 @@ class DatapointWindow(QDialog):
         self.y_datapoints.setObjectName("Y_data")
         self.y_datapoints.setStyleSheet("""
             QLineEdit#Y_data{
-                background: white;
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
                 font-size: 24pt;
                 border: 1px solid black;
                 border-radius: 24px;
@@ -69,7 +79,12 @@ class DatapointWindow(QDialog):
         self.z_datapoints.setObjectName("Z_data")
         self.z_datapoints.setStyleSheet("""
             QLineEdit#Z_data{
-                background: white;
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
                 font-size: 24pt;
                 border: 1px solid black;
                 border-radius: 24px;
@@ -79,7 +94,12 @@ class DatapointWindow(QDialog):
         self.submit_button = QPushButton("Submit")
         self.submit_button.setStyleSheet("""
             QPushButton{  
-                background: white;
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
                 border: 1px solid black;
                 border-radius: 24px;
                 font-family: "SF Pro Display";
@@ -216,8 +236,12 @@ class displayDataset(QTableView):
         self.setStyleSheet("""
             QTableView {
                 border-radius: 24px;
-                background: white;
-                border: 2px solid black;
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
                 font-family: "SF Pro Display";
                 font-size: 11pt;
                 color: black;
@@ -241,6 +265,31 @@ class displayDataset(QTableView):
         self.verticalHeader().setVisible(False)
         self.setShowGrid(True)
         self.setSortingEnabled(False)
+        self.setStyleSheet("""
+            QTableView {
+                border-radius: 24px;
+                border: 2px solid black;
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                font-family: "SF Pro Display";
+                font-size: 11pt;
+                color: black;
+                margin: 10px;
+                padding: 10px;           
+            }
+            QHeaderView::section {
+                background-color: white;
+                border: 1px solid black;
+                color: black;
+                padding: 4px;
+                font-weight: bold;
+                margin: 10px;
+            }
+        """)
 
 class import_replace_dataset_button(QPushButton):
     def __init__(self,dataset_table):
@@ -392,7 +441,12 @@ class Dataset_TopBar(QWidget):
 
         self.setStyleSheet("""
             QWidget{
-                background: white;
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
                 border-radius: 24px;
             }
             QPushButton{
@@ -410,9 +464,20 @@ class Dataset_TopBar(QWidget):
 class Dataset_Table(QWidget):
     def __init__(self,table):
         super().__init__()
+        self.setObjectName("dataset_table")
         self.setStyleSheet("""
-            background: white;
-            border-radius: 24px;
+            QWidget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border-radius: 24px;
+            }
+            QWidget#dataset_table{
+                border: 2px solid #d0d0ff;
+            }
         """)
 
         self.dataset_table = table

@@ -8,13 +8,13 @@ class AI_Menu_button(QPushButton):
         super().__init__()
         self.setStyleSheet("""
             background: qlineargradient(
-                        x1:0, y1:1,
-                        x2:0, y2:0,
-                        stop:0.02 rgba(131, 125, 255, 1),
-                        stop:0.36 rgba(97, 97, 255, 1),
-                        stop:0.66 rgba(31, 162, 255, 1),
-                        stop:1 rgba(0, 212, 255, 1)
-                    );
+                x1:0, y1:1,
+                x2:0, y2:0,
+                stop:0.02 rgba(131, 125, 255, 1),
+                stop:0.36 rgba(97, 97, 255, 1),
+                stop:0.66 rgba(31, 162, 255, 1),
+                stop:1 rgba(0, 212, 255, 1)
+            );
             color: black;
         """)
         
@@ -43,13 +43,13 @@ class Summarize_Dataset_button(QPushButton):
         super().__init__()
         self.setStyleSheet("""
             background: qlineargradient(
-                        x1:0, y1:1,
-                        x2:0, y2:0,
-                        stop:0.02 rgba(131, 125, 255, 1),
-                        stop:0.36 rgba(97, 97, 255, 1),
-                        stop:0.66 rgba(31, 162, 255, 1),
-                        stop:1 rgba(0, 212, 255, 1)
-                    );
+                x1:0, y1:1,
+                x2:0, y2:0,
+                stop:0.02 rgba(131, 125, 255, 1),
+                stop:0.36 rgba(97, 97, 255, 1),
+                stop:0.66 rgba(31, 162, 255, 1),
+                stop:1 rgba(0, 212, 255, 1)
+            );
             color: black;
         """)
 
@@ -78,13 +78,13 @@ class Cleaning_Suggestions_button(QPushButton):
         super().__init__()
         self.setStyleSheet("""
             background: qlineargradient(
-                        x1:0, y1:1,
-                        x2:0, y2:0,
-                        stop:0.02 rgba(131, 125, 255, 1),
-                        stop:0.36 rgba(97, 97, 255, 1),
-                        stop:0.66 rgba(31, 162, 255, 1),
-                        stop:1 rgba(0, 212, 255, 1)
-                    );
+                x1:0, y1:1,
+                x2:0, y2:0,
+                stop:0.02 rgba(131, 125, 255, 1),
+                stop:0.36 rgba(97, 97, 255, 1),
+                stop:0.66 rgba(31, 162, 255, 1),
+                stop:1 rgba(0, 212, 255, 1)
+            );
             color: black;
         """)
 
@@ -120,10 +120,18 @@ class AI_Summary_TopBar(QWidget):
         layout.setContentsMargins(5,5,5,5) 
         layout.setSpacing(5)
 
+        self.setObjectName("ai_summary_topbar")
+
         #Set the style for the buttons
         self.setStyleSheet("""
-            QWidget{
-                background: white;
+            QWidget#ai_summary_topbar{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid #c0c0ff;
                 border-radius: 24px;
             }
             QPushButton{
@@ -144,7 +152,13 @@ class AI_Summary(QWidget):
         super().__init__()
         #Format the section and control the size of it
         self.setStyleSheet("""
-            background: white;
+            background: qlineargradient(
+                x1:0, y1:0, x2:1, y2:0,
+                stop:0 #f5f5ff,
+                stop:0.5 #f7f5fc,
+                stop:1 #f0f0ff
+            );
+            border: 2px solid #d0d0ff;
             border-radius: 24px;
         """)
         self.setFixedWidth(350)

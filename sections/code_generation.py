@@ -12,7 +12,13 @@ class Code_Section(QWidget):
         self.setMinimumHeight(100)
         self.setStyleSheet("""
             QWidget{
-                background: white;
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid #d0d0ff;
                 border-radius: 24px;
             }
         """)

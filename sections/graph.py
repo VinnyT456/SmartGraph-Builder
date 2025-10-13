@@ -9,13 +9,13 @@ class new_graph_button(QPushButton):
 
         self.setStyleSheet("""
             background: qlineargradient(
-                        x1:0, y1:1,
-                        x2:0, y2:0,
-                        stop:0.02 rgba(131, 125, 255, 1),
-                        stop:0.36 rgba(97, 97, 255, 1),
-                        stop:0.66 rgba(31, 162, 255, 1),
-                        stop:1 rgba(0, 212, 255, 1)
-                    );
+                x1:0, y1:1,
+                x2:0, y2:0,
+                stop:0.02 rgba(131, 125, 255, 1),
+                stop:0.36 rgba(97, 97, 255, 1),
+                stop:0.66 rgba(31, 162, 255, 1),
+                stop:1 rgba(0, 212, 255, 1)
+            );
             color: black;
         """)
 
@@ -45,13 +45,13 @@ class undo_button(QPushButton):
 
         self.setStyleSheet("""
             background: qlineargradient(
-                        x1:0, y1:1,
-                        x2:0, y2:0,
-                        stop:0.02 rgba(131, 125, 255, 1),
-                        stop:0.36 rgba(97, 97, 255, 1),
-                        stop:0.66 rgba(31, 162, 255, 1),
-                        stop:1 rgba(0, 212, 255, 1)
-                    );
+                x1:0, y1:1,
+                x2:0, y2:0,
+                stop:0.02 rgba(131, 125, 255, 1),
+                stop:0.36 rgba(97, 97, 255, 1),
+                stop:0.66 rgba(31, 162, 255, 1),
+                stop:1 rgba(0, 212, 255, 1)
+            );
             color: black;
         """)
 
@@ -81,13 +81,13 @@ class clear_button(QPushButton):
 
         self.setStyleSheet("""
             background: qlineargradient(
-                        x1:0, y1:1,
-                        x2:0, y2:0,
-                        stop:0.02 rgba(131, 125, 255, 1),
-                        stop:0.36 rgba(97, 97, 255, 1),
-                        stop:0.66 rgba(31, 162, 255, 1),
-                        stop:1 rgba(0, 212, 255, 1)
-                    );
+                x1:0, y1:1,
+                x2:0, y2:0,
+                stop:0.02 rgba(131, 125, 255, 1),
+                stop:0.36 rgba(97, 97, 255, 1),
+                stop:0.66 rgba(31, 162, 255, 1),
+                stop:1 rgba(0, 212, 255, 1)
+            );
             color: black;
         """)
 
@@ -117,13 +117,13 @@ class previous_graph_button(QPushButton):
 
         self.setStyleSheet("""
             background: qlineargradient(
-                        x1:0, y1:1,
-                        x2:0, y2:0,
-                        stop:0.02 rgba(131, 125, 255, 1),
-                        stop:0.36 rgba(97, 97, 255, 1),
-                        stop:0.66 rgba(31, 162, 255, 1),
-                        stop:1 rgba(0, 212, 255, 1)
-                    );
+                x1:0, y1:1,
+                x2:0, y2:0,
+                stop:0.02 rgba(131, 125, 255, 1),
+                stop:0.36 rgba(97, 97, 255, 1),
+                stop:0.66 rgba(31, 162, 255, 1),
+                stop:1 rgba(0, 212, 255, 1)
+            );
             color: black;
         """)
 
@@ -153,13 +153,13 @@ class zoom_in_button(QPushButton):
 
         self.setStyleSheet("""
             background: qlineargradient(
-                        x1:0, y1:1,
-                        x2:0, y2:0,
-                        stop:0.02 rgba(131, 125, 255, 1),
-                        stop:0.36 rgba(97, 97, 255, 1),
-                        stop:0.66 rgba(31, 162, 255, 1),
-                        stop:1 rgba(0, 212, 255, 1)
-                    );
+                x1:0, y1:1,
+                x2:0, y2:0,
+                stop:0.02 rgba(131, 125, 255, 1),
+                stop:0.36 rgba(97, 97, 255, 1),
+                stop:0.66 rgba(31, 162, 255, 1),
+                stop:1 rgba(0, 212, 255, 1)
+            );
             color: black;
         """)
 
@@ -189,13 +189,13 @@ class zoom_out_button(QPushButton):
 
         self.setStyleSheet("""
             background: qlineargradient(
-                        x1:0, y1:1,
-                        x2:0, y2:0,
-                        stop:0.02 rgba(131, 125, 255, 1),
-                        stop:0.36 rgba(97, 97, 255, 1),
-                        stop:0.66 rgba(31, 162, 255, 1),
-                        stop:1 rgba(0, 212, 255, 1)
-                    );
+                x1:0, y1:1,
+                x2:0, y2:0,
+                stop:0.02 rgba(131, 125, 255, 1),
+                stop:0.36 rgba(97, 97, 255, 1),
+                stop:0.66 rgba(31, 162, 255, 1),
+                stop:1 rgba(0, 212, 255, 1)
+            );
             color: black;
         """)
 
@@ -225,13 +225,13 @@ class copy_code_button(QPushButton):
 
         self.setStyleSheet("""
             background: qlineargradient(
-                        x1:0, y1:1,
-                        x2:0, y2:0,
-                        stop:0.02 rgba(131, 125, 255, 1),
-                        stop:0.36 rgba(97, 97, 255, 1),
-                        stop:0.66 rgba(31, 162, 255, 1),
-                        stop:1 rgba(0, 212, 255, 1)
-                    );
+                x1:0, y1:1,
+                x2:0, y2:0,
+                stop:0.02 rgba(131, 125, 255, 1),
+                stop:0.36 rgba(97, 97, 255, 1),
+                stop:0.66 rgba(31, 162, 255, 1),
+                stop:1 rgba(0, 212, 255, 1)
+            );
             color: black;
         """)
 
@@ -261,13 +261,13 @@ class export_graph_button(QPushButton):
 
         self.setStyleSheet("""
             background: qlineargradient(
-                        x1:0, y1:1,
-                        x2:0, y2:0,
-                        stop:0.02 rgba(131, 125, 255, 1),
-                        stop:0.36 rgba(97, 97, 255, 1),
-                        stop:0.66 rgba(31, 162, 255, 1),
-                        stop:1 rgba(0, 212, 255, 1)
-                    );
+                x1:0, y1:1,
+                x2:0, y2:0,
+                stop:0.02 rgba(131, 125, 255, 1),
+                stop:0.36 rgba(97, 97, 255, 1),
+                stop:0.66 rgba(31, 162, 255, 1),
+                stop:1 rgba(0, 212, 255, 1)
+            );
             color: black;
         """)
 
@@ -314,10 +314,18 @@ class Graph_TopBar(QWidget):
         self.setFixedWidth(620)
         self.setLayout(layout)
 
+        self.setObjectName("graph_topbar")
+
         #Format the Top bar and the buttons on it
         self.setStyleSheet("""
-            QWidget{
-                background: white;
+            QWidget#graph_topbar{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid #c0c0ff;
                 border-radius: 24px;
             }
             QPushButton{
@@ -333,7 +341,13 @@ class Graph_Display(QWidget):
     def __init__(self):
         super().__init__()
         self.setStyleSheet("""
-            background: white;
+            background: qlineargradient(
+                x1:0, y1:0, x2:1, y2:0,
+                stop:0 #f5f5ff,
+                stop:0.5 #f7f5fc,
+                stop:1 #f0f0ff
+            );
+            border: 2px solid #d0d0ff;
             border-radius: 24px;
         """)
 

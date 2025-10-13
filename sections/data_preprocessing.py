@@ -8,13 +8,13 @@ class dropna_button(QPushButton):
         super().__init__()
         self.setStyleSheet("""
             background: qlineargradient(
-                        x1:0, y1:1,
-                        x2:0, y2:0,
-                        stop:0.02 rgba(131, 125, 255, 1),
-                        stop:0.36 rgba(97, 97, 255, 1),
-                        stop:0.66 rgba(31, 162, 255, 1),
-                        stop:1 rgba(0, 212, 255, 1)
-                    );
+                x1:0, y1:1,
+                x2:0, y2:0,
+                stop:0.02 rgba(131, 125, 255, 1),
+                stop:0.36 rgba(97, 97, 255, 1),
+                stop:0.66 rgba(31, 162, 255, 1),
+                stop:1 rgba(0, 212, 255, 1)
+            );
             color: black;
         """)
         self.label = QLabel("Dropna")
@@ -39,13 +39,13 @@ class filter_button(QPushButton):
         super().__init__()
         self.setStyleSheet("""
             background: qlineargradient(
-                        x1:0, y1:1,
-                        x2:0, y2:0,
-                        stop:0.02 rgba(131, 125, 255, 1),
-                        stop:0.36 rgba(97, 97, 255, 1),
-                        stop:0.66 rgba(31, 162, 255, 1),
-                        stop:1 rgba(0, 212, 255, 1)
-                    );
+                x1:0, y1:1,
+                x2:0, y2:0,
+                stop:0.02 rgba(131, 125, 255, 1),
+                stop:0.36 rgba(97, 97, 255, 1),
+                stop:0.66 rgba(31, 162, 255, 1),
+                stop:1 rgba(0, 212, 255, 1)
+            );
             color: black;
         """)
         self.label = QLabel("Filter")
@@ -70,13 +70,13 @@ class fillna_button(QPushButton):
         super().__init__()
         self.setStyleSheet("""
             background: qlineargradient(
-                        x1:0, y1:1,
-                        x2:0, y2:0,
-                        stop:0.02 rgba(131, 125, 255, 1),
-                        stop:0.36 rgba(97, 97, 255, 1),
-                        stop:0.66 rgba(31, 162, 255, 1),
-                        stop:1 rgba(0, 212, 255, 1)
-                    );
+                x1:0, y1:1,
+                x2:0, y2:0,
+                stop:0.02 rgba(131, 125, 255, 1),
+                stop:0.36 rgba(97, 97, 255, 1),
+                stop:0.66 rgba(31, 162, 255, 1),
+                stop:1 rgba(0, 212, 255, 1)
+            );
             color: black;
         """)
         self.label = QLabel("Fillna")
@@ -101,13 +101,13 @@ class convert_type_button(QPushButton):
         super().__init__()
         self.setStyleSheet("""
             background: qlineargradient(
-                        x1:0, y1:1,
-                        x2:0, y2:0,
-                        stop:0.02 rgba(131, 125, 255, 1),
-                        stop:0.36 rgba(97, 97, 255, 1),
-                        stop:0.66 rgba(31, 162, 255, 1),
-                        stop:1 rgba(0, 212, 255, 1)
-                    );
+                x1:0, y1:1,
+                x2:0, y2:0,
+                stop:0.02 rgba(131, 125, 255, 1),
+                stop:0.36 rgba(97, 97, 255, 1),
+                stop:0.66 rgba(31, 162, 255, 1),
+                stop:1 rgba(0, 212, 255, 1)
+            );
             color: black;
         """)
         self.label = QLabel("Convert Type")
@@ -132,13 +132,13 @@ class undo_button(QPushButton):
         super().__init__()
         self.setStyleSheet("""
             background: qlineargradient(
-                        x1:0, y1:1,
-                        x2:0, y2:0,
-                        stop:0.02 rgba(131, 125, 255, 1),
-                        stop:0.36 rgba(97, 97, 255, 1),
-                        stop:0.66 rgba(31, 162, 255, 1),
-                        stop:1 rgba(0, 212, 255, 1)
-                    );
+                x1:0, y1:1,
+                x2:0, y2:0,
+                stop:0.02 rgba(131, 125, 255, 1),
+                stop:0.36 rgba(97, 97, 255, 1),
+                stop:0.66 rgba(31, 162, 255, 1),
+                stop:1 rgba(0, 212, 255, 1)
+            );
             color: black;
         """)
         self.label = QLabel("Undo")
@@ -171,9 +171,17 @@ class Data_Preprocessing_TopBar(QWidget):
         layout.setContentsMargins(5,5,5,5) 
         layout.setSpacing(5)
 
+        self.setObjectName("data_preprocessing_topbar")
+
         self.setStyleSheet("""
-            QWidget{
-                background: white;
+            QWidget#data_preprocessing_topbar{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid #c0c0ff;
                 border-radius: 24px;
             }
             QPushButton{
@@ -192,7 +200,13 @@ class Data_Preprocessing_Table(QWidget):
     def __init__(self):
         super().__init__()
         self.setStyleSheet("""
-            background: white;
+            background: qlineargradient(
+                x1:0, y1:0, x2:1, y2:0,
+                stop:0 #f5f5ff,
+                stop:0.5 #f7f5fc,
+                stop:1 #f0f0ff
+            );
+            border: 2px solid #d0d0ff;
             border-radius: 24px;
         """)
 
