@@ -286,10 +286,11 @@ class select_graph_window(QDialog):
         self.graph_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.graph_label.setStyleSheet("""
             background: qlineargradient(
-                x1:0, y1:0, x2:1, y2:0,
-                stop:0 #f5f5ff,
-                stop:0.5 #f7f5fc,
-                stop:1 #f0f0ff
+                x1:0, y1:0,
+                x2:1, y2:0,
+                stop:0 rgba(220, 245, 255, 1),
+                stop:0.5 rgba(205, 240, 255, 1),
+                stop:1 rgba(190, 235, 255, 1)
             );
             font-family: "SF Pro Display";
             font-weight: 600;
@@ -302,10 +303,11 @@ class select_graph_window(QDialog):
         self.graph_name.setStyleSheet("""
             QWidget#Graph_Name{
                 background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(220, 245, 255, 1),
+                    stop:0.5 rgba(205, 240, 255, 1),
+                    stop:1 rgba(190, 235, 255, 1)
                 );
                 border: 1px solid black;
                 border-radius: 24px;
@@ -351,10 +353,10 @@ class select_graph_window(QDialog):
         self.select_button.setStyleSheet("""
             QPushButton#Select_Button{  
                 background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(160, 255, 230, 1),
+                    stop:1 rgba(110, 210, 255, 1)
                 );
                 border: 1px solid black;
                 border-radius: 24px;
@@ -383,10 +385,11 @@ class select_graph_window(QDialog):
         self.previous_graph.setStyleSheet("""
             QPushButton#Previous_Graph{  
                 background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(166, 255, 245, 1),
+                    stop:0.5 rgba(132, 235, 255, 1),
+                    stop:1 rgba(88, 200, 255, 1)
                 );
                 border: 1px solid black;
                 border-radius: 24px;
@@ -419,10 +422,11 @@ class select_graph_window(QDialog):
         self.next_graph.setStyleSheet("""
             QPushButton#Next_Graph{  
                 background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(166, 255, 245, 1),
+                    stop:0.5 rgba(132, 235, 255, 1),
+                    stop:1 rgba(88, 200, 255, 1)
                 );
                 border: 1px solid black;
                 border-radius: 24px;
