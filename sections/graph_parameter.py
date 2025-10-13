@@ -105,27 +105,41 @@ SEABORN_PLOTS = {
     "Rug Plot":{
         "Image":"sample_graphs/rug_plot.png",
         "x-axis_data_type":["float","int"],
-        "parameters":{},
+        "parameters":["x-axis","y-axis","axis title","title",
+                    "legend","grid","hue","height","expand_margins",
+                    "palette","alpha","linewidth","orientation","ax"],
     },
     "Heatmap":{
         "Image":"sample_graphs/heatmap.png",
         "x-axis_data_type":["float","int"],
         "y-axis_data_type":["float","int"],
+        "parameters":["x-axis","y-axis","axis title","title",
+                    "legend","grid","annot","fmt","cmap",
+                    "center","vmin","vmax","linewidths","linecolor"]
     },
     "Pair Plot":{
         "Image":"sample_graphs/pair_plot.png",
         "x-axis_data_type":["float","int"],
         "y-axis_data_type":["float","int"],
+        "parameters":["x-axis","y-axis","axis title","title",
+                    "legend","grid","hue","palette","kind",
+                    "diag_kind","markers","corner","plot_kws","diag_kws"]
     },
     "Joint Plot":{
         "Image":"sample_graphs/joint_plot.png",
         "x-axis_data_type":["float","int"],
         "y-axis_data_type":["float","int"],
+        "parameters":["x-axis","y-axis","axis title","title",
+                    "legend","grid","hue","kind","palette",
+                    "height","ratio","marginal_ticks","space","joint_kws"]
     },
     "Cluster Map":{
         "Image":"sample_graphs/cluster_map.png",
         "x-axis_data_type":["object","category"],
         "y-axis_data_type":["object","category"],
+        "parameters":["x-axis","y-axis","axis title","title",
+                    "cmap","center","annot","linewidths","figsize",
+                    "row_cluster","col_cluster","standard_scale","z_score","dendrogram_ratio"]
     },
 }
 class graph_parameter_table(QWidget):
