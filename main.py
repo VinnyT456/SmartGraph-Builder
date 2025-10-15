@@ -1,4 +1,4 @@
-
+import os 
 import sys
 
 from PyQt6.QtWidgets import (
@@ -15,7 +15,7 @@ from sections.code_generation import Code_Section
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Simple Visual")
+        self.setWindowTitle("SmartGraph Builder")
         self.setFixedSize(1400, 800)
 
         #Create a vertical box layout and add the graph parameter and data preprocessing section in it
@@ -70,8 +70,14 @@ class MainWindow(QMainWindow):
                     background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #7f9cf5, stop:0.5 #b299f8, stop:1 #a15ee0);
                 }
         """)
-
         self.setCentralWidget(window)
+
+        #Check that the dataset folder is empty
+        folder_path = 'dataset'
+        if (os.listdir(folder_path)):
+            for file in os.listdir(folder_path):
+                file_path = f"{folder_path}/{file}"
+                os.remove(file_path)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
