@@ -147,12 +147,12 @@ class DatapointWindow(QDialog):
             if (z_points == ""):
                 z_points = ("0 " * length).strip()
 
-            if (len(x_points) != len(y_points) != len(z_points)):
-                return 
-
             x_points = list(map(float,x_points.replace(","," ").split(" ")))
             y_points = list(map(float,y_points.replace(","," ").split(" ")))
             z_points = list(map(float,z_points.replace(","," ").split(" ")))
+
+            if (len(x_points) != len(y_points) != len(z_points)):
+                return 
 
             df = pd.DataFrame({
                 "X": x_points,
@@ -251,7 +251,7 @@ class displayDataset(QTableView):
             QHeaderView::section {
                 background-color: white;
                 border: 1px solid black;
-                color: black;
+                color: white;
                 padding: 4px;
                 font-weight: bold;
                 margin: 10px;
