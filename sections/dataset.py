@@ -13,8 +13,22 @@ class ColumnManagementWindow(QDialog):
         self.dataset_table = dataset_table
 
         self.setWindowTitle("Column Management")
-        self.setFixedHeight(500)
+        self.setObjectName("column_management_window")
+        self.setFixedHeight(300)
         self.setFixedWidth(500)
+
+        self.setStyleSheet("""
+            QDialog#column_management_window{
+                background: qlineargradient(
+                    x1:0, y1:1, x2:0, y2:0,
+                    stop:0 rgba(255, 0, 255, 255),
+                    stop:0.22 rgba(252, 86, 191, 255),
+                    stop:0.46 rgba(247, 96, 96, 255),
+                    stop:0.71 rgba(255, 180, 82, 255),
+                    stop:0.90 rgba(245, 219, 51, 255)
+                );
+            }
+        """)
 
 class DatapointWindow(QDialog):
     def __init__(self,dataset_table):
@@ -28,13 +42,13 @@ class DatapointWindow(QDialog):
 
         self.setStyleSheet("""
             background: qlineargradient(
-                        x1:0, y1:1,
-                        x2:0, y2:0,
-                        stop:0.02 rgba(131, 125, 255, 1),
-                        stop:0.36 rgba(97, 97, 255, 1),
-                        stop:0.66 rgba(31, 162, 255, 1),
-                        stop:1 rgba(0, 212, 255, 1)
-                    );
+                x1:0, y1:1,
+                x2:0, y2:0,
+                stop:0.02 rgba(131, 125, 255, 1),
+                stop:0.36 rgba(97, 97, 255, 1),
+                stop:0.66 rgba(31, 162, 255, 1),
+                stop:1 rgba(0, 212, 255, 1)
+            );
             color: black;
         """)
 
@@ -304,7 +318,7 @@ class import_replace_dataset_button(QPushButton):
                         stop:0.66 rgba(31, 162, 255, 1),
                         stop:1 rgba(0, 212, 255, 1)
                     );
-            color: black;
+            color: #c8f7ff;
         """)
 
         self.label = QLabel("Import Dataset")
@@ -361,7 +375,7 @@ class enter_datapoints_button(QPushButton):
                         stop:0.66 rgba(31, 162, 255, 1),
                         stop:1 rgba(0, 212, 255, 1)
                     );
-            color: black;
+            color: #c8f7ff;
         """)
 
         self.label = QLabel("Enter Datapoints")
@@ -392,14 +406,14 @@ class column_management_button(QPushButton):
         super().__init__()
         self.setStyleSheet("""
             background: qlineargradient(
-                        x1:0, y1:1,
-                        x2:0, y2:0,
-                        stop:0.02 rgba(131, 125, 255, 1),
-                        stop:0.36 rgba(97, 97, 255, 1),
-                        stop:0.66 rgba(31, 162, 255, 1),
-                        stop:1 rgba(0, 212, 255, 1)
-                    );
-            color: black;
+                x1:0, y1:1,
+                x2:0, y2:0,
+                stop:0.02 rgba(131, 125, 255, 1),
+                stop:0.36 rgba(97, 97, 255, 1),
+                stop:0.66 rgba(31, 162, 255, 1),
+                stop:1 rgba(0, 212, 255, 1)
+            );
+            color: #c8f7ff;
         """)
 
         self.dataset_table = dataset_table
