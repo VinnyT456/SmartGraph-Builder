@@ -24,15 +24,18 @@ class PlotManager:
             self.db.truncate()
         self.db.insert(plot_data)
 
-    def check_x_axis_title(self,title):
+    def update_x_axis_title(self,title):
         current_title = self.db.all()[-1]["axis title"]
         current_title[0] = title
         self.db.update({"axis title":current_title},Query().version == self.current_version)
 
-    def check_y_axis_title(self,title):
+    def update_y_axis_title(self,title):
         current_title = self.db.all()[-1]["axis title"]
         current_title[1] = title
         self.db.update({"axis title":current_title},Query().version == self.current_version)
+
+    def update_title(self,title):
+        self.db.update({"title":title},Query().version == self.current_version)
 
     def insert_plot_parameter(self, plot_data):
         plot_copy = plot_data.copy()
