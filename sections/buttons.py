@@ -18,7 +18,7 @@ plot_json = {
         "axis title":["",""],
         "title":None,
         "legend":"auto",
-        "grid":True,
+        "grid":False,
         "hue":None,
         "style":None,
         "size":None,
@@ -855,16 +855,11 @@ class legend_button(QPushButton):
 class grid_button(QPushButton):
     def __init__(self):
         super().__init__()
+        self.plot_manager = PlotManager()
+        self.update_grid()
 
-        self.setStyleSheet("""
-            QDialog{
-               background: qlineargradient(
-                    x1: 0, y1: 1, 
-                    x2: 0, y2: 0,
-                    stop: 0 rgba(25, 191, 188, 1),
-                    stop: 0.28 rgba(27, 154, 166, 1),
-                    stop: 0.65 rgba(78, 160, 242, 1),
-                    stop: 0.89 rgba(33, 218, 255, 1)
-                );
-            }
-        """)
+    def update_grid(self):
+        db = self.plot_manager.get_db()
+        db["grid"] = not db["grid"]
+        self.plot_manager.insert_plot_parameter(db)
+
