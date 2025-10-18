@@ -15,7 +15,7 @@ class dropna_button(QPushButton):
                 stop:0.66 rgba(31, 162, 255, 1),
                 stop:1 rgba(0, 212, 255, 1)
             );
-            color: black;
+            color: #c8f7ff;
         """)
         self.label = QLabel("Dropna")
         self.label.setWordWrap(True)
@@ -46,7 +46,7 @@ class filter_button(QPushButton):
                 stop:0.66 rgba(31, 162, 255, 1),
                 stop:1 rgba(0, 212, 255, 1)
             );
-            color: black;
+            color: #c8f7ff;
         """)
         self.label = QLabel("Filter")
         self.label.setWordWrap(True)
@@ -77,7 +77,7 @@ class fillna_button(QPushButton):
                 stop:0.66 rgba(31, 162, 255, 1),
                 stop:1 rgba(0, 212, 255, 1)
             );
-            color: black;
+            color: #c8f7ff;
         """)
         self.label = QLabel("Fillna")
         self.label.setWordWrap(True)
@@ -108,7 +108,7 @@ class convert_type_button(QPushButton):
                 stop:0.66 rgba(31, 162, 255, 1),
                 stop:1 rgba(0, 212, 255, 1)
             );
-            color: black;
+            color: #c8f7ff;
         """)
         self.label = QLabel("Convert Type")
         self.label.setWordWrap(True)
@@ -139,7 +139,7 @@ class undo_button(QPushButton):
                 stop:0.66 rgba(31, 162, 255, 1),
                 stop:1 rgba(0, 212, 255, 1)
             );
-            color: black;
+            color: #c8f7ff;
         """)
         self.label = QLabel("Undo")
         self.label.setWordWrap(True)
