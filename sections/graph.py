@@ -16,7 +16,7 @@ class new_graph_button(QPushButton):
                 stop:0.66 rgba(31, 162, 255, 1),
                 stop:1 rgba(0, 212, 255, 1)
             );
-            color: black;
+            color: #c8f7ff;
         """)
 
         #Create a new label with the text New Graph and format it
@@ -52,7 +52,8 @@ class undo_button(QPushButton):
                 stop:0.66 rgba(31, 162, 255, 1),
                 stop:1 rgba(0, 212, 255, 1)
             );
-            color: black;
+            color: #c8f7ff;
+            
         """)
 
         #Create a new label with the text Undo and format it
@@ -88,7 +89,8 @@ class clear_button(QPushButton):
                 stop:0.66 rgba(31, 162, 255, 1),
                 stop:1 rgba(0, 212, 255, 1)
             );
-            color: black;
+            color: #c8f7ff;
+            
         """)
 
         #Create a new label with the text Clear and format it
@@ -124,7 +126,8 @@ class previous_graph_button(QPushButton):
                 stop:0.66 rgba(31, 162, 255, 1),
                 stop:1 rgba(0, 212, 255, 1)
             );
-            color: black;
+            color: #c8f7ff;
+            
         """)
 
         #Create a new label with the text Previous Graph and format it
@@ -160,7 +163,8 @@ class zoom_in_button(QPushButton):
                 stop:0.66 rgba(31, 162, 255, 1),
                 stop:1 rgba(0, 212, 255, 1)
             );
-            color: black;
+            color: #c8f7ff;
+            
         """)
 
         #Create a new label with the text Zoom In and format it
@@ -196,7 +200,8 @@ class zoom_out_button(QPushButton):
                 stop:0.66 rgba(31, 162, 255, 1),
                 stop:1 rgba(0, 212, 255, 1)
             );
-            color: black;
+            color: #c8f7ff;
+            
         """)
 
         #Create a new label with the text Zoom Out and format it
@@ -232,7 +237,8 @@ class copy_code_button(QPushButton):
                 stop:0.66 rgba(31, 162, 255, 1),
                 stop:1 rgba(0, 212, 255, 1)
             );
-            color: black;
+            color: #c8f7ff;
+            
         """)
 
         #Create a new label with the text Copy Code and format it
@@ -268,7 +274,8 @@ class export_graph_button(QPushButton):
                 stop:0.66 rgba(31, 162, 255, 1),
                 stop:1 rgba(0, 212, 255, 1)
             );
-            color: black;
+            color: #c8f7ff;
+            
         """)
 
         #Create a new label with the text Export Graph and format it
