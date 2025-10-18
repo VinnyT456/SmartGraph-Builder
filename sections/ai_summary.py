@@ -15,7 +15,7 @@ class AI_Menu_button(QPushButton):
                 stop:0.66 rgba(31, 162, 255, 1),
                 stop:1 rgba(0, 212, 255, 1)
             );
-            color: black;
+            color: #c8f7ff;     
         """)
         
         #Create a new label with the text AI Menu and format it
@@ -50,7 +50,8 @@ class Summarize_Dataset_button(QPushButton):
                 stop:0.66 rgba(31, 162, 255, 1),
                 stop:1 rgba(0, 212, 255, 1)
             );
-            color: black;
+            color: #c8f7ff;
+            
         """)
 
         #Create a new label with the text Summarize Dataset and format it
@@ -85,7 +86,8 @@ class Cleaning_Suggestions_button(QPushButton):
                 stop:0.66 rgba(31, 162, 255, 1),
                 stop:1 rgba(0, 212, 255, 1)
             );
-            color: black;
+            color: #c8f7ff;
+            
         """)
 
         #Create a new label with the text Cleaning Suggestions and format it
