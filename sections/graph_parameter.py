@@ -158,6 +158,7 @@ class graph_parameter_table(QWidget):
             "y-axis":y_axis_button,
             "axis title":axis_title_button,
             "title":title_button,
+            "grid":grid_button,
         }
 
         #Customize the parameter table
