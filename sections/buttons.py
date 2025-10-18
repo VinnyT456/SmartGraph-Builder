@@ -739,6 +739,9 @@ class axis_title_button(QDialog):
         layout.setContentsMargins(10,10,10,10)
         layout.setSpacing(10)
 
+        close_shortcut = QShortcut(QKeySequence("Return"), self) 
+        close_shortcut.activated.connect(self.close_application)
+
     def x_axis_update_text(self):
         x_axis_title = self.x_axis_title_section.text().strip()
 
@@ -748,7 +751,7 @@ class axis_title_button(QDialog):
             self.x_axis_input = True
             self.plot_manager.insert_plot_parameter(db)
         else:
-            self.plot_manager.check_x_axis_title(x_axis_title)
+            self.plot_manager.update_x_axis_title(x_axis_title)
         
 
     def y_axis_update_text(self):
@@ -759,26 +762,78 @@ class axis_title_button(QDialog):
             self.y_axis_input = True
             self.plot_manager.insert_plot_parameter(db)
         else:
-            self.plot_manager.check_y_axis_title(y_axis_title)
+            self.plot_manager.update_y_axis_title(y_axis_title)
+
+    def close_application(self):
+        self.close()
 
 class title_button(QDialog):
     def __init__(self):
         super().__init__()
 
+        self.plot_manager = PlotManager()
+
+        self.setWindowTitle("Enter the Title for the graph")
+        self.setFixedHeight(80)
+        self.setFixedWidth(500)
+
+        self.title_input = False
+
         self.setStyleSheet("""
             QDialog{
                background: qlineargradient(
-                    x1: 0, y1: 1, 
-                    x2: 0, y2: 0,
-                    stop: 0 rgba(25, 191, 188, 1),
-                    stop: 0.28 rgba(27, 154, 166, 1),
-                    stop: 0.65 rgba(78, 160, 242, 1),
-                    stop: 0.89 rgba(33, 218, 255, 1)
+                    x1:0, y1:1,
+                    x2:0, y2:0,
+                    stop:0.02 rgba(131, 125, 255, 1),
+                    stop:0.36 rgba(97, 97, 255, 1),
+                    stop:0.66 rgba(31, 162, 255, 1),
+                    stop:1 rgba(0, 212, 255, 1)
                 );
             }
         """)
 
         self.title_section = QLineEdit()
+        self.title_section.setPlaceholderText("Title")
+        self.title_section.setObjectName("title_section")
+        self.title_section.setStyleSheet("""
+            QLineEdit#title_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        self.title_section.setFixedHeight(60)
+
+        self.title_section.textChanged.connect(self.update_title)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.title_section)
+        layout.setContentsMargins(10,10,10,10)
+        layout.setSpacing(10)
+
+        close_shortcut = QShortcut(QKeySequence("Return"), self) 
+        close_shortcut.activated.connect(self.close_application)
+
+    def update_title(self):
+        title = self.title_section.text().strip()
+        db = self.plot_manager.get_db()
+        if (db["title"] == None and not self.title_input):
+            db["title"] = title
+            self.title_input = True
+            self.plot_manager.insert_plot_parameter(db)
+        else:
+            self.plot_manager.update_title(title)
+
+    def close_application(self):
+        self.close()
 
 class legend_button(QPushButton):
     def __init__(self):
