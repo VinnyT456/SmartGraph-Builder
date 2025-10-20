@@ -12,7 +12,9 @@ class PlotManager:
         return records[-1]["version"]
 
     def get_db(self):
-        return self.db.all()[-1]
+        if (self.db.all() != []):
+            return self.db.all()[-1]
+        return []
 
     def insert_x_axis_data(self, plot_data):
         if (self.db.all() != [] and self.db.all()[-1]["y-axis"] != ""):
@@ -26,12 +28,12 @@ class PlotManager:
 
     def update_x_axis_title(self,title):
         current_title = self.db.all()[-1]["axis title"]
-        current_title[0] = title
+        current_title["x-axis"] = title
         self.db.update({"axis title":current_title},Query().version == self.current_version)
 
     def update_y_axis_title(self,title):
         current_title = self.db.all()[-1]["axis title"]
-        current_title[1] = title
+        current_title["y-axis"] = title
         self.db.update({"axis title":current_title},Query().version == self.current_version)
 
     def update_title(self,title):
