@@ -299,6 +299,13 @@ class x_axis_button(QDialog):
         self.column_name = self.usable_columns[self.idx]
         self.display_dataset()
 
+        vertical_scroll_bar = self.scroll_section.verticalScrollBar()
+        if (old_idx == len(self.legend_parameters)-1 and self.idx == 0):
+            vertical_scroll_bar.setValue(0)
+        if self.idx > 8 and self.idx < len(self.legend_parameters):
+            scroll_value = min(vertical_scroll_bar.maximum(), vertical_scroll_bar.value() + 50)
+            vertical_scroll_bar.setValue(scroll_value)
+
     def columns_go_up(self):
         if (self.usable_columns == []):
             return
@@ -310,6 +317,14 @@ class x_axis_button(QDialog):
         self.highlighted_selected_column(old_idx)
         self.column_name = self.usable_columns[self.idx]
         self.display_dataset()
+
+        vertical_scroll_bar = self.scroll_section.verticalScrollBar()
+        if (old_idx == 0 and self.idx == len(self.legend_parameters)-1):
+            max_scroll_value = vertical_scroll_bar.maximum()
+            vertical_scroll_bar.setValue(max_scroll_value)
+        elif self.idx < len(self.legend_parameters) - 9:
+            scroll_value = max(0, vertical_scroll_bar.value() - 50)
+            vertical_scroll_bar.setValue(scroll_value)
 
     def highlighted_selected_column(self,old_idx=-1):
         if (self.usable_columns == []):
@@ -619,6 +634,13 @@ class y_axis_button(QDialog):
         self.column_name = self.usable_columns[self.idx]
         self.display_dataset()
 
+        vertical_scroll_bar = self.scroll_section.verticalScrollBar()
+        if (old_idx == len(self.legend_parameters)-1 and self.idx == 0):
+            vertical_scroll_bar.setValue(0)
+        if self.idx > 8 and self.idx < len(self.legend_parameters):
+            scroll_value = min(vertical_scroll_bar.maximum(), vertical_scroll_bar.value() + 50)
+            vertical_scroll_bar.setValue(scroll_value)
+
     def columns_go_up(self):
         if (self.usable_columns == []):
             return
@@ -630,6 +652,14 @@ class y_axis_button(QDialog):
         self.highlighted_selected_column(old_idx)
         self.column_name = self.usable_columns[self.idx]
         self.display_dataset()
+
+        vertical_scroll_bar = self.scroll_section.verticalScrollBar()
+        if (old_idx == 0 and self.idx == len(self.legend_parameters)-1):
+            max_scroll_value = vertical_scroll_bar.maximum()
+            vertical_scroll_bar.setValue(max_scroll_value)
+        elif self.idx < len(self.legend_parameters) - 9:
+            scroll_value = max(0, vertical_scroll_bar.value() - 50)
+            vertical_scroll_bar.setValue(scroll_value)
 
     def highlighted_selected_column(self,old_idx=-1):
         if (self.usable_columns == []):
@@ -1016,7 +1046,7 @@ class legend_button(QDialog):
             parameter_button.setFixedHeight(45)
 
             #Connect each button to the change column feature to ensure that dataset being displayed changes with the button
-            parameter_button.clicked.connect(lambda checked=False, parameter=parameter_name: self.change_parameter(parameter_name))
+            parameter_button.clicked.connect(lambda checked=False, parameter=parameter_name: self.change_parameter(parameter))
 
             #Add the button to the list and the layout
             self.buttons.append(parameter_button)
@@ -1027,8 +1057,17 @@ class legend_button(QDialog):
         button_layout.setSpacing(5) 
         button_layout.addStretch()
 
-    def change_parameter(self):
+    def display_current_parameter_adjustment(self):
         pass
+
+    def change_parameter(self,parameter_name):
+        #Keep track of the old idx and change both the column name and new idx
+        old_idx = self.idx
+        self.parameter_name = parameter_name
+        self.idx = self.legend_parameters.index(self.parameter_name)
+
+        #Change the current column that's being displayed and highlight the selected button
+        self.highlighted_selected_column(old_idx)
 
     def columns_go_up(self):
         #Keep track of the old idx and change both the column name and idx
@@ -1039,12 +1078,27 @@ class legend_button(QDialog):
         self.highlighted_selected_column(old_idx)
         self.parameter_name = self.legend_parameters[self.idx]
 
+        vertical_scroll_bar = self.scroll_section.verticalScrollBar()
+        if (old_idx == 0 and self.idx == len(self.legend_parameters)-1):
+            max_scroll_value = vertical_scroll_bar.maximum()
+            vertical_scroll_bar.setValue(max_scroll_value)
+        elif self.idx < len(self.legend_parameters) - 9:
+            scroll_value = max(0, vertical_scroll_bar.value() - 50)
+            vertical_scroll_bar.setValue(scroll_value)
+
     def columns_go_down(self):
         old_idx = self.idx
         self.idx += 1
         self.idx %= len(self.legend_parameters)
         self.highlighted_selected_column(old_idx)
         self.parameter_name = self.legend_parameters[self.idx]
+
+        vertical_scroll_bar = self.scroll_section.verticalScrollBar()
+        if (old_idx == len(self.legend_parameters)-1 and self.idx == 0):
+            vertical_scroll_bar.setValue(0)
+        if self.idx > 8 and self.idx < len(self.legend_parameters):
+            scroll_value = min(vertical_scroll_bar.maximum(), vertical_scroll_bar.value() + 50)
+            vertical_scroll_bar.setValue(scroll_value)
 
     def highlighted_selected_column(self,old_idx=-1):
         #Set the current button selected to be called selected
