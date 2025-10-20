@@ -154,6 +154,7 @@ class graph_parameter_table(QWidget):
             "y-axis":y_axis_button,
             "axis title":axis_title_button,
             "title":title_button,
+            "legend":legend_button,
             "grid":grid_button,
         }
 
@@ -240,7 +241,10 @@ class graph_parameter_table(QWidget):
                 else:
                     instance = function(selected_graph)
                 self.dialogs[name] = instance
-            self.dialogs.get(name).exec()
+            
+            instance = self.dialogs.get(name)
+            if (isinstance(instance,QDialog)):
+                instance.exec()
         
         #Get the parameters based on the selected graph and module
         self.parameters = SEABORN_PLOTS[selected_graph].get("parameters",[])
