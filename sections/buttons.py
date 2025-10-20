@@ -1,8 +1,11 @@
-from PyQt6.QtCore import QLine, Qt
+import select
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QKeySequence, QPixmap, QShortcut
 from PyQt6.QtWidgets import (
     QDialog, QGridLayout, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QPushButton, QScrollArea, QSizePolicy, QTableView, QWidget, QVBoxLayout
 )
+from matplotlib.pyplot import plot
+from pandas.plotting import plot_params
 from sections.dataset import PrepareDataset
 from sections.plot_manager import PlotManager
 import pandas as pd
@@ -15,9 +18,34 @@ plot_json = {
         "data":"./user_dataset.csv",
         "x-axis":None,
         "y-axis":None,
-        "axis title":["",""],
+        "axis title":{
+            "x-axis":"",
+            "y-axis":"",
+        },
         "title":None,
-        "legend":"auto",
+        "legend":{
+            "loc":"best",
+            "bbox_to_anchor":None,
+            "ncol":1,
+            "fontsize":None,
+            "title":None,
+            "title_fontsize":None,
+            "frameon":True,
+            "facecolor":None,
+            "edgecolor":None,
+            "framealpha":None,
+            "shadow":False,
+            "fancybox":True,
+            "borderpad":0.4,
+            "labelcolor":"none",
+            "alignment":"center",
+            "columnspacing":2.0,
+            "handletextpad":0.8,
+            "borderaxespad":0.5,
+            "handlelength":2.0,
+            "handleheight":0.7,
+            "markerfirst":True,
+        },
         "grid":False,
         "hue":None,
         "style":None,
@@ -33,10 +61,11 @@ plot_json = {
 if os.path.exists("plot_config.json"):
     os.remove("plot_config.json")
 
-
 class x_axis_button(QDialog):
     def __init__(self,plot_parameters,selected_graph):
         super().__init__()
+
+        self.plot_manager = PlotManager()
 
         self.plot_parameters = plot_parameters
         self.selected_graph = selected_graph
@@ -343,10 +372,14 @@ class x_axis_button(QDialog):
 
     #Close the window and record the selected column
     def select_x_axis_column(self):
-        current_version = self.plot_manager.current_version
-        plot_json[self.selected_graph]["x-axis"] = self.column_name
-        plot_json[self.selected_graph]['version'] = current_version
-        self.plot_manager.insert_x_axis_data(plot_json[self.selected_graph])
+        db = self.plot_manager.get_db()
+        if (db != []):
+            plot_parameters = db.copy()
+            plot_parameters["x-axis"] = self.column_name
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["x-axis"] = self.column_name
+        self.plot_manager.insert_x_axis_data(plot_parameters)
         self.close()
 
 class y_axis_button(QDialog):
@@ -659,24 +692,27 @@ class y_axis_button(QDialog):
 
     #Close the window and record the selected column
     def select_y_axis_column(self):
-        current_version = self.plot_manager.current_version
-        plot_json[self.selected_graph]["y-axis"] = self.column_name
-        plot_json[self.selected_graph]['version'] = current_version
-        self.plot_manager.insert_y_axis_data(plot_json[self.selected_graph])
+        db = self.plot_manager.get_db()
+        if (db != []):
+            plot_parameters = db.copy()
+            plot_parameters["y-axis"] = self.column_name
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["y-axis"] = self.column_name
+        self.plot_manager.insert_y_axis_data(plot_parameters)
         self.close()
 
 class axis_title_button(QDialog):
-    def __init__(self):
+    def __init__(self,selected_graph):
         super().__init__()
 
         self.plot_manager = PlotManager()
+        self.selected_graph = selected_graph
+        self.axis_title_created = False
 
         self.setWindowTitle("Enter the x/y axis titles")
         self.setFixedHeight(150)
         self.setFixedWidth(500)
-
-        self.x_axis_input = False
-        self.y_axis_input = False
 
         self.setStyleSheet("""
             QDialog{
@@ -746,38 +782,51 @@ class axis_title_button(QDialog):
         x_axis_title = self.x_axis_title_section.text().strip()
 
         db = self.plot_manager.get_db()
-        if (db["axis title"][0] == "" and db["axis title"][1] == "" and not self.x_axis_input):
-            db["axis title"][0] = x_axis_title
-            self.x_axis_input = True
-            self.plot_manager.insert_plot_parameter(db)
+        if (db != []):
+            if ((db["axis title"]["x-axis"] == "" and db["axis title"]["y-axis"] == "") or not self.axis_title_created):
+                db["axis title"]["x-axis"] = x_axis_title
+                self.axis_title_created = True
+                self.plot_manager.insert_plot_parameter(db)
+            else:
+                self.plot_manager.update_x_axis_title(x_axis_title)
         else:
-            self.plot_manager.update_x_axis_title(x_axis_title)
+            plot_parameter = plot_json[self.selected_graph].copy()
+            plot_parameter["axis title"]["x-axis"] = x_axis_title
+            self.axis_title_created = not self.axis_title_created
+            self.plot_manager.insert_plot_parameter(plot_parameter)
         
 
     def y_axis_update_text(self):
         y_axis_title = self.y_axis_title_section.text().strip()
         db = self.plot_manager.get_db()
-        if (db["axis title"][0] == "" and db["axis title"][1] == "" and not self.y_axis_input):
-            db["axis title"][1] = y_axis_title
-            self.y_axis_input = True
-            self.plot_manager.insert_plot_parameter(db)
+        if (db != []):
+            if ((db["axis title"]["x-axis"] == "" and db["axis title"]["y-axis"] == "") or not self.axis_title_created):
+                db["axis title"]["y-axis"] = y_axis_title
+                self.plot_manager.insert_plot_parameter(db)
+                self.axis_title_created = True
+            else:
+                self.plot_manager.update_y_axis_title(y_axis_title)
         else:
-            self.plot_manager.update_y_axis_title(y_axis_title)
+            plot_parameter = plot_json[self.selected_graph].copy()
+            plot_parameter["axis title"]["y-axis"] = y_axis_title
+            self.plot_manager.insert_plot_parameter(plot_parameter)
+            self.axis_title_created = True
 
     def close_application(self):
+        self.axis_title_created = False
         self.close()
 
 class title_button(QDialog):
-    def __init__(self):
+    def __init__(self,selected_graph):
         super().__init__()
 
         self.plot_manager = PlotManager()
+        self.selected_graph = selected_graph
+        self.title_created = False
 
         self.setWindowTitle("Enter the Title for the graph")
         self.setFixedHeight(80)
         self.setFixedWidth(500)
-
-        self.title_input = False
 
         self.setStyleSheet("""
             QDialog{
@@ -825,19 +874,32 @@ class title_button(QDialog):
     def update_title(self):
         title = self.title_section.text().strip()
         db = self.plot_manager.get_db()
-        if (db["title"] == None and not self.title_input):
-            db["title"] = title
-            self.title_input = True
-            self.plot_manager.insert_plot_parameter(db)
+        if (db != []):
+            if (db["title"] == None or not self.title_created):
+                db["title"] = title
+                self.plot_manager.insert_plot_parameter(db)
+                self.title_created = True
+            else:
+                self.plot_manager.update_title(title)
         else:
-            self.plot_manager.update_title(title)
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["title"] = title
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+            self.title_created = True
 
     def close_application(self):
+        self.title_created = False
         self.close()
 
 class legend_button(QPushButton):
-    def __init__(self):
+    def __init__(self,selected_graph):
         super().__init__()
+
+        self.setWindowTitle("Customize Legend")
+
+        self.selected_graph = selected_graph
+
+        self.legend_parameters = []
 
         self.setStyleSheet("""
             QDialog{
@@ -852,14 +914,24 @@ class legend_button(QPushButton):
             }
         """)
 
+        self.setFixedWidth(600)
+        self.setFixedHeight(500)
+
 class grid_button(QPushButton):
-    def __init__(self):
+    def __init__(self,selected_graph):
         super().__init__()
         self.plot_manager = PlotManager()
+        self.initial_grid_state = True
+        self.selected_graph = selected_graph
         self.update_grid()
 
     def update_grid(self):
         db = self.plot_manager.get_db()
-        db["grid"] = not db["grid"]
-        self.plot_manager.insert_plot_parameter(db)
+        if (db != []):
+            db["grid"] = not db["grid"]
+            self.plot_manager.insert_plot_parameter(db)
+        else:
+            plot_parameter = plot_json[self.selected_graph].copy()
+            plot_parameter["grid"] = self.initial_grid_state
+            self.plot_manager.insert_plot_parameter(plot_parameter) 
 
