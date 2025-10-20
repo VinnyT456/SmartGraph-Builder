@@ -69,8 +69,6 @@ class x_axis_button(QDialog):
 
         self.plot_parameters = plot_parameters
         self.selected_graph = selected_graph
-
-        self.plot_manager = PlotManager()
         
         #Set the title of the window
         self.setWindowTitle("Select the x-axis")
@@ -267,7 +265,6 @@ class x_axis_button(QDialog):
         button_layout.setSpacing(5) 
         button_layout.addStretch()
 
-    #Display the dataset and make it look decent
     def display_dataset(self):
         if (self.usable_columns == []):
             return
@@ -891,7 +888,7 @@ class title_button(QDialog):
         self.title_created = False
         self.close()
 
-class legend_button(QPushButton):
+class legend_button(QDialog):
     def __init__(self,selected_graph):
         super().__init__()
 
@@ -899,7 +896,10 @@ class legend_button(QPushButton):
 
         self.selected_graph = selected_graph
 
-        self.legend_parameters = []
+        self.legend_parameters = list(plot_json[self.selected_graph]["legend"].keys())
+        self.idx = 0
+
+        self.parameter_name = ""
 
         self.setStyleSheet("""
             QDialog{
@@ -916,6 +916,192 @@ class legend_button(QPushButton):
 
         self.setFixedWidth(600)
         self.setFixedHeight(500)
+
+        self.parameters_section = QWidget()
+        self.parameters_section.setObjectName("legend_parameter_section")
+        self.parameters_section.setStyleSheet("""
+            QWidget#legend_parameter_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        #Create a section to display the dataset and style it
+        self.adjust_parameters_section = QWidget()
+        self.adjust_parameters_section.setObjectName("adjust_parameters_section")
+        self.adjust_parameters_section.setStyleSheet("""
+            QWidget#adjust_parameters_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        #Create a scrollable area to allow the user to scroll through the buttons
+        self.scroll_section = QScrollArea()
+        self.scroll_section.setFrameShape(QScrollArea.Shape.NoFrame)
+        self.scroll_section.setWidgetResizable(True)
+
+        #Place the scrollable area on the button section
+        self.scroll_section.setWidget(self.parameters_section)
+        self.scroll_section.setStyleSheet("""
+            QScrollArea{
+                background: transparent;
+                border: none;
+                border-radius: 24px;
+            }
+        """)
+        #Hide the handle
+        self.scroll_section.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+        #Store the buttons created
+        self.buttons = []
+
+        #Create the buttons
+        self.create_legend_parameter_buttons()
+        #Highlight the selected column in the buttons
+        self.highlighted_selected_column()
+
+        #Place the buttons and the dataset next to each other side by side
+        self.layout = QHBoxLayout(self)
+        self.layout.addWidget(self.scroll_section,stretch=1)
+        self.layout.addSpacing(10)
+        self.layout.addWidget(self.adjust_parameters_section,stretch=1)
+
+        #Create a shortcut for the user to go to the previous column by press up
+        up_shortcut = QShortcut(QKeySequence("up"), self) 
+        up_shortcut.activated.connect(self.columns_go_up)  
+
+        #Create a shortcut for the user to go to the next column by press down
+        down_shortcut = QShortcut(QKeySequence("down"), self) 
+        down_shortcut.activated.connect(self.columns_go_down)
+
+        #Create a shortcut for the user to close the dialog window
+        close_shortcut = QShortcut(QKeySequence("Return"), self) 
+        close_shortcut.activated.connect(self.close_application)
+
+        #Make sure this gets drawn.
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        
+    def create_legend_parameter_buttons(self):
+
+        #Make sure that there is no old buttons in the layout
+        for btn in self.buttons:
+            self.layout.removeWidget(btn)
+            btn.deleteLater()
+        self.buttons.clear()
+
+        #Create a vertical box to put the buttons in. Make sure they are positioned vertically.
+        button_layout = QVBoxLayout(self.parameters_section)
+        #Go through each column in the list and create a button for each of them
+        for parameter in self.legend_parameters:
+
+            #Make a copy of the current column name
+            parameter_name = str(parameter)
+
+            #Create the button with the column name, give it an object name, and give it a fixedHeight for consistency
+            parameter_button = QPushButton(parameter_name)
+            parameter_button.setObjectName("not_selected")
+            parameter_button.setFixedHeight(45)
+
+            #Connect each button to the change column feature to ensure that dataset being displayed changes with the button
+            parameter_button.clicked.connect(lambda checked=False, parameter=parameter_name: self.change_parameter(parameter_name))
+
+            #Add the button to the list and the layout
+            self.buttons.append(parameter_button)
+            button_layout.addWidget(parameter_button)
+
+        #Add margins and spacing to make it look and push all the buttons to the top
+        button_layout.setContentsMargins(10,10,10,10)
+        button_layout.setSpacing(5) 
+        button_layout.addStretch()
+
+    def change_parameter(self):
+        pass
+
+    def columns_go_up(self):
+        #Keep track of the old idx and change both the column name and idx
+        #Change the column display and the button selected
+        old_idx = self.idx
+        self.idx -= 1
+        self.idx %= len(self.legend_parameters)
+        self.highlighted_selected_column(old_idx)
+        self.parameter_name = self.legend_parameters[self.idx]
+
+    def columns_go_down(self):
+        old_idx = self.idx
+        self.idx += 1
+        self.idx %= len(self.legend_parameters)
+        self.highlighted_selected_column(old_idx)
+        self.parameter_name = self.legend_parameters[self.idx]
+
+    def highlighted_selected_column(self,old_idx=-1):
+        #Set the current button selected to be called selected
+        self.buttons[self.idx].setObjectName("selected")
+        #If there is a old_idx then change the old button to be not selected
+        if (old_idx != -1):
+            self.buttons[old_idx].setObjectName("not_selected")
+
+        #Customize the dialog window and each button selected and not selected
+        self.setStyleSheet("""
+            QDialog{
+                background: qlineargradient(
+                    x1: 0, y1: 1, 
+                    x2: 0, y2: 0,
+                    stop: 0 rgba(25, 191, 188, 1),
+                    stop: 0.28 rgba(27, 154, 166, 1),
+                    stop: 0.65 rgba(78, 160, 242, 1),
+                    stop: 0.89 rgba(33, 218, 255, 1)
+                );
+            }
+            QPushButton#selected{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#not_selected{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+    def close_application(self):
+        self.close()
 
 class grid_button(QPushButton):
     def __init__(self,selected_graph):
