@@ -1,11 +1,9 @@
-import select
+
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QKeySequence, QPixmap, QShortcut
 from PyQt6.QtWidgets import (
     QDialog, QGridLayout, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QPushButton, QScrollArea, QSizePolicy, QTableView, QWidget, QVBoxLayout
 )
-from matplotlib.pyplot import plot
-from pandas.plotting import plot_params
 from sections.dataset import PrepareDataset
 from sections.plot_manager import PlotManager
 import pandas as pd
@@ -72,9 +70,6 @@ class x_axis_button(QDialog):
         
         #Set the title of the window
         self.setWindowTitle("Select the x-axis")
-
-        #Read the csv file or data points from the dataset folder
-        self.dataset = pd.read_csv("./dataset/user_dataset.csv")
 
         #Keep track of the current column and index
         self.column_name = ''
@@ -164,15 +159,6 @@ class x_axis_button(QDialog):
             }
         """)
 
-        #Generate the usable columns in the dataset
-        self.usable_columns = self.find_usable_columns()
-        #Create the buttons
-        self.create_buttons()
-        #Display the column in that dataset
-        self.display_dataset()
-        #Highlight the selected column in the buttons
-        self.highlighted_selected_column()
-
         #Create a scrollable area to allow the user to scroll through the buttons
         self.scroll_section = QScrollArea()
         self.scroll_section.setFrameShape(QScrollArea.Shape.NoFrame)
@@ -234,14 +220,27 @@ class x_axis_button(QDialog):
     def create_buttons(self):  
         if (self.usable_columns == []):
             return
+
+        def remove_layout(widget):
+            layout = widget.layout()
+            if layout is not None:
+                while layout.count():
+                    item = layout.takeAt(0)
+                    child = item.widget()
+                    if child is not None:
+                        child.setParent(None)
+                QWidget().setLayout(layout)
+        
         #Make sure that there is no old buttons in the layout
         for btn in self.buttons:
             self.layout.removeWidget(btn)
             btn.deleteLater()
         self.buttons.clear()
+        remove_layout(self.button_section)
 
         #Create a vertical box to put the buttons in. Make sure they are positioned vertically.
         button_layout = QVBoxLayout(self.button_section)
+
         #Go through each column in the list and create a button for each of them
         for column in self.usable_columns:
 
@@ -264,6 +263,9 @@ class x_axis_button(QDialog):
         button_layout.setContentsMargins(10,10,10,10)
         button_layout.setSpacing(5) 
         button_layout.addStretch()
+
+    def get_dataset(self):
+        self.dataset = pd.read_csv("./dataset/user_dataset.csv")
 
     def display_dataset(self):
         if (self.usable_columns == []):
@@ -300,9 +302,9 @@ class x_axis_button(QDialog):
         self.display_dataset()
 
         vertical_scroll_bar = self.scroll_section.verticalScrollBar()
-        if (old_idx == len(self.legend_parameters)-1 and self.idx == 0):
+        if (old_idx == len(self.usable_columns)-1 and self.idx == 0):
             vertical_scroll_bar.setValue(0)
-        if self.idx > 8 and self.idx < len(self.legend_parameters):
+        if self.idx > 8 and self.idx < len(self.usable_columns):
             scroll_value = min(vertical_scroll_bar.maximum(), vertical_scroll_bar.value() + 50)
             vertical_scroll_bar.setValue(scroll_value)
 
@@ -319,10 +321,10 @@ class x_axis_button(QDialog):
         self.display_dataset()
 
         vertical_scroll_bar = self.scroll_section.verticalScrollBar()
-        if (old_idx == 0 and self.idx == len(self.legend_parameters)-1):
+        if (old_idx == 0 and self.idx == len(self.usable_columns)-1):
             max_scroll_value = vertical_scroll_bar.maximum()
             vertical_scroll_bar.setValue(max_scroll_value)
-        elif self.idx < len(self.legend_parameters) - 9:
+        elif self.idx < len(self.usable_columns) - 9:
             scroll_value = max(0, vertical_scroll_bar.value() - 50)
             vertical_scroll_bar.setValue(scroll_value)
 
@@ -394,6 +396,18 @@ class x_axis_button(QDialog):
         self.plot_manager.insert_x_axis_data(plot_parameters)
         self.close()
 
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.get_dataset()
+        #Generate the usable columns in the dataset
+        self.usable_columns = self.find_usable_columns()
+        #Create the buttons
+        self.create_buttons()
+        #Display the column in that dataset
+        self.display_dataset()
+        #Highlight the selected column in the buttons
+        self.highlighted_selected_column()
+
 class y_axis_button(QDialog):
     def __init__(self,plot_parameters,selected_graph):
         super().__init__()
@@ -405,9 +419,6 @@ class y_axis_button(QDialog):
         
         #Set the title of the window
         self.setWindowTitle("Select the y-axis")
-
-        #Read the csv file or data points from the dataset folder 
-        self.dataset = pd.read_csv("./dataset/user_dataset.csv")
 
         #Keep track of the current column and index
         self.column_name = ''
@@ -497,15 +508,6 @@ class y_axis_button(QDialog):
             }
         """)
 
-        #Generate the usable columns in the dataset
-        self.usable_columns = self.find_usable_columns()
-        #Create the buttons
-        self.create_buttons()
-        #Display the column in that dataset
-        self.display_dataset()
-        #Highlight the selected column in the buttons
-        self.highlighted_selected_column()
-
         #Create a scrollable area to allow the user to scroll through the buttons
         self.scroll_section = QScrollArea()
         self.scroll_section.setFrameShape(QScrollArea.Shape.NoFrame)
@@ -569,11 +571,22 @@ class y_axis_button(QDialog):
         if (self.usable_columns == []):
             return
 
+        def remove_layout(widget):
+            layout = widget.layout()
+            if layout is not None:
+                while layout.count():
+                    item = layout.takeAt(0)
+                    child = item.widget()
+                    if child is not None:
+                        child.setParent(None)
+                QWidget().setLayout(layout)
+
         #Make sure that there is no old buttons in the layout
         for btn in self.buttons:
             self.layout.removeWidget(btn)
             btn.deleteLater()
         self.buttons.clear()
+        remove_layout(self.button_section)
 
         #Create a vertical box to put the buttons in. Make sure they are positioned vertically.
         button_layout = QVBoxLayout(self.button_section)
@@ -599,6 +612,9 @@ class y_axis_button(QDialog):
         button_layout.setContentsMargins(10,10,10,10)
         button_layout.setSpacing(5) 
         button_layout.addStretch()
+
+    def get_dataset(self):
+        self.dataset = pd.read_csv("./dataset/user_dataset.csv")
 
     #Display the dataset and make it look decent
     def display_dataset(self):
@@ -635,9 +651,9 @@ class y_axis_button(QDialog):
         self.display_dataset()
 
         vertical_scroll_bar = self.scroll_section.verticalScrollBar()
-        if (old_idx == len(self.legend_parameters)-1 and self.idx == 0):
+        if (old_idx == len(self.usable_columns)-1 and self.idx == 0):
             vertical_scroll_bar.setValue(0)
-        if self.idx > 8 and self.idx < len(self.legend_parameters):
+        if self.idx > 8 and self.idx < len(self.usable_columns):
             scroll_value = min(vertical_scroll_bar.maximum(), vertical_scroll_bar.value() + 50)
             vertical_scroll_bar.setValue(scroll_value)
 
@@ -654,10 +670,10 @@ class y_axis_button(QDialog):
         self.display_dataset()
 
         vertical_scroll_bar = self.scroll_section.verticalScrollBar()
-        if (old_idx == 0 and self.idx == len(self.legend_parameters)-1):
+        if (old_idx == 0 and self.idx == len(self.usable_columns)-1):
             max_scroll_value = vertical_scroll_bar.maximum()
             vertical_scroll_bar.setValue(max_scroll_value)
-        elif self.idx < len(self.legend_parameters) - 9:
+        elif self.idx < len(self.usable_columns) - 9:
             scroll_value = max(0, vertical_scroll_bar.value() - 50)
             vertical_scroll_bar.setValue(scroll_value)
 
@@ -728,6 +744,18 @@ class y_axis_button(QDialog):
             plot_parameters["y-axis"] = self.column_name
         self.plot_manager.insert_y_axis_data(plot_parameters)
         self.close()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.get_dataset()
+        #Generate the usable columns in the dataset
+        self.usable_columns = self.find_usable_columns()
+        #Create the buttons
+        self.create_buttons()
+        #Display the column in that dataset
+        self.display_dataset()
+        #Highlight the selected column in the buttons
+        self.highlighted_selected_column()
 
 class axis_title_button(QDialog):
     def __init__(self,selected_graph):
