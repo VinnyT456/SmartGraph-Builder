@@ -1,14 +1,10 @@
-import json
 import os
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QKeySequence, QPixmap, QShortcut
 from PyQt6.QtWidgets import (
     QDialog, QGridLayout, QHBoxLayout, QHeaderView, QLabel, QPushButton, QScrollArea, QSizePolicy, QTableView, QWidget, QVBoxLayout
 )
-from matplotlib.pyplot import plot
-from sections.dataset import PrepareDataset
 from sections.buttons import *
-import pandas as pd
 
 graph_module = ''
 selected_graph = ''
@@ -232,15 +228,19 @@ class graph_parameter_table(QWidget):
         #Keep track of all the buttons
         self.buttons = []
 
+        #Keep track of all the button dialogs
+        self.dialogs = {}
+
     def update_parameter_buttons(self):
 
         def handle_button_function(name,function):
-            if (name.lower() == "x-axis" or name.lower() == "y-axis"):
-                instance = function(SEABORN_PLOTS,selected_graph)
-            else:
-                instance = function()
-            if (isinstance(instance,QDialog)):
-                instance.exec()
+            if (name not in self.dialogs.keys()):
+                if (name.lower() == "x-axis" or name.lower() == "y-axis"):
+                    instance = function(SEABORN_PLOTS,selected_graph)
+                else:
+                    instance = function(selected_graph)
+                self.dialogs[name] = instance
+            self.dialogs.get(name).exec()
         
         #Get the parameters based on the selected graph and module
         self.parameters = SEABORN_PLOTS[selected_graph].get("parameters",[])
