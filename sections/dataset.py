@@ -147,9 +147,14 @@ class DatapointWindow(QDialog):
         y_valid_input = self.valid_inputs(y_points)
         z_valid_input = self.valid_inputs(z_points)
 
-        if (x_valid_input and y_valid_input and z_valid_input):
 
-            length = max(len(re.sub(r"[ ,]", "",x_points)),len(re.sub(r"[ ,]", "",y_points)),len(re.sub(r"[ ,]", "",z_points)))
+        if (x_valid_input and y_valid_input and z_valid_input):
+            
+            #Find all positive/negative decimal numbers
+            #Find all positive/negative integer numbers
+            length = max(len(re.findall(r"[-+]?\d*\.\d+|[-+]?\d+",x_points)),
+                        len(re.findall(r"[-+]?\d*\.\d+|[-+]?\d+",y_points)),
+                        len(re.findall(r"[-+]?\d*\.\d+|[-+]?\d+",z_points)))
 
             if (length == 0):
                 return
