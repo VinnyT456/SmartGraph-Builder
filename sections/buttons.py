@@ -1,9 +1,11 @@
 
+from ast import arg
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QKeySequence, QPixmap, QShortcut
 from PyQt6.QtWidgets import (
     QDialog, QGridLayout, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QPushButton, QScrollArea, QSizePolicy, QTableView, QWidget, QVBoxLayout
 )
+from matplotlib import legend
 from sections.dataset import PrepareDataset
 from sections.plot_manager import PlotManager
 import pandas as pd
@@ -304,7 +306,9 @@ class x_axis_button(QDialog):
         vertical_scroll_bar = self.scroll_section.verticalScrollBar()
         if (old_idx == len(self.usable_columns)-1 and self.idx == 0):
             vertical_scroll_bar.setValue(0)
-        if self.idx > 8 and self.idx < len(self.usable_columns):
+        elif (self.idx == len(self.usable_columns)-1):
+            vertical_scroll_bar.setValue(vertical_scroll_bar.maximum())
+        elif (self.idx > 8 and self.idx < len(self.usable_columns)):
             scroll_value = min(vertical_scroll_bar.maximum(), vertical_scroll_bar.value() + 50)
             vertical_scroll_bar.setValue(scroll_value)
 
@@ -324,7 +328,9 @@ class x_axis_button(QDialog):
         if (old_idx == 0 and self.idx == len(self.usable_columns)-1):
             max_scroll_value = vertical_scroll_bar.maximum()
             vertical_scroll_bar.setValue(max_scroll_value)
-        elif self.idx < len(self.usable_columns) - 9:
+        elif (self.idx == 0):
+            vertical_scroll_bar.setValue(0)
+        elif (self.idx < len(self.usable_columns) - 9):
             scroll_value = max(0, vertical_scroll_bar.value() - 50)
             vertical_scroll_bar.setValue(scroll_value)
 
@@ -946,6 +952,166 @@ class title_button(QDialog):
         self.title_created = False
         self.close()
 
+class loc_adjustment_section(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        #Create a section to display the loc section and style it
+        self.loc_adjustment_section = QWidget()
+        self.loc_adjustment_section.setObjectName("adjust_loc_section")
+        self.loc_adjustment_section.setStyleSheet("""
+            QWidget#adjust_loc_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        self.loc_buttons = []
+        self.available_loc_arguments = ["best","upper right","upper left","lower left",
+                                    "lower right","right","center left","center right",
+                                    "lower center","upper center","center"]
+        self.loc_idx = 0
+        self.loc_argument_name = ""
+        self.scroll_section = QScrollArea()
+        self.scroll_section.setFrameShape(QScrollArea.Shape.NoFrame)
+        self.scroll_section.setWidgetResizable(True)
+
+        self.loc_parameter_section()
+
+        #Place the scrollable area on the button section
+        self.scroll_section.setWidget(self.loc_adjustment_section)
+        self.scroll_section.setStyleSheet("""
+            QScrollArea{
+                background: transparent;
+                border: none;
+                border-radius: 24px;
+            }
+        """)
+        #Hide the handle
+        self.scroll_section.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.scroll_section)
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+    #loc parameter specific functions
+    def loc_parameter_section(self):
+        #Make sure that there is no old buttons in the layout
+        for btn in self.loc_buttons:
+            self.layout.removeWidget(btn)
+            btn.deleteLater()
+        self.loc_buttons.clear()
+        self.remove_layout()
+
+        #Create a vertical box to put the buttons in. Make sure they are positioned vertically.
+        button_layout = QVBoxLayout(self.loc_adjustment_section)
+        #Go through each arugment in the list and create a button for each of them
+        for argument in self.available_loc_arguments:
+
+            #Make a copy of the current arugment name
+            arugment_name = str(argument)
+
+            #Create the button with the column name, give it an object name, and give it a fixedHeight for consistency
+            argument_button = QPushButton(arugment_name)
+            argument_button.setObjectName("not_selected")
+            argument_button.setFixedHeight(45)
+
+            #Connect each button to the change arugment feature to ensure that dataset being displayed changes with the button
+            argument_button.clicked.connect(lambda checked=False, argument=arugment_name: self.change_argument(argument))
+
+            #Add the button to the list and the layout
+            self.loc_buttons.append(argument_button)
+            button_layout.addWidget(argument_button)
+
+        #Add margins and spacing to make it look and push all the buttons to the top
+        button_layout.setContentsMargins(10,10,10,10)
+        button_layout.setSpacing(5) 
+        button_layout.addStretch()
+        
+    def change_argument(self, argument_name):
+        #Keep track of the old idx and change both the argument name and new idx
+        old_idx = self.loc_idx
+        self.loc_argument_name = argument_name
+        self.loc_idx = self.available_loc_arguments.index(self.loc_argument_name)
+
+        #Change the current arugment that's being displayed and highlights the selected button
+        self.highlighted_selected_column(old_idx)
+
+    #global function
+    def remove_layout(self):    
+        layout = self.loc_adjustment_section.layout()
+        if layout is not None:
+            while layout.count():
+                item = layout.takeAt(0)
+                child = item.widget()
+                if child is not None:
+                    child.setParent(None)
+            QWidget().setLayout(layout)
+
+    def highlighted_selected_column(self,old_idx=-1):
+        #Set the current button selected to be called selected
+        self.loc_buttons[self.loc_idx].setObjectName("selected")
+
+        #If there is a old_idx then change the old button to be not selected
+        if (old_idx != -1):
+            self.loc_buttons[old_idx].setObjectName("not_selected")
+
+        #Customize the dialog window and each button selected and not selected
+        self.setStyleSheet("""
+            QWidget#adjust_loc_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+            QPushButton#selected{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#not_selected{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        
 class legend_button(QDialog):
     def __init__(self,selected_graph):
         super().__init__()
@@ -1035,7 +1201,7 @@ class legend_button(QDialog):
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.scroll_section,stretch=1)
         self.layout.addSpacing(10)
-        self.layout.addWidget(self.adjust_parameters_section,stretch=1)
+        self.layout.addWidget(loc_adjustment_section(),stretch=1)
 
         #Create a shortcut for the user to go to the previous column by press up
         up_shortcut = QShortcut(QKeySequence("up"), self) 
@@ -1062,18 +1228,18 @@ class legend_button(QDialog):
 
         #Create a vertical box to put the buttons in. Make sure they are positioned vertically.
         button_layout = QVBoxLayout(self.parameters_section)
-        #Go through each column in the list and create a button for each of them
+        #Go through each parameter in the list and create a button for each of them
         for parameter in self.legend_parameters:
 
-            #Make a copy of the current column name
+            #Make a copy of the current parameter name
             parameter_name = str(parameter)
 
-            #Create the button with the column name, give it an object name, and give it a fixedHeight for consistency
+            #Create the button with the parameter name, give it an object name, and give it a fixedHeight for consistency
             parameter_button = QPushButton(parameter_name)
             parameter_button.setObjectName("not_selected")
             parameter_button.setFixedHeight(45)
 
-            #Connect each button to the change column feature to ensure that dataset being displayed changes with the button
+            #Connect each button to the change parameter feature to ensure that dataset being displayed changes with the button
             parameter_button.clicked.connect(lambda checked=False, parameter=parameter_name: self.change_parameter(parameter))
 
             #Add the button to the list and the layout
@@ -1110,6 +1276,8 @@ class legend_button(QDialog):
         if (old_idx == 0 and self.idx == len(self.legend_parameters)-1):
             max_scroll_value = vertical_scroll_bar.maximum()
             vertical_scroll_bar.setValue(max_scroll_value)
+        elif (self.idx == 0):
+            vertical_scroll_bar.setValue(0)
         elif self.idx < len(self.legend_parameters) - 9:
             scroll_value = max(0, vertical_scroll_bar.value() - 50)
             vertical_scroll_bar.setValue(scroll_value)
@@ -1124,7 +1292,9 @@ class legend_button(QDialog):
         vertical_scroll_bar = self.scroll_section.verticalScrollBar()
         if (old_idx == len(self.legend_parameters)-1 and self.idx == 0):
             vertical_scroll_bar.setValue(0)
-        if self.idx > 8 and self.idx < len(self.legend_parameters):
+        elif (self.idx == len(self.legend_parameters)-1):
+            vertical_scroll_bar.setValue(vertical_scroll_bar.maximum())
+        elif self.idx > 8 and self.idx < len(self.legend_parameters):
             scroll_value = min(vertical_scroll_bar.maximum(), vertical_scroll_bar.value() + 50)
             vertical_scroll_bar.setValue(scroll_value)
 
