@@ -1126,12 +1126,11 @@ class loc_adjustment_section(QWidget):
             }
             QPushButton#selected{
                 background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 0, 255, 255),
-                    stop:0.22 rgba(252, 86, 191, 255),
-                    stop:0.46 rgba(247, 96, 96, 255),
-                    stop:0.71 rgba(255, 180, 82, 255),
-                    stop:0.90 rgba(245, 219, 51, 255)
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
                 );
                 border: 2px solid black;
                 border-radius: 16px;
@@ -1374,6 +1373,128 @@ class ncol_adjustment_section(QWidget):
             plot_parameters["legend"]["ncol"] = self.ncol_value
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
+class fontsize_adjustment_section(QWidget):
+    def __init__(self,selected_graph):
+        super().__init__()
+        
+        self.plot_manager = PlotManager()
+
+        self.selected_graph = selected_graph
+
+        self.fontsize_adjustment_section = QWidget()
+        self.fontsize_adjustment_section.setObjectName("adjust_fontsize_section")
+        self.fontsize_adjustment_section.setStyleSheet("""
+            QWidget#adjust_fontsize_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        self.custom_fontsize_button = QPushButton("Custom Fontsize")
+        self.custom_fontsize_button.setObjectName("custom_fontsize")
+        self.custom_fontsize_button.setStyleSheet("""
+            QPushButton#custom_fontsize{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#custom_fontsize:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.fixed_fontsize_button = QPushButton("Fixed Fontsize")
+        self.fixed_fontsize_button.setObjectName("fixed_fontsize")
+        self.fixed_fontsize_button.setStyleSheet("""
+            QPushButton#fixed_fontsize{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#fixed_fontsize:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.custom_fontsize_button.clicked.connect(self.change_to_custom_fontsize)
+        self.fixed_fontsize_button.clicked.connect(self.change_to_fixed_fontsize)
+
+        button_layout = QVBoxLayout(self.fontsize_adjustment_section)
+        button_layout.addWidget(self.custom_fontsize_button)
+        button_layout.addWidget(self.fixed_fontsize_button)
+        button_layout.setContentsMargins(10,10,10,10)
+        button_layout.setSpacing(5)
+        button_layout.addStretch()
+
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.fontsize_adjustment_section)
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+    def change_to_custom_fontsize(self):
+        pass
+
+    def change_to_fixed_fontsize(self):
+        pass
+
 class legend_button(QDialog):
     def __init__(self,selected_graph):
         super().__init__()
@@ -1463,7 +1584,7 @@ class legend_button(QDialog):
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.scroll_section,stretch=1)
         self.layout.addSpacing(10)
-        self.layout.addWidget(ncol_adjustment_section(self.selected_graph),stretch=1)
+        self.layout.addWidget(fontsize_adjustment_section(self.selected_graph),stretch=1)
 
         #Create a shortcut for the user to go to the previous column by press up
         up_shortcut = QShortcut(QKeySequence("up"), self) 
