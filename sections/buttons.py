@@ -5,7 +5,6 @@ from PyQt6.QtGui import QKeySequence, QPixmap, QShortcut
 from PyQt6.QtWidgets import (
     QDialog, QGridLayout, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QPushButton, QScrollArea, QSizePolicy, QTableView, QWidget, QVBoxLayout
 )
-from matplotlib import legend
 from sections.dataset import PrepareDataset
 from sections.plot_manager import PlotManager
 import pandas as pd
@@ -953,8 +952,12 @@ class title_button(QDialog):
         self.close()
 
 class loc_adjustment_section(QWidget):
-    def __init__(self):
+    def __init__(self,selected_graph):
         super().__init__()
+
+        self.plot_manager = PlotManager()
+
+        self.selected_graph = selected_graph
 
         #Create a section to display the loc section and style it
         self.loc_adjustment_section = QWidget()
@@ -977,12 +980,13 @@ class loc_adjustment_section(QWidget):
                                     "lower right","right","center left","center right",
                                     "lower center","upper center","center"]
         self.loc_idx = 0
-        self.loc_argument_name = ""
+        self.loc_argument_name = self.available_loc_arguments[0]
         self.scroll_section = QScrollArea()
         self.scroll_section.setFrameShape(QScrollArea.Shape.NoFrame)
         self.scroll_section.setWidgetResizable(True)
 
         self.loc_parameter_section()
+        self.highlighted_selected_column()
 
         #Place the scrollable area on the button section
         self.scroll_section.setWidget(self.loc_adjustment_section)
@@ -1001,9 +1005,15 @@ class loc_adjustment_section(QWidget):
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0,0,0,0)
 
+        #Create a shortcut for the user to go to the previous column by press up
+        up_shortcut = QShortcut(QKeySequence("left"), self) 
+        up_shortcut.activated.connect(self.move_selected_button_up)  
+
+        down_shortcut = QShortcut(QKeySequence("right"),self)
+        down_shortcut.activated.connect(self.move_selected_button_down)
+
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
-    #loc parameter specific functions
     def loc_parameter_section(self):
         #Make sure that there is no old buttons in the layout
         for btn in self.loc_buttons:
@@ -1046,7 +1056,46 @@ class loc_adjustment_section(QWidget):
         #Change the current arugment that's being displayed and highlights the selected button
         self.highlighted_selected_column(old_idx)
 
-    #global function
+    def move_selected_button_up(self):
+        #Keep track of the old idx and change both the column name and idx
+        #Change the column display and the button selected
+        old_idx = self.loc_idx
+        self.loc_idx -= 1
+
+        self.loc_idx %= len(self.available_loc_arguments)
+        self.highlighted_selected_column(old_idx)
+        self.loc_argument_name = self.available_loc_arguments[self.loc_idx]
+
+        vertical_scroll_bar = self.scroll_section.verticalScrollBar()
+        if (old_idx == 0 and self.loc_idx == len(self.available_loc_arguments)-1):
+            max_scroll_value = vertical_scroll_bar.maximum()
+            vertical_scroll_bar.setValue(max_scroll_value)
+        elif (self.loc_idx == 0):
+            vertical_scroll_bar.setValue(0)
+        elif self.loc_idx < len(self.available_loc_arguments) - 9:
+            scroll_value = max(0, vertical_scroll_bar.value() - 50)
+            vertical_scroll_bar.setValue(scroll_value)
+
+        self.update_parameter_argument()
+
+    def move_selected_button_down(self):
+        old_idx = self.loc_idx
+        self.loc_idx += 1
+        self.loc_idx %= len(self.available_loc_arguments)
+        self.highlighted_selected_column(old_idx)
+        self.loc_adjustment_name = self.available_loc_arguments[self.loc_idx]
+
+        vertical_scroll_bar = self.scroll_section.verticalScrollBar()
+        if (old_idx == len(self.available_loc_arguments)-1 and self.loc_idx == 0):
+            vertical_scroll_bar.setValue(0)
+        elif (self.loc_idx == len(self.available_loc_arguments)-1):
+            vertical_scroll_bar.setValue(vertical_scroll_bar.maximum())
+        elif self.loc_idx > 8 and self.loc_idx < len(self.available_loc_arguments):
+            scroll_value = min(vertical_scroll_bar.maximum(), vertical_scroll_bar.value() + 50)
+            vertical_scroll_bar.setValue(scroll_value)
+
+        self.update_parameter_argument()
+
     def remove_layout(self):    
         layout = self.loc_adjustment_section.layout()
         if layout is not None:
@@ -1079,11 +1128,12 @@ class loc_adjustment_section(QWidget):
             }
             QPushButton#selected{
                 background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 0, 255, 255),
+                    stop:0.22 rgba(252, 86, 191, 255),
+                    stop:0.46 rgba(247, 96, 96, 255),
+                    stop:0.71 rgba(255, 180, 82, 255),
+                    stop:0.90 rgba(245, 219, 51, 255)
                 );
                 border: 2px solid black;
                 border-radius: 16px;
@@ -1111,7 +1161,17 @@ class loc_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        
+
+    def update_parameter_argument(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            if (db["legend"]["loc"] != self.loc_adjustment_name):
+                self.plot_manager.update_legend_loc(self.loc_adjustment_name)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["loc"] = self.loc_adjustment_name
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+
 class legend_button(QDialog):
     def __init__(self,selected_graph):
         super().__init__()
@@ -1201,7 +1261,7 @@ class legend_button(QDialog):
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.scroll_section,stretch=1)
         self.layout.addSpacing(10)
-        self.layout.addWidget(loc_adjustment_section(),stretch=1)
+        self.layout.addWidget(loc_adjustment_section(self.selected_graph),stretch=1)
 
         #Create a shortcut for the user to go to the previous column by press up
         up_shortcut = QShortcut(QKeySequence("up"), self) 
