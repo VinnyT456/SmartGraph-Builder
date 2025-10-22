@@ -44,6 +44,9 @@ class PlotManager:
 
     def update_legend_bbox_anchor(self,new_bbox_anchor):
         self.db.update(lambda db: db["legend"].update({"bbox_to_anchor":new_bbox_anchor}) or db,Query().version == self.current_version)
+    
+    def update_legend_ncol(self,new_ncol):
+        self.db.update(lambda db: db["legend"].update({"ncol":new_ncol}) or db,Query().version == self.current_version)
 
     def insert_plot_parameter(self, plot_data):
         plot_copy = plot_data.copy()
