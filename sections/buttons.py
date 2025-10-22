@@ -1748,6 +1748,81 @@ class fontsize_adjustment_section(QWidget):
             plot_parameters["legend"]["fontsize"] = self.current_fontsize
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
+class legend_title_adjustment_section(QWidget):
+    def __init__(self,selected_graph):
+        super().__init__()
+        
+        self.plot_manager = PlotManager()
+        
+        self.selected_graph = selected_graph
+
+        #Create a section to display the loc section and style it
+        self.title_adjustment_section = QWidget()
+        self.title_adjustment_section.setObjectName("adjust_title_section")
+        self.title_adjustment_section.setStyleSheet("""
+            QWidget#adjust_title_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+            QLineEdit{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        self.title_value = ""
+
+        self.title_input = QLineEdit()
+        self.title_input.setPlaceholderText("title: ")
+
+        self.title_input.setFixedHeight(60)
+
+        self.title_input.textChanged.connect(self.update_title)
+
+        title_section_layout = QVBoxLayout(self.title_adjustment_section)
+        title_section_layout.addWidget(self.title_input)
+
+        title_section_layout.setContentsMargins(10,10,10,5)
+        title_section_layout.setSpacing(10)
+        title_section_layout.addStretch()
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.title_adjustment_section)
+        
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+    
+    def update_title(self):
+        self.title_value = self.title_input.text().strip()
+        if (self.title_value == ""):
+            self.title_value = None
+        self.update_json()
+
+    def update_json(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_legend("title",self.title_value)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["title"] = self.title_value
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+
 class legend_button(QDialog):
     def __init__(self,selected_graph):
         super().__init__()
@@ -1837,7 +1912,7 @@ class legend_button(QDialog):
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.scroll_section,stretch=1)
         self.layout.addSpacing(10)
-        self.layout.addWidget(fontsize_adjustment_section(self.selected_graph),stretch=1)
+        self.layout.addWidget(legend_title_adjustment_section(self.selected_graph),stretch=1)
 
         #Create a shortcut for the user to go to the previous column by press up
         up_shortcut = QShortcut(QKeySequence("up"), self) 
