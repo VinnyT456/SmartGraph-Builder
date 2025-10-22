@@ -385,6 +385,22 @@ class x_axis_button(QDialog):
                 padding: 6px;
                 color: black;
             }
+            QPushButton#not_selected:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
         """)
 
     #Close the window and record the selected column
@@ -725,6 +741,22 @@ class y_axis_button(QDialog):
                     stop:0.29 rgba(63, 252, 180, 1),
                     stop:0.61 rgba(2, 247, 207, 1),
                     stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#not_selected:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
                 );
                 border: 2px solid black;
                 border-radius: 16px;
@@ -1157,13 +1189,29 @@ class loc_adjustment_section(QWidget):
                 padding: 6px;
                 color: black;
             }
+            QPushButton#not_selected:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
         """)
 
     def update_parameter_argument(self):
         db = self.plot_manager.get_db()
         if (db != []):
             if (db["legend"]["loc"] != self.loc_adjustment_name):
-                self.plot_manager.update_legend_loc(self.loc_adjustment_name)
+                self.plot_manager.update_legend("loc",self.loc_adjustment_name)
         else:
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["loc"] = self.loc_adjustment_name
@@ -1254,7 +1302,7 @@ class bbox_to_anchor_adjustment_section(QWidget):
             self.x_value = float(x_input)
         except:
             pass
-        finally:
+        else:
             self.update_bbox_anchor()
         
 
@@ -1264,7 +1312,7 @@ class bbox_to_anchor_adjustment_section(QWidget):
             self.y_value = float(y_input)
         except:
             pass
-        finally:
+        else:
             self.update_bbox_anchor()
 
     def update_width(self):
@@ -1273,7 +1321,7 @@ class bbox_to_anchor_adjustment_section(QWidget):
             self.width_value = float(width_input)
         except:
             pass
-        finally:
+        else:
             self.update_bbox_anchor()
 
     def update_height(self):
@@ -1282,14 +1330,14 @@ class bbox_to_anchor_adjustment_section(QWidget):
             self.height_value = float(height_input)
         except:
             pass
-        finally:
+        else:
             self.update_bbox_anchor()
 
     def update_bbox_anchor(self):
         db = self.plot_manager.get_db()
         if (db != []):
             new_bbox_anchor = [self.x_value,self.y_value,self.width_value,self.height_value]
-            self.plot_manager.update_legend_bbox_anchor(new_bbox_anchor)
+            self.plot_manager.update_legend("bbox_to_anchor",new_bbox_anchor)
         else:
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["bbox_to_anchor"] = (0,0,0,0)
@@ -1361,13 +1409,13 @@ class ncol_adjustment_section(QWidget):
             self.ncol_value = int(ncol_input)
         except:
             pass
-        finally:
+        else:
             self.update_json()
 
     def update_json(self):
         db = self.plot_manager.get_db()
         if (db != []):
-            self.plot_manager.update_legend_ncol(self.ncol_value)
+            self.plot_manager.update_legend("ncol",self.ncol_value)
         else:
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["ncol"] = self.ncol_value
@@ -1380,6 +1428,15 @@ class fontsize_adjustment_section(QWidget):
         self.plot_manager = PlotManager()
 
         self.selected_graph = selected_graph
+        
+        self.custom_fontsize = 0
+        self.fixed_fontsizes = ["xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large"]
+        self.current_fontsize = None
+
+        self.current_page = 0
+        self.font_idx = 0
+
+        self.fontsize_buttons = []
 
         self.fontsize_adjustment_section = QWidget()
         self.fontsize_adjustment_section.setObjectName("adjust_fontsize_section")
@@ -1489,11 +1546,207 @@ class fontsize_adjustment_section(QWidget):
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
+        go_back_shortcut = QShortcut(QKeySequence("left"), self) 
+        go_back_shortcut.activated.connect(self.change_to_original_screen)
+
+        go_to_previous_screen_shortcut = QShortcut(QKeySequence("right"), self) 
+        go_to_previous_screen_shortcut.activated.connect(self.change_to_old_page)
+
+    def clear_layout(self):
+        layout = self.fontsize_adjustment_section.layout()
+        if layout:
+            while layout.count():
+                item = layout.takeAt(0)
+                widget = item.widget()
+                if widget:
+                    widget.setParent(None)
+
+    def change_to_original_screen(self):
+        self.clear_layout()
+
+        button_layout = self.fontsize_adjustment_section.layout()
+
+        button_layout.addWidget(self.custom_fontsize_button)
+        button_layout.addWidget(self.fixed_fontsize_button)
+        button_layout.setContentsMargins(10,10,10,10)
+        button_layout.setSpacing(5)
+        button_layout.addStretch()
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+    def change_to_old_page(self):
+        if (self.current_page != 0):
+            self.clear_layout()
+            if (self.current_page == 1):
+                self.change_to_custom_fontsize()
+            elif (self.current_page == 2):
+                self.change_to_fixed_fontsize()
+
     def change_to_custom_fontsize(self):
-        pass
+        self.clear_layout()
+
+        self.current_page = 1
+
+        self.custom_fontsize_input = QLineEdit()
+        self.custom_fontsize_input.setPlaceholderText("Fontsize:")
+        self.custom_fontsize_input.setObjectName("custom_fontsize_input")
+        self.custom_fontsize_input.setStyleSheet("""
+            QLineEdit#custom_fontsize_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+        self.custom_fontsize_input.setFixedHeight(60) 
+        
+        self.custom_fontsize_input.textChanged.connect(self.process_custom_fontsize)
+
+        custom_fontsize_layout = self.fontsize_adjustment_section.layout()
+        custom_fontsize_layout.addWidget(self.custom_fontsize_input)
+        custom_fontsize_layout.setContentsMargins(5,10,5,10)
+        custom_fontsize_layout.setSpacing(0)
+        custom_fontsize_layout.addStretch()
 
     def change_to_fixed_fontsize(self):
-        pass
+        self.clear_layout()
+
+        self.current_page = 2 
+
+        #Make sure that there is no old buttons in the layout
+        self.fontsize_buttons.clear()
+        self.current_fontsize = self.fixed_fontsizes[self.font_idx]
+
+        #Create a vertical box to put the buttons in. Make sure they are positioned vertically.
+        button_layout = self.fontsize_adjustment_section.layout()
+        #Go through each parameter in the list and create a button for each of them
+        for size in self.fixed_fontsizes:
+
+            #Make a copy of the current fontsize name
+            fontsize = str(size)
+
+            #Create the button with the fontsize name, give it an object name, and give it a fixedHeight for consistency
+            fontsize_button = QPushButton(size)
+            fontsize_button.setObjectName("not_selected")
+            fontsize_button.setFixedHeight(45)
+
+            #Connect each button to the change parameter feature to ensure that dataset being displayed changes with the button
+            fontsize_button.clicked.connect(lambda checked=False, fontsize=fontsize: self.change_fontsize(fontsize))
+
+            #Add the button to the list and the layout
+            self.fontsize_buttons.append(fontsize_button)
+            button_layout.addWidget(fontsize_button)
+
+        #Add margins and spacing to make it look and push all the buttons to the top
+        button_layout.setContentsMargins(10,10,10,10)
+        button_layout.setSpacing(5) 
+        button_layout.addStretch()
+
+        self.highlighted_selected_button()
+
+    def change_fontsize(self,fontsize):
+        #Keep track of the old idx and change both the column name and new idx
+        old_idx = self.font_idx
+        self.current_fontsize = fontsize
+        self.font_idx = self.fixed_fontsizes.index(self.current_fontsize)
+
+        #Change the current button that's being displayed and highlight the selected button
+        self.highlighted_selected_button(old_idx)
+
+    def highlighted_selected_button(self,old_idx=-1):
+        self.update_fontsize()
+        #Set the current button selected to be called selected
+        self.fontsize_buttons[self.font_idx].setObjectName("selected")
+        #If there is a old_idx then change the old button to be not selected
+        if (old_idx != -1):
+            self.fontsize_buttons[old_idx].setObjectName("not_selected")
+
+        #Customize the dialog window and each button selected and not selected
+        self.setStyleSheet("""
+            QWidget#adjust_fontsize_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+            QPushButton#selected{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#not_selected{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#not_selected:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+    def process_custom_fontsize(self):
+        self.current_fontsize = self.custom_fontsize_input.text().strip()
+        try:
+            self.current_fontsize = int(self.current_fontsize)
+        except:
+            pass
+        else:
+            self.update_fontsize()
+
+    def update_fontsize(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_legend("fontsize",self.current_fontsize)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["fontsize"] = self.current_fontsize
+            self.plot_manager.insert_plot_parameter(plot_parameters)
 
 class legend_button(QDialog):
     def __init__(self,selected_graph):
@@ -1724,6 +1977,22 @@ class legend_button(QDialog):
                     stop:0.29 rgba(63, 252, 180, 1),
                     stop:0.61 rgba(2, 247, 207, 1),
                     stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#not_selected:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
                 );
                 border: 2px solid black;
                 border-radius: 16px;
