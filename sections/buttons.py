@@ -1,5 +1,3 @@
-
-from ast import arg
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QKeySequence, QPixmap, QShortcut
 from PyQt6.QtWidgets import (
@@ -1172,6 +1170,132 @@ class loc_adjustment_section(QWidget):
             plot_parameters["legend"]["loc"] = self.loc_adjustment_name
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
+class bbox_to_anchor_adjustment_section(QWidget):
+    def __init__(self,selected_graph):
+        super().__init__()
+        
+        self.plot_manager = PlotManager()
+        
+        self.selected_graph = selected_graph
+
+        #Create a section to display the loc section and style it
+        self.bbox_adjustment_section = QWidget()
+        self.bbox_adjustment_section.setObjectName("adjust_bbox_section")
+        self.bbox_adjustment_section.setStyleSheet("""
+            QWidget#adjust_bbox_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+            QLineEdit{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        self.x_value = 0
+        self.y_value = 0
+        self.width_value = 0
+        self.height_value = 0
+
+        self.x_input = QLineEdit()
+        self.x_input.setPlaceholderText("X: ")
+        self.y_input = QLineEdit()
+        self.y_input.setPlaceholderText("Y: ")
+        self.width_input = QLineEdit()
+        self.width_input.setPlaceholderText("Width: ")
+        self.height_input = QLineEdit()
+        self.height_input.setPlaceholderText("Height: ")
+
+        self.x_input.setFixedHeight(60)
+        self.y_input.setFixedHeight(60)
+        self.width_input.setFixedHeight(60)
+        self.height_input.setFixedHeight(60)
+
+        self.x_input.textChanged.connect(self.update_x)
+        self.y_input.textChanged.connect(self.update_y)
+        self.width_input.textChanged.connect(self.update_width)
+        self.height_input.textChanged.connect(self.update_height)
+
+        bbox_section_layout = QVBoxLayout(self.bbox_adjustment_section)
+
+        bbox_section_layout.addWidget(self.x_input)
+        bbox_section_layout.addWidget(self.y_input)
+        bbox_section_layout.addWidget(self.width_input)
+        bbox_section_layout.addWidget(self.height_input)
+
+        bbox_section_layout.setContentsMargins(10,10,10,5)
+        bbox_section_layout.setSpacing(10)
+        bbox_section_layout.addStretch()
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.bbox_adjustment_section)
+        
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+    
+    def update_x(self):
+        x_input = self.x_input.text().strip()
+        try:
+            self.x_value = float(x_input)
+        except:
+            pass
+        finally:
+            self.update_bbox_anchor()
+        
+
+    def update_y(self):
+        y_input = self.y_input.text().strip()
+        try:
+            self.y_value = float(y_input)
+        except:
+            pass
+        finally:
+            self.update_bbox_anchor()
+
+    def update_width(self):
+        width_input = self.width_input.text().strip()
+        try:
+            self.width_value = float(width_input)
+        except:
+            pass
+        finally:
+            self.update_bbox_anchor()
+
+    def update_height(self):
+        height_input = self.height_input.text().strip()
+        try:
+            self.height_value = float(height_input)
+        except:
+            pass
+        finally:
+            self.update_bbox_anchor()
+
+    def update_bbox_anchor(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            new_bbox_anchor = [self.x_value,self.y_value,self.width_value,self.height_value]
+            self.plot_manager.update_legend_bbox_anchor(new_bbox_anchor)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["bbox_to_anchor"] = (0,0,0,0)
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+
 class legend_button(QDialog):
     def __init__(self,selected_graph):
         super().__init__()
@@ -1261,7 +1385,7 @@ class legend_button(QDialog):
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.scroll_section,stretch=1)
         self.layout.addSpacing(10)
-        self.layout.addWidget(loc_adjustment_section(self.selected_graph),stretch=1)
+        self.layout.addWidget(bbox_to_anchor_adjustment_section(self.selected_graph),stretch=1)
 
         #Create a shortcut for the user to go to the previous column by press up
         up_shortcut = QShortcut(QKeySequence("up"), self) 
