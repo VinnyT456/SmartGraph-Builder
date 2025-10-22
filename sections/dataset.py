@@ -166,9 +166,12 @@ class DatapointWindow(QDialog):
             if (z_points == ""):
                 z_points = ("0 " * length).strip()
 
-            x_points = list(map(float,x_points.replace(","," ").split(" ")))
-            y_points = list(map(float,y_points.replace(","," ").split(" ")))
-            z_points = list(map(float,z_points.replace(","," ").split(" ")))
+            try:
+                x_points = list(map(float,x_points.replace(","," ").split(" ")))
+                y_points = list(map(float,y_points.replace(","," ").split(" ")))
+                z_points = list(map(float,z_points.replace(","," ").split(" ")))
+            except:
+                pass
 
             if (len(x_points) != len(y_points) != len(z_points)):
                 return 
