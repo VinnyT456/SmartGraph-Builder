@@ -1610,7 +1610,7 @@ class fontsize_adjustment_section(QWidget):
 
         custom_fontsize_layout = self.fontsize_adjustment_section.layout()
         custom_fontsize_layout.addWidget(self.custom_fontsize_input)
-        custom_fontsize_layout.setContentsMargins(5,10,5,10)
+        custom_fontsize_layout.setContentsMargins(10,10,10,10)
         custom_fontsize_layout.setSpacing(0)
         custom_fontsize_layout.addStretch()
 
@@ -2012,7 +2012,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
 
         custom_fontsize_layout = self.title_fontsize_adjustment_section.layout()
         custom_fontsize_layout.addWidget(self.custom_title_fontsize_input)
-        custom_fontsize_layout.setContentsMargins(5,10,5,10)
+        custom_fontsize_layout.setContentsMargins(10,10,10,10)
         custom_fontsize_layout.setSpacing(0)
         custom_fontsize_layout.addStretch()
 
@@ -2150,6 +2150,102 @@ class legend_title_fontsize_adjustment_section(QWidget):
             plot_parameters["legend"]["title_fontsize"] = self.current_title_fontsize
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
+class frameon_adjustment_section(QWidget):
+    def __init__(self,selected_graph):
+        super().__init__()
+        
+        self.plot_manager = PlotManager()
+
+        self.selected_graph = selected_graph
+        
+        self.current_state = 0
+        self.frameon_state = False
+
+        self.frameon_adjustment_section = QWidget()
+        self.frameon_adjustment_section.setObjectName("frameon_adjustment_section")
+        self.frameon_adjustment_section.setStyleSheet("""
+            QWidget#frameon_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        self.frameon_button = QPushButton("Frameon")
+        self.frameon_button.setObjectName("frameon_button")
+        self.frameon_button.setStyleSheet("""
+            QPushButton#frameon_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#frameon_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.frameon_button.clicked.connect(self.switch_on_frameon)
+
+        button_layout = QVBoxLayout(self.frameon_adjustment_section)
+        button_layout.addWidget(self.frameon_button)
+        button_layout.setSpacing(0)
+        button_layout.setContentsMargins(10,10,10,10)
+        button_layout.addStretch()
+
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.frameon_adjustment_section)
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+    def switch_on_frameon(self):
+        self.current_state += 1
+        if (self.current_state % 2 == 1):
+            self.frameon_state = True
+        else:
+            self.frameon_state = False
+
+        self.update_frameon()
+
+    def update_frameon(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_legend("frameon",self.frameon_state)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["frameon"] = self.frameon_state
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+
 class legend_button(QDialog):
     def __init__(self,selected_graph):
         super().__init__()
@@ -2239,7 +2335,7 @@ class legend_button(QDialog):
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.scroll_section,stretch=1)
         self.layout.addSpacing(10)
-        self.layout.addWidget(legend_title_fontsize_adjustment_section(self.selected_graph),stretch=1)
+        self.layout.addWidget(frameon_adjustment_section(self.selected_graph),stretch=1)
 
         #Create a shortcut for the user to go to the previous column by press up
         up_shortcut = QShortcut(QKeySequence("up"), self) 
@@ -2420,8 +2516,8 @@ class grid_button(QPushButton):
     def update_grid(self):
         db = self.plot_manager.get_db()
         if (db != []):
-            db["grid"] = not db["grid"]
-            self.plot_manager.insert_plot_parameter(db)
+            self.initial_grid_state = not self.initial_grid_state
+            self.plot_manager.update_legend("grid",self.initial_grid_state)
         else:
             plot_parameter = plot_json[self.selected_graph].copy()
             plot_parameter["grid"] = self.initial_grid_state
