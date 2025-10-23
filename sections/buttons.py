@@ -1823,6 +1823,333 @@ class legend_title_adjustment_section(QWidget):
             plot_parameters["legend"]["title"] = self.title_value
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
+class legend_title_fontsize_adjustment_section(QWidget):
+    def __init__(self,selected_graph):
+        super().__init__()
+        
+        self.plot_manager = PlotManager()
+
+        self.selected_graph = selected_graph
+        
+        self.custom_title_fontsize = 0
+        self.fixed_title_fontsizes = ["xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large"]
+        self.current_title_fontsize = None
+
+        self.current_page = 0
+        self.title_font_idx = 0
+
+        self.title_fontsize_buttons = []
+
+        self.title_fontsize_adjustment_section = QWidget()
+        self.title_fontsize_adjustment_section.setObjectName("adjust_title_fontsize_section")
+        self.title_fontsize_adjustment_section.setStyleSheet("""
+            QWidget#adjust_title_fontsize_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        self.custom_title_fontsize_button = QPushButton("Custom Title Fontsize")
+        self.custom_title_fontsize_button.setObjectName("custom_title_fontsize")
+        self.custom_title_fontsize_button.setStyleSheet("""
+            QPushButton#custom_title_fontsize{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#custom_title_fontsize:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.fixed_title_fontsize_button = QPushButton("Fixed Title Fontsize")
+        self.fixed_title_fontsize_button.setObjectName("fixed_title_fontsize")
+        self.fixed_title_fontsize_button.setStyleSheet("""
+            QPushButton#fixed_title_fontsize{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#fixed_title_fontsize:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.custom_title_fontsize_button.clicked.connect(self.change_to_custom_title_fontsize)
+        self.fixed_title_fontsize_button.clicked.connect(self.change_to_fixed_title_fontsize)
+
+        button_layout = QVBoxLayout(self.title_fontsize_adjustment_section)
+        button_layout.addWidget(self.custom_title_fontsize_button)
+        button_layout.addWidget(self.fixed_title_fontsize_button)
+        button_layout.setContentsMargins(10,10,10,10)
+        button_layout.setSpacing(5)
+        button_layout.addStretch()
+
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.title_fontsize_adjustment_section)
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+        go_back_shortcut = QShortcut(QKeySequence("left"), self) 
+        go_back_shortcut.activated.connect(self.change_to_original_screen)
+
+        go_to_previous_screen_shortcut = QShortcut(QKeySequence("right"), self) 
+        go_to_previous_screen_shortcut.activated.connect(self.change_to_old_page)
+
+    def clear_layout(self):
+        layout = self.title_fontsize_adjustment_section.layout()
+        if layout:
+            while layout.count():
+                item = layout.takeAt(0)
+                widget = item.widget()
+                if widget:
+                    widget.setParent(None)
+
+    def change_to_original_screen(self):
+        self.clear_layout()
+
+        button_layout = self.title_fontsize_adjustment_section.layout()
+
+        button_layout.addWidget(self.custom_title_fontsize_button)
+        button_layout.addWidget(self.fixed_title_fontsize_button)
+        button_layout.setContentsMargins(10,10,10,10)
+        button_layout.setSpacing(5)
+        button_layout.addStretch()
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+    def change_to_old_page(self):
+        if (self.current_page != 0):
+            self.clear_layout()
+            if (self.current_page == 1):
+                self.change_to_custom_title_fontsize()
+            elif (self.current_page == 2):
+                self.change_to_fixed_title_fontsize()
+
+    def change_to_custom_title_fontsize(self):
+        self.clear_layout()
+
+        self.current_page = 1
+
+        self.custom_title_fontsize_input = QLineEdit()
+        self.custom_title_fontsize_input.setPlaceholderText("Title Fontsize:")
+        self.custom_title_fontsize_input.setObjectName("custom_title_fontsize_input")
+        self.custom_title_fontsize_input.setStyleSheet("""
+            QLineEdit#custom_title_fontsize_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+        self.custom_title_fontsize_input.setFixedHeight(60) 
+        
+        self.custom_title_fontsize_input.textChanged.connect(self.process_custom_title_fontsize)
+
+        custom_fontsize_layout = self.title_fontsize_adjustment_section.layout()
+        custom_fontsize_layout.addWidget(self.custom_title_fontsize_input)
+        custom_fontsize_layout.setContentsMargins(5,10,5,10)
+        custom_fontsize_layout.setSpacing(0)
+        custom_fontsize_layout.addStretch()
+
+    def change_to_fixed_title_fontsize(self):
+        self.clear_layout()
+
+        self.current_page = 2 
+
+        #Make sure that there is no old buttons in the layout
+        self.title_fontsize_buttons.clear()
+        self.current_title_fontsize = self.fixed_title_fontsizes[self.title_font_idx]
+
+        #Create a vertical box to put the buttons in. Make sure they are positioned vertically.
+        button_layout = self.title_fontsize_adjustment_section.layout()
+        #Go through each parameter in the list and create a button for each of them
+        for size in self.fixed_title_fontsizes:
+
+            #Make a copy of the current fontsize name
+            fontsize = str(size)
+
+            #Create the button with the fontsize name, give it an object name, and give it a fixedHeight for consistency
+            fontsize_button = QPushButton(size)
+            fontsize_button.setObjectName("not_selected")
+            fontsize_button.setFixedHeight(45)
+
+            #Connect each button to the change parameter feature to ensure that dataset being displayed changes with the button
+            fontsize_button.clicked.connect(lambda checked=False, fontsize=fontsize: self.change_fontsize(fontsize))
+
+            #Add the button to the list and the layout
+            self.title_fontsize_buttons.append(fontsize_button)
+            button_layout.addWidget(fontsize_button)
+
+        #Add margins and spacing to make it look and push all the buttons to the top
+        button_layout.setContentsMargins(10,10,10,10)
+        button_layout.setSpacing(5) 
+        button_layout.addStretch()
+
+        self.highlighted_selected_button()
+
+    def change_fontsize(self,fontsize):
+        #Keep track of the old idx and change both the column name and new idx
+        old_idx = self.title_font_idx
+        self.current_title_fontsize = fontsize
+        self.title_font_idx = self.fixed_title_fontsizes.index(self.current_title_fontsize)
+
+        #Change the current button that's being displayed and highlight the selected button
+        self.highlighted_selected_button(old_idx)
+
+    def highlighted_selected_button(self,old_idx=-1):
+        self.update_fontsize()
+        #Set the current button selected to be called selected
+        self.title_fontsize_buttons[self.title_font_idx].setObjectName("selected")
+        #If there is a old_idx then change the old button to be not selected
+        if (old_idx != -1):
+            self.title_fontsize_buttons[old_idx].setObjectName("not_selected")
+
+        #Customize the dialog window and each button selected and not selected
+        self.setStyleSheet("""
+            QWidget#adjust_title_fontsize_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+            QPushButton#selected{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#not_selected{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#not_selected:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+    def process_custom_title_fontsize(self):
+        self.current_title_fontsize = self.custom_title_fontsize_input.text().strip()
+        try:
+            self.current_title_fontsize = int(self.custom_title_fontsize_input)
+        except:
+            pass
+        else:
+            self.update_fontsize()
+
+    def update_fontsize(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_legend("fontsize",self.current_title_fontsize)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["title_fontsize"] = self.current_title_fontsize
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+
 class legend_button(QDialog):
     def __init__(self,selected_graph):
         super().__init__()
@@ -1912,7 +2239,7 @@ class legend_button(QDialog):
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.scroll_section,stretch=1)
         self.layout.addSpacing(10)
-        self.layout.addWidget(legend_title_adjustment_section(self.selected_graph),stretch=1)
+        self.layout.addWidget(legend_title_fontsize_adjustment_section(self.selected_graph),stretch=1)
 
         #Create a shortcut for the user to go to the previous column by press up
         up_shortcut = QShortcut(QKeySequence("up"), self) 
