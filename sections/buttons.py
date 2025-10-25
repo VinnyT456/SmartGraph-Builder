@@ -1,8 +1,9 @@
 from functools import partial
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QKeySequence, QPixmap, QShortcut
+from PyQt6.QtCore import QStringListModel, Qt
+from PyQt6.QtGui import QFont, QKeySequence, QPixmap, QShortcut
 from PyQt6.QtWidgets import (
-    QDialog, QGridLayout, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QPushButton, QScrollArea, QSizePolicy, QTableView, QWidget, QVBoxLayout
+    QDialog, QGridLayout, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QPushButton, QScrollArea, 
+    QSizePolicy, QTableView, QWidget, QVBoxLayout, QStyledItemDelegate
 )
 from numpy.strings import startswith
 from sections.dataset import PrepareDataset
@@ -2429,9 +2430,11 @@ class face_color_adjustment_section(QWidget):
 
         self.current_facecolor = ""
 
-        self.face_color_adjustment_section = QWidget()
-        self.face_color_adjustment_section.setObjectName("face_color_adjustment")
-        self.face_color_adjustment_section.setStyleSheet("""
+        #-----Home Screen-----
+
+        self.face_color_adjustment_homescreen = QWidget()
+        self.face_color_adjustment_homescreen.setObjectName("face_color_adjustment")
+        self.face_color_adjustment_homescreen.setStyleSheet("""
             QWidget#face_color_adjustment{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
@@ -2634,13 +2637,13 @@ class face_color_adjustment_section(QWidget):
             }
         """)
 
-        self.named_color_button.clicked.connect(self.change_to_named_color)
-        self.hex_code_button.clicked.connect(self.change_to_hex_code)
-        self.rgba_color_button.clicked.connect(self.change_to_rgba_colors)
-        self.grayscale_color_button.clicked.connect(self.change_to_grayscale_colors)
+        self.named_color_button.clicked.connect(self.change_to_named_color_screen)
+        self.hex_code_button.clicked.connect(self.change_to_hex_code_screen)
+        self.rgba_color_button.clicked.connect(self.change_to_rgba_colors_screen)
+        self.grayscale_color_button.clicked.connect(self.change_to_grayscale_colors_screen)
         self.none_button.clicked.connect(self.set_color_to_none)
 
-        button_layout = QVBoxLayout(self.face_color_adjustment_section)
+        button_layout = QVBoxLayout(self.face_color_adjustment_homescreen)
         button_layout.addWidget(self.named_color_button)
         button_layout.addWidget(self.hex_code_button)
         button_layout.addWidget(self.rgba_color_button)
@@ -2650,52 +2653,36 @@ class face_color_adjustment_section(QWidget):
         button_layout.setSpacing(5)
         button_layout.addStretch()
 
-        self.scroll_section = QScrollArea()
-        self.scroll_section.setFrameShape(QScrollArea.Shape.NoFrame)
-        self.scroll_section.setWidgetResizable(True)
+        #-----Named Color Screen-----
 
-        #Place the scrollable area on the button section
-        self.scroll_section.setWidget(self.face_color_adjustment_section)
-        self.scroll_section.setStyleSheet("""
-            QScrollArea{
-                background: transparent;
-                border: none;
+        self.named_color_screen = QWidget()
+        self.named_color_screen.setObjectName("named_color_screen")
+        self.named_color_screen.setStyleSheet("""
+            QWidget#named_color_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
                 border-radius: 24px;
-            }
+            }   
         """)
-        #Hide the handle
-        self.scroll_section.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.create_named_color_screen()
+        self.named_color_screen.hide()
 
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.scroll_section)
+        main_layout.addWidget(self.face_color_adjustment_homescreen)
+        main_layout.addWidget(self.named_color_screen)
         main_layout.setContentsMargins(0,0,0,0)
         main_layout.setSpacing(0)
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
-    def clear_layout(self):
-        layout = self.face_color_adjustment_section.layout()
-        if layout:
-            while layout.count():
-                item = layout.takeAt(0)
-                widget = item.widget()
-                if widget:
-                    widget.setParent(None)
+    def create_named_color_screen(self):
+        named_color_screen_layout = QVBoxLayout(self.named_color_screen)
 
-    def change_to_named_color(self):
-        #Make sure that the layout is completely empty and we're working with a empty widget
-        self.clear_layout()
-
-        #Set the current page variable to 2 to allow the user to go back to this page later
-        self.current_page = 2 
-
-        #Make sure that there is no old buttons in the layout
-        self.buttons.clear()
-        self.current_facecolor = self.named_colors[self.named_color_idx]
-
-        #Create a vertical box to put the buttons in. Make sure they are positioned vertically.
-        button_layout = self.face_color_adjustment_section.layout()
-        
         self.color_search_bar = QLineEdit()
         self.color_search_bar.setObjectName("search_bar")
         self.color_search_bar.setPlaceholderText("Search: ")
@@ -2714,47 +2701,97 @@ class face_color_adjustment_section(QWidget):
             }
         """)
         self.color_search_bar.setMinimumHeight(60)
-        button_layout.addWidget(self.color_search_bar)
-        button_layout.addSpacing(15)
+        named_color_screen_layout.addWidget(self.color_search_bar)
+        named_color_screen_layout.addSpacing(15)
+    
+        self.list_view = QListView()
+        self.model = QStringListModel(self.named_colors)
+        self.list_view.setModel(self.model)
         
-        self.setUpdatesEnabled(False) 
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.list_view.setItemDelegate(CustomDelegate())
 
-        #Go through each parameter in the list and create a button for each of them
-        for color in self.named_colors:
+        self.list_view.setStyleSheet("""
+            QListView {
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 24px;
+            }
+            QListView::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+        self.list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.list_view.setSpacing(3)
 
-            #Make a copy of the current fontsize name
-            color_name = str(color)
+        named_color_screen_layout.addWidget(self.list_view)
 
-            #Create the button with the fontsize name, give it an object name, and give it a fixedHeight for consistency
-            color_button = QPushButton(color_name)
-            color_button.setObjectName("not_selected")
-            color_button.setFixedHeight(45)
-            color_button.setFixedWidth(250)
+        # Add margins and spacing to make it look good and push content to the top
+        named_color_screen_layout.setContentsMargins(10, 10, 10, 10)
+    
 
-            #Connect each button to the change parameter feature to ensure that dataset being displayed changes with the button
-            color_button.clicked.connect(partial(self.change_color,color_name))
+    def change_to_named_color_screen(self):
+        self.face_color_adjustment_homescreen.hide()
+        self.named_color_screen.show()
 
-            #Add the button to the list and the layout
-            self.buttons.append(color_button)
-            button_layout.addWidget(color_button)
+    def change_to_hex_code_screen(self):
+        pass
 
-        self.setUpdatesEnabled(True)
+    def change_to_rgba_colors_screen(self):
+        pass
 
-        #Add margins and spacing to make it look and push all the buttons to the top
-        button_layout.setContentsMargins(10,10,10,10)
-        button_layout.setSpacing(5) 
-        button_layout.addStretch()
-
-        self.highlighted_selected_button()
-
-    def change_to_hex_code(self):
-        self.clear_layout()
-
-    def change_to_rgba_colors(self):
-        self.clear_layout()
-
-    def change_to_grayscale_colors(self):
-        self.clear_layout()
+    def change_to_grayscale_colors_screen(self):
+        pass
 
     def set_color_to_none(self):
         pass
