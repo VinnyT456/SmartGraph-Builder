@@ -1006,16 +1006,22 @@ class loc_adjustment_section(QWidget):
             }
         """)
 
+        #Store the loc buttons created in a list and list out the possible positions
         self.loc_buttons = []
         self.available_loc_arguments = ["best","upper right","upper left","lower left",
                                     "lower right","right","center left","center right",
                                     "lower center","upper center","center"]
+
+        #Use a index to control the current location of the legend
         self.loc_idx = 0
         self.loc_argument_name = self.available_loc_arguments[0]
+
+        #Create a scrolling section just in case there was too much buttons
         self.scroll_section = QScrollArea()
         self.scroll_section.setFrameShape(QScrollArea.Shape.NoFrame)
         self.scroll_section.setWidgetResizable(True)
 
+        #Display the location buttons and highlight the current button selected (first one initially)
         self.loc_parameter_section()
         self.highlighted_selected_column()
 
@@ -1028,9 +1034,11 @@ class loc_adjustment_section(QWidget):
                 border-radius: 24px;
             }
         """)
+
         #Hide the handle
         self.scroll_section.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
+        #Add the legend loc adjustment section to the main widget to display on the other QDialog
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.scroll_section)
         main_layout.setSpacing(0)
@@ -1046,6 +1054,8 @@ class loc_adjustment_section(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
     def loc_parameter_section(self):
+        #Do this when it's all on the same layout and not switching between layouts on the widgets
+
         #Make sure that there is no old buttons in the layout
         for btn in self.loc_buttons:
             self.layout.removeWidget(btn)
@@ -1254,51 +1264,66 @@ class bbox_to_anchor_adjustment_section(QWidget):
             }
         """)
 
+        #Initialize the values for the bbox anchor parameter
         self.x_value = 0
         self.y_value = 0
         self.width_value = 0
         self.height_value = 0
 
+        #Create a line edit widget for each of the parameters
         self.x_input = QLineEdit()
         self.x_input.setPlaceholderText("X: ")
+
         self.y_input = QLineEdit()
         self.y_input.setPlaceholderText("Y: ")
+
         self.width_input = QLineEdit()
         self.width_input.setPlaceholderText("Width: ")
+        
         self.height_input = QLineEdit()
         self.height_input.setPlaceholderText("Height: ")
 
+        #Set the sizes of each line edit widget for consistency
         self.x_input.setFixedHeight(60)
         self.y_input.setFixedHeight(60)
         self.width_input.setFixedHeight(60)
         self.height_input.setFixedHeight(60)
 
+        #Connect each line edit to update whenever the user inputs something
         self.x_input.textChanged.connect(self.update_x)
         self.y_input.textChanged.connect(self.update_y)
         self.width_input.textChanged.connect(self.update_width)
         self.height_input.textChanged.connect(self.update_height)
 
+        #Create a layout on the bbox adjustment section
         bbox_section_layout = QVBoxLayout(self.bbox_adjustment_section)
 
+        #Add the 4 line edit widgets to the layout
         bbox_section_layout.addWidget(self.x_input)
         bbox_section_layout.addWidget(self.y_input)
         bbox_section_layout.addWidget(self.width_input)
         bbox_section_layout.addWidget(self.height_input)
 
-        bbox_section_layout.setContentsMargins(10,10,10,5)
+        #Add margins, spacing, and stretch to make it look good
+        bbox_section_layout.setContentsMargins(10,10,10,10)
         bbox_section_layout.setSpacing(10)
         bbox_section_layout.addStretch()
 
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-
+        #Add the bbox adjustment sections onto the main widget
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.bbox_adjustment_section)
         
+        #Add the margins and spacings to make sure that it fits nicely
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0,0,0,0)
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
     
     def update_x(self):
+        #Get the text input of x from the user and remove any excess spaces
         x_input = self.x_input.text().strip()
+
+        #Check if the input is valid and only update if it's valid
         try:
             self.x_value = float(x_input)
         except:
@@ -1308,7 +1333,10 @@ class bbox_to_anchor_adjustment_section(QWidget):
         
 
     def update_y(self):
+        #Get the text input of y from the user and remove any excess spaces
         y_input = self.y_input.text().strip()
+
+        #Check if the input is valid and only update if it's valid
         try:
             self.y_value = float(y_input)
         except:
@@ -1317,7 +1345,10 @@ class bbox_to_anchor_adjustment_section(QWidget):
             self.update_bbox_anchor()
 
     def update_width(self):
+        #Get the text input of the width from the user and remove any excess spaces
         width_input = self.width_input.text().strip()
+
+        #Check if the input is valid and only update if it's valid
         try:
             self.width_value = float(width_input)
         except:
@@ -1326,7 +1357,10 @@ class bbox_to_anchor_adjustment_section(QWidget):
             self.update_bbox_anchor()
 
     def update_height(self):
+        #Get the text input of the height input from the user and remove any excess spaces
         height_input = self.height_input.text().strip()
+        
+        #Check if the input is valid and only update if it's valid
         try:
             self.height_value = float(height_input)
         except:
@@ -1335,13 +1369,15 @@ class bbox_to_anchor_adjustment_section(QWidget):
             self.update_bbox_anchor()
 
     def update_bbox_anchor(self):
+        #Get the newest json file if it exist
         db = self.plot_manager.get_db()
+        new_bbox_anchor = (self.x_value,self.y_value,self.width_value,self.height_value)
+        #If the json file is not empty then update it and if it is empty then create one with the new bbox anchor with it.
         if (db != []):
-            new_bbox_anchor = [self.x_value,self.y_value,self.width_value,self.height_value]
             self.plot_manager.update_legend("bbox_to_anchor",new_bbox_anchor)
         else:
             plot_parameters = plot_json[self.selected_graph].copy()
-            plot_parameters["legend"]["bbox_to_anchor"] = (0,0,0,0)
+            plot_parameters["legend"]["bbox_to_anchor"] = new_bbox_anchor
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
 class ncol_adjustment_section(QWidget):
@@ -1380,41 +1416,56 @@ class ncol_adjustment_section(QWidget):
             }
         """)
 
+        #Initialize the ncol value to be 0
         self.ncol_value = 0
 
+        #Create a line edit object for the user to input the ncol
         self.ncol_input = QLineEdit()
         self.ncol_input.setPlaceholderText("ncol: ")
 
+        #Set the height of the line edit object to make it look good
         self.ncol_input.setFixedHeight(60)
 
+        #Connect any changes with the text to an update function
         self.ncol_input.textChanged.connect(self.update_ncol)
 
+        #Create a layout for the ncol adjustment section and add the line edit object to it
         ncol_section_layout = QVBoxLayout(self.ncol_adjustment_section)
         ncol_section_layout.addWidget(self.ncol_input)
-
-        ncol_section_layout.setContentsMargins(10,10,10,5)
+    
+        #Add the margins, spacing, and stretch to the layout to make it look good
+        ncol_section_layout.setContentsMargins(10,10,10,10)
         ncol_section_layout.setSpacing(10)
         ncol_section_layout.addStretch()
 
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-
+        #Add the ncol adjustment section to the main widget
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.ncol_adjustment_section)
         
+        #Set both the spacing and margins for the main widget to make sure it fits nicely
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0,0,0,0)
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
     
     def update_ncol(self):
+        #Extract the ncol input from the user and remove any excess text from it
         ncol_input = self.ncol_input.text().strip()
+
+        #Only update the ncol value in the json file if the input is valid
         try:
             self.ncol_value = int(ncol_input)
         except:
             pass
         else:
-            self.update_json()
+            self.update_ncol()
 
-    def update_json(self):
+    def update_ncol(self):
+        #Get the newest json entries from the plot manager
         db = self.plot_manager.get_db()
+
+        #Check if db is empty or not. If it is empty then create a new entry with the ncol value
+        #If the db isn't empty then update the db with the new ncol value.
         if (db != []):
             self.plot_manager.update_legend("ncol",self.ncol_value)
         else:
@@ -1429,16 +1480,22 @@ class fontsize_adjustment_section(QWidget):
         self.plot_manager = PlotManager()
 
         self.selected_graph = selected_graph
-        
+
+        #Initialize the custom fontsize and the options for the fixed fontsize
         self.custom_fontsize = 0
         self.fixed_fontsizes = ["xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large"]
+        
+        #Set the initial fontsize to be none
         self.current_fontsize = None
-
+    
+        #Use current page to control going back and forth on pages and idx to control which font size is chosen
         self.current_page = 0
         self.font_idx = 0
 
+        #Store all the fixed fontsize buttons in here
         self.fontsize_buttons = []
 
+        #Create a new widget for the fontsize adjustment section and style it to match the other ones
         self.fontsize_adjustment_section = QWidget()
         self.fontsize_adjustment_section.setObjectName("adjust_fontsize_section")
         self.fontsize_adjustment_section.setStyleSheet("""
@@ -1454,6 +1511,7 @@ class fontsize_adjustment_section(QWidget):
             }
         """)
 
+        #Create a button for getting to the screen to input the custom fontsize and customize the button
         self.custom_fontsize_button = QPushButton("Custom Fontsize")
         self.custom_fontsize_button.setObjectName("custom_fontsize")
         self.custom_fontsize_button.setStyleSheet("""
@@ -1492,6 +1550,7 @@ class fontsize_adjustment_section(QWidget):
             }
         """)
 
+        #Create a button for getting to the screen for selecting the fixed fontsizes and customize the button
         self.fixed_fontsize_button = QPushButton("Fixed Fontsize")
         self.fixed_fontsize_button.setObjectName("fixed_fontsize")
         self.fixed_fontsize_button.setStyleSheet("""
@@ -1530,29 +1589,38 @@ class fontsize_adjustment_section(QWidget):
             }
         """)
 
+        #Connect both the custom and fixed fontsize buttons to their associated function
         self.custom_fontsize_button.clicked.connect(self.change_to_custom_fontsize)
         self.fixed_fontsize_button.clicked.connect(self.change_to_fixed_fontsize)
 
+        #Create a layout to store all the buttons in
         button_layout = QVBoxLayout(self.fontsize_adjustment_section)
         button_layout.addWidget(self.custom_fontsize_button)
         button_layout.addWidget(self.fixed_fontsize_button)
+
+        #Add margins, spacing, and stretch to make the layout look nice.
         button_layout.setContentsMargins(10,10,10,10)
         button_layout.setSpacing(5)
         button_layout.addStretch()
 
+        #Create a layout for the main widget and add the adjustment section to it
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.fontsize_adjustment_section)
+
+        #Add the spacing and margin to ensure the section fits nicely with the main widget
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0,0,0,0)
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
+        #Create shortcuts to go back and forth between the screens.
         go_back_shortcut = QShortcut(QKeySequence("left"), self) 
         go_back_shortcut.activated.connect(self.change_to_original_screen)
 
         go_to_previous_screen_shortcut = QShortcut(QKeySequence("right"), self) 
         go_to_previous_screen_shortcut.activated.connect(self.change_to_old_page)
 
+    #Remove everything from the current layout.
     def clear_layout(self):
         layout = self.fontsize_adjustment_section.layout()
         if layout:
@@ -1563,20 +1631,26 @@ class fontsize_adjustment_section(QWidget):
                     widget.setParent(None)
 
     def change_to_original_screen(self):
+        #Clear everything to make sure we're starting with a blank screen
         self.clear_layout()
 
+        #Get the current layout of the fontsize adjustment section
         button_layout = self.fontsize_adjustment_section.layout()
 
+        #Add all the buttons to that layout and the margins, spacing, and stretch to replicate what was there before
         button_layout.addWidget(self.custom_fontsize_button)
         button_layout.addWidget(self.fixed_fontsize_button)
         button_layout.setContentsMargins(10,10,10,10)
         button_layout.setSpacing(5)
         button_layout.addStretch()
 
+        #Make sure that it draws the right thing
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
     def change_to_old_page(self):
+        #Only change the page when the user has went to a screen already
         if (self.current_page != 0):
+            #Based on the current page variable adjust what is shown on the widget
             self.clear_layout()
             if (self.current_page == 1):
                 self.change_to_custom_fontsize()
@@ -1584,10 +1658,14 @@ class fontsize_adjustment_section(QWidget):
                 self.change_to_fixed_fontsize()
 
     def change_to_custom_fontsize(self):
+        #Clear everything to make sure we're starting with a blank screen
         self.clear_layout()
 
+        #Set the current page to 1 to allow the user to switch back later if necessary
         self.current_page = 1
 
+        #Create a QLineEdit object to allow the user input the custom fontsize
+        #Give it a placeholder text to make sure that the user knows what to input and style the button
         self.custom_fontsize_input = QLineEdit()
         self.custom_fontsize_input.setPlaceholderText("Fontsize:")
         self.custom_fontsize_input.setObjectName("custom_fontsize_input")
@@ -1605,19 +1683,27 @@ class fontsize_adjustment_section(QWidget):
                 border-radius: 24px;
             }
         """)
+
+        #Set the height for the QLineEdit for consistency
         self.custom_fontsize_input.setFixedHeight(60) 
         
+        #Connect the QLineEdit object with a update to automatically update the user inputs
         self.custom_fontsize_input.textChanged.connect(self.process_custom_fontsize)
 
+        #Grab the layout that the fontsize_adjustment_section is using to ensure that it will also apply to the main widget later
         custom_fontsize_layout = self.fontsize_adjustment_section.layout()
+        
+        #Add the QLineEdit object to the layout and add the margins, spacing, and stretch to make it look good
         custom_fontsize_layout.addWidget(self.custom_fontsize_input)
         custom_fontsize_layout.setContentsMargins(10,10,10,10)
         custom_fontsize_layout.setSpacing(0)
         custom_fontsize_layout.addStretch()
 
     def change_to_fixed_fontsize(self):
+        #Clear the screen to make sure where working with a empty widget
         self.clear_layout()
 
+        #Set the current page variable to 2 to make sure that the user can switch screens later
         self.current_page = 2 
 
         #Make sure that there is no old buttons in the layout
@@ -1732,7 +1818,10 @@ class fontsize_adjustment_section(QWidget):
         """)
 
     def process_custom_fontsize(self):
+        #Extract the fontsize from the user input and remove any excess text
         self.current_fontsize = self.custom_fontsize_input.text().strip()
+
+        #Check if the input is valid and only update it if it's valid
         try:
             self.current_fontsize = int(self.current_fontsize)
         except:
@@ -1741,7 +1830,11 @@ class fontsize_adjustment_section(QWidget):
             self.update_fontsize()
 
     def update_fontsize(self):
+        #Get the newest entry from the json file
         db = self.plot_manager.get_db()
+
+        #Check if the entry is empty or not.
+        #If the entry is empty then create one with the new fontsize else update the newest one with the new fontsize
         if (db != []):
             self.plot_manager.update_legend("fontsize",self.current_fontsize)
         else:
@@ -1785,38 +1878,55 @@ class legend_title_adjustment_section(QWidget):
             }
         """)
 
+        #Initialize the value for the title
         self.title_value = ""
 
+        #Create a QLineEdit to allow the user to input the title and add a placeholder text to it
         self.title_input = QLineEdit()
         self.title_input.setPlaceholderText("title: ")
-
+        
+        #Set the height of the object for consistency
         self.title_input.setFixedHeight(60)
 
+        #Connect the object to a function to allow it to update automatically
         self.title_input.textChanged.connect(self.update_title)
 
+        #Create a layout for the title section and add the line edit object to the layout
         title_section_layout = QVBoxLayout(self.title_adjustment_section)
         title_section_layout.addWidget(self.title_input)
 
-        title_section_layout.setContentsMargins(10,10,10,5)
+        #Add the margins, spacing, and stretch to the layout to make it look good
+        title_section_layout.setContentsMargins(10,10,10,10)
         title_section_layout.setSpacing(10)
         title_section_layout.addStretch()
 
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-
+        #Create a main layout for the main widget and add the title adjustment section to it
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.title_adjustment_section)
         
+        #Add the spacing and margin to the main widget to ensure it fits nicely
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0,0,0,0)
     
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
     def update_title(self):
+        #Extract the title from the user input and remove any excess spaces.
         self.title_value = self.title_input.text().strip()
+
+        #Change the title to None if it's an empty string
         if (self.title_value == ""):
             self.title_value = None
+
+        #Update it in the json file
         self.update_json()
 
     def update_json(self):
+        #Get the new entry in the json file
         db = self.plot_manager.get_db()
+        
+        #Check if the db is empty or not and update it if it's empty
+        #If the db is empty then create a new entry in the json file with the new title
         if (db != []):
             self.plot_manager.update_legend("title",self.title_value)
         else:
@@ -1832,15 +1942,21 @@ class legend_title_fontsize_adjustment_section(QWidget):
 
         self.selected_graph = selected_graph
         
+        #Initialize the custom title fontsize and the fixed fontsizes
         self.custom_title_fontsize = 0
         self.fixed_title_fontsizes = ["xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large"]
+        
+        #Initialize the fontsize to be None in the beginning
         self.current_title_fontsize = None
 
+        #Initialize the current page to be 0 and the index to be 0
         self.current_page = 0
         self.title_font_idx = 0
 
+        #Store the fontsize buttons created in a list
         self.title_fontsize_buttons = []
 
+        #Create a widget for the title fontsize adjustment section and style it.
         self.title_fontsize_adjustment_section = QWidget()
         self.title_fontsize_adjustment_section.setObjectName("adjust_title_fontsize_section")
         self.title_fontsize_adjustment_section.setStyleSheet("""
@@ -1856,6 +1972,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
             }
         """)
 
+        #Create a QPushButton for switching to the custom title fontsize screen and customize it
         self.custom_title_fontsize_button = QPushButton("Custom Title Fontsize")
         self.custom_title_fontsize_button.setObjectName("custom_title_fontsize")
         self.custom_title_fontsize_button.setStyleSheet("""
@@ -1894,6 +2011,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
             }
         """)
 
+        #Create a QPushButton for switching to the fixed fontsize screen and customize it
         self.fixed_title_fontsize_button = QPushButton("Fixed Title Fontsize")
         self.fixed_title_fontsize_button.setObjectName("fixed_title_fontsize")
         self.fixed_title_fontsize_button.setStyleSheet("""
@@ -1932,30 +2050,41 @@ class legend_title_fontsize_adjustment_section(QWidget):
             }
         """)
 
+        #Connect the two buttons to a button that will switch to the associated screen either custom or fixed fontsize
         self.custom_title_fontsize_button.clicked.connect(self.change_to_custom_title_fontsize)
         self.fixed_title_fontsize_button.clicked.connect(self.change_to_fixed_title_fontsize)
 
+        #Create a layout for the title fontsize adjustment section
         button_layout = QVBoxLayout(self.title_fontsize_adjustment_section)
+
+        #Add all the buttons to the layout which will be added to the title fontsize adjustment section
         button_layout.addWidget(self.custom_title_fontsize_button)
         button_layout.addWidget(self.fixed_title_fontsize_button)
+
+        #Add the margins, spacing, and stretch to the layout so that the buttons will look good on the widget
         button_layout.setContentsMargins(10,10,10,10)
         button_layout.setSpacing(5)
         button_layout.addStretch()
 
+        #Create a layout for the main wdiget and add the title fontsize adjustment section to it
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.title_fontsize_adjustment_section)
+
+        #Add the spacing and margins to make sure that the section fits nicely to the main widget
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0,0,0,0)
 
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-
+        #Create two shortcuts to allow the user to switch between screens
         go_back_shortcut = QShortcut(QKeySequence("left"), self) 
         go_back_shortcut.activated.connect(self.change_to_original_screen)
 
         go_to_previous_screen_shortcut = QShortcut(QKeySequence("right"), self) 
-        go_to_previous_screen_shortcut.activated.connect(self.change_to_old_page)
+        go_to_previous_screen_shortcut.activated.connect(self.change_to_old_page) 
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
     def clear_layout(self):
+        #Clear every widget on the layout
         layout = self.title_fontsize_adjustment_section.layout()
         if layout:
             while layout.count():
@@ -1965,12 +2094,17 @@ class legend_title_fontsize_adjustment_section(QWidget):
                     widget.setParent(None)
 
     def change_to_original_screen(self):
+        #Make sure that the layout is completely empty and we're working with a empty widget
         self.clear_layout()
 
+        #Grab the layout that is used for the title_fontsize_adjustment_section
         button_layout = self.title_fontsize_adjustment_section.layout()
 
+        #Add the buttons needed back to it so that it goes back to the original screen
         button_layout.addWidget(self.custom_title_fontsize_button)
         button_layout.addWidget(self.fixed_title_fontsize_button)
+
+        #Add the margins, spacing, and stretch to replicate what the original screen was like
         button_layout.setContentsMargins(10,10,10,10)
         button_layout.setSpacing(5)
         button_layout.addStretch()
@@ -1978,7 +2112,9 @@ class legend_title_fontsize_adjustment_section(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
     def change_to_old_page(self):
+        #Check if the user has been to any other screen
         if (self.current_page != 0):
+            #Change the screen based on the last screen the user has been to
             self.clear_layout()
             if (self.current_page == 1):
                 self.change_to_custom_title_fontsize()
@@ -1986,10 +2122,14 @@ class legend_title_fontsize_adjustment_section(QWidget):
                 self.change_to_fixed_title_fontsize()
 
     def change_to_custom_title_fontsize(self):
+        ##Make sure that the layout is completely empty and we're working with a empty widget
         self.clear_layout()
 
+        #Set the current page variable to 1 for the user to go back to this screen later
         self.current_page = 1
 
+        #Create QLineEdit object to allow the user to input the custom fontsize they want
+        #Add a placeholder text to ensure the user knows what to input and style it to make it look good
         self.custom_title_fontsize_input = QLineEdit()
         self.custom_title_fontsize_input.setPlaceholderText("Title Fontsize:")
         self.custom_title_fontsize_input.setObjectName("custom_title_fontsize_input")
@@ -2007,19 +2147,29 @@ class legend_title_fontsize_adjustment_section(QWidget):
                 border-radius: 24px;
             }
         """)
+        
+        #Set the size of the QLineEdit object for consistency
         self.custom_title_fontsize_input.setFixedHeight(60) 
         
+        #Connect the QLineEdit object to a function that will automatically update whenever the user inputs something
         self.custom_title_fontsize_input.textChanged.connect(self.process_custom_title_fontsize)
 
+        #Grab the layout of the title_fontsize_adjustment_section so that the final result is applied onto the main widget
         custom_fontsize_layout = self.title_fontsize_adjustment_section.layout()
+
+        #Add the QLineEdit Object to the layout
         custom_fontsize_layout.addWidget(self.custom_title_fontsize_input)
+
+        #Add the margins, spacing, and stretch to make it look nicer
         custom_fontsize_layout.setContentsMargins(10,10,10,10)
         custom_fontsize_layout.setSpacing(0)
         custom_fontsize_layout.addStretch()
 
     def change_to_fixed_title_fontsize(self):
+        #Make sure that the layout is completely empty and we're working with a empty widget
         self.clear_layout()
 
+        #Set the current page variable to 2 to allow the user to go back to this page later
         self.current_page = 2 
 
         #Make sure that there is no old buttons in the layout
@@ -2134,7 +2284,9 @@ class legend_title_fontsize_adjustment_section(QWidget):
         """)
 
     def process_custom_title_fontsize(self):
+        #Extract the fontsize from the user input
         self.current_title_fontsize = self.custom_title_fontsize_input.text().strip()
+        #Check if the input is valid and only update if it's valid
         try:
             self.current_title_fontsize = int(self.custom_title_fontsize_input)
         except:
@@ -2143,7 +2295,9 @@ class legend_title_fontsize_adjustment_section(QWidget):
             self.update_fontsize()
 
     def update_fontsize(self):
+        #Grab the newest entry in the json file
         db = self.plot_manager.get_db()
+        #Check if the entry is empty or not and update if not empty and add if empty
         if (db != []):
             self.plot_manager.update_legend("fontsize",self.current_title_fontsize)
         else:
@@ -2159,9 +2313,10 @@ class frameon_adjustment_section(QWidget):
 
         self.selected_graph = selected_graph
         
-        self.current_state = 0
+        #Initialize the frameon state
         self.frameon_state = True
-
+        
+        #Create a widget to display the frameon adjustment section and style it for consistency
         self.frameon_adjustment_section = QWidget()
         self.frameon_adjustment_section.setObjectName("frameon_adjustment_section")
         self.frameon_adjustment_section.setStyleSheet("""
@@ -2176,7 +2331,8 @@ class frameon_adjustment_section(QWidget):
                 border-radius: 24px;
             }
         """)
-
+    
+        #Create a button to allow the user to switch between Frameon
         self.frameon_button = QPushButton("Frameon")
         self.frameon_button.setObjectName("frameon_button")
         self.frameon_button.setStyleSheet("""
@@ -2214,27 +2370,40 @@ class frameon_adjustment_section(QWidget):
                 color: black;
             }
         """)
+
+        #Connect the frameon button to a function to switch between the two states
         self.frameon_button.clicked.connect(self.switch_on_frameon)
 
+        #Create a button layout for the frameon adjustment section
         button_layout = QVBoxLayout(self.frameon_adjustment_section)
+
+        #Add the frameon button to the layout
         button_layout.addWidget(self.frameon_button)
+
+        #Set the spacing, margins, and stretch to make it look good
         button_layout.setSpacing(0)
         button_layout.setContentsMargins(10,10,10,10)
         button_layout.addStretch()
 
+        #Create a layout for the main widget and store the frameon adjustment section in
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.frameon_adjustment_section)
+
+        #Add the spacing and margins to make sure that the section fits nicely
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0,0,0,0)
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
     def switch_on_frameon(self):
+        #Change the frameon_state to be the opposite of the current state and update it in the json
         self.frameon_state = not self.frameon_state
         self.update_frameon()
 
     def update_frameon(self):
+        #Grab the newest entry in the json
         db = self.plot_manager.get_db()
+        #Check if the entry is empty or not and update if it's not empty and create one with the state if it's empty
         if (db != []):
             self.plot_manager.update_legend("frameon",self.frameon_state)
         else:
