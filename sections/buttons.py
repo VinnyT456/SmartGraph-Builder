@@ -1,8 +1,10 @@
+from functools import partial
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QKeySequence, QPixmap, QShortcut
 from PyQt6.QtWidgets import (
     QDialog, QGridLayout, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QPushButton, QScrollArea, QSizePolicy, QTableView, QWidget, QVBoxLayout
 )
+from numpy.strings import startswith
 from sections.dataset import PrepareDataset
 from sections.plot_manager import PlotManager
 import matplotlib.colors as mcolors
@@ -2122,7 +2124,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
                 self.change_to_fixed_title_fontsize()
 
     def change_to_custom_title_fontsize(self):
-        ##Make sure that the layout is completely empty and we're working with a empty widget
+        #Make sure that the layout is completely empty and we're working with a empty widget
         self.clear_layout()
 
         #Set the current page variable to 1 for the user to go back to this screen later
@@ -2417,7 +2419,11 @@ class face_color_adjustment_section(QWidget):
 
         self.plot_manager = PlotManager()
         self.selected_graph = selected_graph
-        self.named_color_buttons = list(mcolors.get_named_colors_mapping().keys())
+        self.named_colors = list(mcolors.get_named_colors_mapping().keys())
+        self.named_colors = [c.replace("xkcd:","") for c in self.named_colors]
+        self.named_colors = [c.replace("tab:","") for c in self.named_colors]
+
+        self.named_color_idx = 0
 
         self.buttons = []
 
@@ -2426,7 +2432,7 @@ class face_color_adjustment_section(QWidget):
         self.face_color_adjustment_section = QWidget()
         self.face_color_adjustment_section.setObjectName("face_color_adjustment")
         self.face_color_adjustment_section.setStyleSheet("""
-            QWidget#adjust_fontsize_section{
+            QWidget#face_color_adjustment{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -2517,7 +2523,7 @@ class face_color_adjustment_section(QWidget):
         self.rgba_color_button = QPushButton("RGBA Color")
         self.rgba_color_button.setObjectName("rgba_color")
         self.rgba_color_button.setStyleSheet("""
-            QPushButton#hex_code{
+            QPushButton#rgba_color{
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -2644,8 +2650,24 @@ class face_color_adjustment_section(QWidget):
         button_layout.setSpacing(5)
         button_layout.addStretch()
 
+        self.scroll_section = QScrollArea()
+        self.scroll_section.setFrameShape(QScrollArea.Shape.NoFrame)
+        self.scroll_section.setWidgetResizable(True)
+
+        #Place the scrollable area on the button section
+        self.scroll_section.setWidget(self.face_color_adjustment_section)
+        self.scroll_section.setStyleSheet("""
+            QScrollArea{
+                background: transparent;
+                border: none;
+                border-radius: 24px;
+            }
+        """)
+        #Hide the handle
+        self.scroll_section.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.face_color_adjustment_section)
+        main_layout.addWidget(self.scroll_section)
         main_layout.setContentsMargins(0,0,0,0)
         main_layout.setSpacing(0)
 
@@ -2661,7 +2683,69 @@ class face_color_adjustment_section(QWidget):
                     widget.setParent(None)
 
     def change_to_named_color(self):
+        #Make sure that the layout is completely empty and we're working with a empty widget
         self.clear_layout()
+
+        #Set the current page variable to 2 to allow the user to go back to this page later
+        self.current_page = 2 
+
+        #Make sure that there is no old buttons in the layout
+        self.buttons.clear()
+        self.current_facecolor = self.named_colors[self.named_color_idx]
+
+        #Create a vertical box to put the buttons in. Make sure they are positioned vertically.
+        button_layout = self.face_color_adjustment_section.layout()
+        
+        self.color_search_bar = QLineEdit()
+        self.color_search_bar.setObjectName("search_bar")
+        self.color_search_bar.setPlaceholderText("Search: ")
+        self.color_search_bar.setStyleSheet("""
+            QLineEdit#search_bar{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+        self.color_search_bar.setMinimumHeight(60)
+        button_layout.addWidget(self.color_search_bar)
+        button_layout.addSpacing(15)
+        
+        self.setUpdatesEnabled(False) 
+
+        #Go through each parameter in the list and create a button for each of them
+        for color in self.named_colors:
+
+            #Make a copy of the current fontsize name
+            color_name = str(color)
+
+            #Create the button with the fontsize name, give it an object name, and give it a fixedHeight for consistency
+            color_button = QPushButton(color_name)
+            color_button.setObjectName("not_selected")
+            color_button.setFixedHeight(45)
+            color_button.setFixedWidth(250)
+
+            #Connect each button to the change parameter feature to ensure that dataset being displayed changes with the button
+            color_button.clicked.connect(partial(self.change_color,color_name))
+
+            #Add the button to the list and the layout
+            self.buttons.append(color_button)
+            button_layout.addWidget(color_button)
+
+        self.setUpdatesEnabled(True)
+
+        #Add margins and spacing to make it look and push all the buttons to the top
+        button_layout.setContentsMargins(10,10,10,10)
+        button_layout.setSpacing(5) 
+        button_layout.addStretch()
+
+        self.highlighted_selected_button()
 
     def change_to_hex_code(self):
         self.clear_layout()
@@ -2674,6 +2758,93 @@ class face_color_adjustment_section(QWidget):
 
     def set_color_to_none(self):
         pass
+
+    def highlighted_selected_button(self,old_idx=-1):
+        #Set the current button selected to be called selected
+        self.buttons[self.named_color_idx].setObjectName("selected")
+        #If there is a old_idx then change the old button to be not selected
+        if (old_idx != -1):
+            self.buttons[old_idx].setObjectName("not_selected")
+
+        #Customize the dialog window and each button selected and not selected
+        self.setStyleSheet("""
+            QWidget#face_color_adjustment{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+            QPushButton#selected{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#not_selected{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#not_selected:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+    def change_color(self,color_name):
+        old_idx = self.named_color_idx
+        self.current_facecolor = color_name
+        self.named_color_idx = self.named_colors.index(self.current_facecolor)
+
+        #Change the current button that's being displayed and highlight the selected button
+        self.highlighted_selected_button(old_idx)
+
+    def update_color(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_legend("facecolor",self.current_facecolor)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["facecolor"] = self.current_facecolor
+            self.plot_manager.insert_plot_parameter(plot_parameters)
 
 class legend_button(QDialog):
     def __init__(self,selected_graph):
