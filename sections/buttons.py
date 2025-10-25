@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (
 )
 from sections.dataset import PrepareDataset
 from sections.plot_manager import PlotManager
+import matplotlib.colors as mcolors
 import pandas as pd
 import os
 
@@ -2159,7 +2160,7 @@ class frameon_adjustment_section(QWidget):
         self.selected_graph = selected_graph
         
         self.current_state = 0
-        self.frameon_state = False
+        self.frameon_state = True
 
         self.frameon_adjustment_section = QWidget()
         self.frameon_adjustment_section.setObjectName("frameon_adjustment_section")
@@ -2229,12 +2230,7 @@ class frameon_adjustment_section(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
     def switch_on_frameon(self):
-        self.current_state += 1
-        if (self.current_state % 2 == 1):
-            self.frameon_state = True
-        else:
-            self.frameon_state = False
-
+        self.frameon_state = not self.frameon_state
         self.update_frameon()
 
     def update_frameon(self):
@@ -2245,6 +2241,270 @@ class frameon_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["frameon"] = self.frameon_state
             self.plot_manager.insert_plot_parameter(plot_parameters)
+
+class face_color_adjustment_section(QWidget):
+    def __init__(self,selected_graph):
+        super().__init__()
+
+        self.plot_manager = PlotManager()
+        self.selected_graph = selected_graph
+        self.named_color_buttons = list(mcolors.get_named_colors_mapping().keys())
+
+        self.buttons = []
+
+        self.current_facecolor = ""
+
+        self.face_color_adjustment_section = QWidget()
+        self.face_color_adjustment_section.setObjectName("face_color_adjustment")
+        self.face_color_adjustment_section.setStyleSheet("""
+            QWidget#adjust_fontsize_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }            
+        """)
+
+        self.named_color_button = QPushButton("Named Colors")
+        self.named_color_button.setObjectName("named_color")
+        self.named_color_button.setStyleSheet("""
+            QPushButton#named_color{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#named_color:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.hex_code_button = QPushButton("Hex Code Color")
+        self.hex_code_button.setObjectName("hex_code")
+        self.hex_code_button.setStyleSheet("""
+            QPushButton#hex_code{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#hex_code:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.rgba_color_button = QPushButton("RGBA Color")
+        self.rgba_color_button.setObjectName("rgba_color")
+        self.rgba_color_button.setStyleSheet("""
+            QPushButton#hex_code{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#hex_code:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.grayscale_color_button = QPushButton("Grayscale")
+        self.grayscale_color_button.setObjectName("grayscale")
+        self.grayscale_color_button.setStyleSheet("""
+            QPushButton#grayscale{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#grayscale:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.none_button = QPushButton("None")
+        self.none_button.setObjectName("none")
+        self.none_button.setStyleSheet("""
+            QPushButton#none{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#none:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.named_color_button.clicked.connect(self.change_to_named_color)
+        self.hex_code_button.clicked.connect(self.change_to_hex_code)
+        self.rgba_color_button.clicked.connect(self.change_to_rgba_colors)
+        self.grayscale_color_button.clicked.connect(self.change_to_grayscale_colors)
+        self.none_button.clicked.connect(self.set_color_to_none)
+
+        button_layout = QVBoxLayout(self.face_color_adjustment_section)
+        button_layout.addWidget(self.named_color_button)
+        button_layout.addWidget(self.hex_code_button)
+        button_layout.addWidget(self.rgba_color_button)
+        button_layout.addWidget(self.grayscale_color_button)
+        button_layout.addWidget(self.none_button)
+        button_layout.setContentsMargins(10,10,10,10)
+        button_layout.setSpacing(5)
+        button_layout.addStretch()
+
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.face_color_adjustment_section)
+        main_layout.setContentsMargins(0,0,0,0)
+        main_layout.setSpacing(0)
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+    def clear_layout(self):
+        layout = self.face_color_adjustment_section.layout()
+        if layout:
+            while layout.count():
+                item = layout.takeAt(0)
+                widget = item.widget()
+                if widget:
+                    widget.setParent(None)
+
+    def change_to_named_color(self):
+        self.clear_layout()
+
+    def change_to_hex_code(self):
+        self.clear_layout()
+
+    def change_to_rgba_colors(self):
+        self.clear_layout()
+
+    def change_to_grayscale_colors(self):
+        self.clear_layout()
+
+    def set_color_to_none(self):
+        pass
 
 class legend_button(QDialog):
     def __init__(self,selected_graph):
@@ -2335,7 +2595,7 @@ class legend_button(QDialog):
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.scroll_section,stretch=1)
         self.layout.addSpacing(10)
-        self.layout.addWidget(frameon_adjustment_section(self.selected_graph),stretch=1)
+        self.layout.addWidget(face_color_adjustment_section(self.selected_graph),stretch=1)
 
         #Create a shortcut for the user to go to the previous column by press up
         up_shortcut = QShortcut(QKeySequence("up"), self) 
