@@ -2774,12 +2774,13 @@ class face_color_adjustment_section(QWidget):
         self.list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.list_view.setSpacing(3)
 
+        self.list_view.clicked.connect(self.change_named_color)
+
         named_color_screen_layout.addWidget(self.list_view)
 
         # Add margins and spacing to make it look good and push content to the top
         named_color_screen_layout.setContentsMargins(10, 10, 10, 10)
     
-
     def change_to_named_color_screen(self):
         self.face_color_adjustment_homescreen.hide()
         self.named_color_screen.show()
@@ -2796,75 +2797,9 @@ class face_color_adjustment_section(QWidget):
     def set_color_to_none(self):
         pass
 
-    def highlighted_selected_button(self,old_idx=-1):
-        #Set the current button selected to be called selected
-        self.buttons[self.named_color_idx].setObjectName("selected")
-        #If there is a old_idx then change the old button to be not selected
-        if (old_idx != -1):
-            self.buttons[old_idx].setObjectName("not_selected")
-
-        #Customize the dialog window and each button selected and not selected
-        self.setStyleSheet("""
-            QWidget#face_color_adjustment{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 2px solid black;
-                border-radius: 24px;
-            }
-            QPushButton#selected{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#not_selected{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#not_selected:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
+    def change_named_color(self,index):
+        self.current_facecolor = self.model.data(index, Qt.ItemDataRole.DisplayRole)
+        self.update_color()
 
     def change_color(self,color_name):
         old_idx = self.named_color_idx
