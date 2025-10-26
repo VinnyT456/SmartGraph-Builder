@@ -2599,12 +2599,10 @@ class face_color_adjustment_section(QWidget):
         self.plot_manager = PlotManager()
         self.selected_graph = selected_graph
         self.named_colors = list(mcolors.get_named_colors_mapping().keys())
+        self.short_code_colors = self.named_colors[-8:]
         self.named_colors = [c.replace("xkcd:","") for c in self.named_colors]
         self.named_colors = [c.replace("tab:","") for c in self.named_colors]
-
-        self.named_color_idx = 0
-
-        self.buttons = []
+        self.named_colors = self.named_colors[:-8]
 
         self.current_facecolor = ""
 
@@ -2739,7 +2737,7 @@ class face_color_adjustment_section(QWidget):
             }
         """)
 
-        self.grayscale_color_button = QPushButton("Grayscale")
+        self.grayscale_color_button = QPushButton("Grayscale Color")
         self.grayscale_color_button.setObjectName("grayscale")
         self.grayscale_color_button.setStyleSheet("""
             QPushButton#grayscale{
@@ -2760,6 +2758,44 @@ class face_color_adjustment_section(QWidget):
                 color: black;
             }
             QPushButton#grayscale:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.short_code_color_button = QPushButton("Short Code Color")
+        self.short_code_color_button.setObjectName("short_code_color")
+        self.short_code_color_button.setStyleSheet("""
+            QPushButton#short_code_color{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#short_code_color:hover{
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -2819,6 +2855,7 @@ class face_color_adjustment_section(QWidget):
         self.hex_code_button.clicked.connect(self.change_to_hex_code_screen)
         self.rgba_color_button.clicked.connect(self.change_to_rgba_color_screen)
         self.grayscale_color_button.clicked.connect(self.change_to_grayscale_colors_screen)
+        self.short_code_color_button.clicked.connect(self.change_to_short_code_color_screen)
         self.none_button.clicked.connect(self.set_color_to_none)
 
         button_layout = QVBoxLayout(self.face_color_adjustment_homescreen)
@@ -2826,6 +2863,7 @@ class face_color_adjustment_section(QWidget):
         button_layout.addWidget(self.hex_code_button)
         button_layout.addWidget(self.rgba_color_button)
         button_layout.addWidget(self.grayscale_color_button)
+        button_layout.addWidget(self.short_code_color_button)
         button_layout.addWidget(self.none_button)
         button_layout.setContentsMargins(10,10,10,10)
         button_layout.setSpacing(5)
@@ -2909,11 +2947,30 @@ class face_color_adjustment_section(QWidget):
         self.create_grayscale_color_screen()
         self.grayscale_color_screen.hide()
 
+        #-----Short Code Colors-----
+
+        self.short_code_color_screen = QWidget()
+        self.short_code_color_screen.setObjectName("short_code_color")
+        self.short_code_color_screen.setStyleSheet("""
+            QWidget#short_code_color{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }  
+        """)
+        self.create_short_code_color_screen()
+        self.short_code_color_screen.hide()
+
         #-----Initialize Screen Value-----
 
         self.available_screens = [self.face_color_adjustment_homescreen,self.named_color_screen,
                                 self.hex_code_color_screen,self.rgba_color_screen,
-                                self.grayscale_color_screen]
+                                self.grayscale_color_screen,self.short_code_color_screen]
         self.previous_screen_idx = 0
         self.current_screen_idx = 0
 
@@ -2924,6 +2981,7 @@ class face_color_adjustment_section(QWidget):
         main_layout.addWidget(self.hex_code_color_screen)
         main_layout.addWidget(self.rgba_color_screen)
         main_layout.addWidget(self.grayscale_color_screen)
+        main_layout.addWidget(self.short_code_color_screen)
         main_layout.setContentsMargins(0,0,0,0)
         main_layout.setSpacing(0)
 
@@ -2957,17 +3015,18 @@ class face_color_adjustment_section(QWidget):
         named_color_screen_layout.addWidget(self.color_search_bar)
         named_color_screen_layout.addSpacing(15)
     
-        self.list_view = QListView()
-        self.model = QStringListModel(self.named_colors)
+        self.named_color_list_view = QListView()
+        self.named_color_model = QStringListModel(self.named_colors)
 
         self.filter_proxy = QSortFilterProxyModel()
-        self.filter_proxy.setSourceModel(self.model)
+        self.filter_proxy.setSourceModel(self.named_color_model)
         self.filter_proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive) 
         self.filter_proxy.setFilterKeyColumn(0)  
 
         self.color_search_bar.textChanged.connect(self.filter_proxy.setFilterFixedString)
 
-        self.list_view.setModel(self.filter_proxy)
+        self.named_color_list_view.setModel(self.filter_proxy)
+        self.named_color_list_view.setObjectName("named_color_list_view")
 
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
@@ -2977,10 +3036,10 @@ class face_color_adjustment_section(QWidget):
                 option.font = font
                 super().paint(painter, option, index)
         
-        self.list_view.setItemDelegate(CustomDelegate())
+        self.named_color_list_view.setItemDelegate(CustomDelegate())
 
-        self.list_view.setStyleSheet("""
-            QListView {
+        self.named_color_list_view.setStyleSheet("""
+            QListView#named_color_list_view{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -2990,7 +3049,7 @@ class face_color_adjustment_section(QWidget):
                 border: transparent;
                 border-radius: 24px;
             }
-            QListView::item {
+            QListView#named_color_list_view::item {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -3004,7 +3063,7 @@ class face_color_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView::item:selected {
+            QListView#named_color_list_view::item:selected {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -3017,7 +3076,7 @@ class face_color_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView::item:hover {
+            QListView#named_color_list_view::item:hover {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -3031,13 +3090,14 @@ class face_color_adjustment_section(QWidget):
                 min-height: 41px;
             }
         """)
-        self.list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.list_view.setSpacing(3)
 
-        self.list_view.clicked.connect(self.change_named_color)
+        self.named_color_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.named_color_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.named_color_list_view.setSpacing(3)
 
-        named_color_screen_layout.addWidget(self.list_view)
+        self.named_color_list_view.clicked.connect(self.change_named_color)
+
+        named_color_screen_layout.addWidget(self.named_color_list_view)
 
         # Add margins and spacing to make it look good and push content to the top
         named_color_screen_layout.setContentsMargins(10, 10, 10, 10)
@@ -3440,6 +3500,86 @@ class face_color_adjustment_section(QWidget):
         grayscale_color_screen_layout.setSpacing(10)
         grayscale_color_screen_layout.addStretch()
 
+    def create_short_code_color_screen(self):
+        short_code_color_screen_layout = QVBoxLayout(self.short_code_color_screen)
+    
+        self.short_code_color_list_view = QListView()
+        self.short_code_color_model = QStringListModel(self.short_code_colors)
+        self.short_code_color_list_view.setModel(self.short_code_color_model)
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.short_code_color_list_view.setItemDelegate(CustomDelegate())
+
+        self.short_code_color_list_view.setObjectName("short_code_color_list_view")
+        self.short_code_color_list_view.setStyleSheet("""
+            QListView#short_code_color_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 24px;
+            }
+            QListView#short_code_color_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#short_code_color_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#short_code_color_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+        self.short_code_color_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.short_code_color_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.short_code_color_list_view.setSpacing(3)
+
+        self.short_code_color_list_view.clicked.connect(self.change_short_code_color)
+
+        short_code_color_screen_layout.addWidget(self.short_code_color_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        short_code_color_screen_layout.setContentsMargins(10, 10, 10, 10)
+
     def change_to_original_screen(self):
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 0
@@ -3469,13 +3609,19 @@ class face_color_adjustment_section(QWidget):
         self.current_screen_idx = 4
         self.grayscale_color_screen.show()
 
+    def change_to_short_code_color_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.previous_screen_idx = self.current_screen_idx
+        self.current_screen_idx = 5
+        self.short_code_color_screen.show()
+
     def set_color_to_none(self):
         self.current_facecolor = None
         self.update_color()
 
     def change_named_color(self,index):
         source_index = self.filter_proxy.mapToSource(index)
-        self.current_facecolor = self.model.data(source_index, Qt.ItemDataRole.DisplayRole)
+        self.current_facecolor = self.named_color_model.data(source_index, Qt.ItemDataRole.DisplayRole)
         self.update_color()
 
     def change_hex_code_color(self):
@@ -3567,6 +3713,10 @@ class face_color_adjustment_section(QWidget):
             self.grayscale_invalid_input_widget.show()
 
         self.current_facecolor = grayscale_value
+        self.update_color()
+
+    def change_short_code_color(self,index):
+        self.current_facecolor = self.short_code_color_model.data(index, Qt.ItemDataRole.DisplayRole)
         self.update_color()
 
     def update_color(self):
