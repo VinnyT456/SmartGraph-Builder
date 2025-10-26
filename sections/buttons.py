@@ -1292,6 +1292,87 @@ class bbox_to_anchor_adjustment_section(QWidget):
         self.width_input.setFixedHeight(60)
         self.height_input.setFixedHeight(60)
 
+        #Create two widget to display valid and invalid inputs
+        self.valid_input_widget = QWidget()
+        self.valid_input_widget.setObjectName("valid_input")
+        self.valid_input_widget.setStyleSheet("""
+            QWidget#valid_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_input_label = QLabel("Valid Input")
+        self.valid_input_label.setWordWrap(True)
+        self.valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_input_label.setObjectName("valid_input_label")
+        self.valid_input_label.setStyleSheet("""
+            QLabel#valid_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_input_layout = QVBoxLayout(self.valid_input_widget)
+        valid_input_layout.addWidget(self.valid_input_label)
+        valid_input_layout.setSpacing(0)
+        valid_input_layout.setContentsMargins(0,0,0,0)
+
+        self.invalid_input_widget = QWidget()
+        self.invalid_input_widget.setObjectName("invalid_input")
+        self.invalid_input_widget.setStyleSheet("""
+            QWidget#invalid_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_input_label = QLabel("Invalid Input")
+        self.invalid_input_label.setWordWrap(True)
+        self.invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_input_label.setObjectName("invalid_input_label")
+        self.invalid_input_label.setStyleSheet("""
+            QLabel#invalid_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        invalid_input_layout = QVBoxLayout(self.invalid_input_widget)
+        invalid_input_layout.addWidget(self.invalid_input_label)
+        invalid_input_layout.setSpacing(0)
+        invalid_input_layout.setContentsMargins(0,0,0,0)
+
+        self.valid_input_widget.setMaximumHeight(50)
+        self.invalid_input_widget.setMaximumHeight(50)
+
+        self.valid_input_widget.hide()
+        self.invalid_input_widget.hide()
+
         #Connect each line edit to update whenever the user inputs something
         self.x_input.textChanged.connect(self.update_x)
         self.y_input.textChanged.connect(self.update_y)
@@ -1301,11 +1382,13 @@ class bbox_to_anchor_adjustment_section(QWidget):
         #Create a layout on the bbox adjustment section
         bbox_section_layout = QVBoxLayout(self.bbox_adjustment_section)
 
-        #Add the 4 line edit widgets to the layout
+        #Add the 4 line edit widgets to the layout and the 2 valid/invalid widgets
         bbox_section_layout.addWidget(self.x_input)
         bbox_section_layout.addWidget(self.y_input)
         bbox_section_layout.addWidget(self.width_input)
         bbox_section_layout.addWidget(self.height_input)
+        bbox_section_layout.addWidget(self.valid_input_widget)
+        bbox_section_layout.addWidget(self.invalid_input_widget)
 
         #Add margins, spacing, and stretch to make it look good
         bbox_section_layout.setContentsMargins(10,10,10,10)
@@ -1329,12 +1412,14 @@ class bbox_to_anchor_adjustment_section(QWidget):
         #Check if the input is valid and only update if it's valid
         try:
             self.x_value = float(x_input)
+            self.valid_input_widget.show()
+            self.invalid_input_widget.hide()
         except:
-            pass
+            self.valid_input_widget.hide()
+            self.invalid_input_widget.show()
         else:
             self.update_bbox_anchor()
         
-
     def update_y(self):
         #Get the text input of y from the user and remove any excess spaces
         y_input = self.y_input.text().strip()
@@ -1342,8 +1427,11 @@ class bbox_to_anchor_adjustment_section(QWidget):
         #Check if the input is valid and only update if it's valid
         try:
             self.y_value = float(y_input)
+            self.valid_input_widget.show()
+            self.invalid_input_widget.hide()
         except:
-            pass
+            self.valid_input_widget.hide()
+            self.invalid_input_widget.show()
         else:
             self.update_bbox_anchor()
 
@@ -1354,8 +1442,11 @@ class bbox_to_anchor_adjustment_section(QWidget):
         #Check if the input is valid and only update if it's valid
         try:
             self.width_value = float(width_input)
+            self.valid_input_widget.show()
+            self.invalid_input_widget.hide()
         except:
-            pass
+            self.valid_input_widget.hide()
+            self.invalid_input_widget.show()
         else:
             self.update_bbox_anchor()
 
@@ -1366,8 +1457,11 @@ class bbox_to_anchor_adjustment_section(QWidget):
         #Check if the input is valid and only update if it's valid
         try:
             self.height_value = float(height_input)
+            self.valid_input_widget.show()
+            self.invalid_input_widget.hide()
         except:
-            pass
+            self.valid_input_widget.hide()
+            self.invalid_input_widget.show()
         else:
             self.update_bbox_anchor()
 
@@ -1432,9 +1526,92 @@ class ncol_adjustment_section(QWidget):
         #Connect any changes with the text to an update function
         self.ncol_input.textChanged.connect(self.update_ncol)
 
+        #Create two widget to display valid and invalid inputs
+        self.valid_input_widget = QWidget()
+        self.valid_input_widget.setObjectName("valid_input")
+        self.valid_input_widget.setStyleSheet("""
+            QWidget#valid_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_input_label = QLabel("Valid Input")
+        self.valid_input_label.setWordWrap(True)
+        self.valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_input_label.setObjectName("valid_input_label")
+        self.valid_input_label.setStyleSheet("""
+            QLabel#valid_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_input_layout = QVBoxLayout(self.valid_input_widget)
+        valid_input_layout.addWidget(self.valid_input_label)
+        valid_input_layout.setSpacing(0)
+        valid_input_layout.setContentsMargins(0,0,0,0)
+
+        self.invalid_input_widget = QWidget()
+        self.invalid_input_widget.setObjectName("invalid_input")
+        self.invalid_input_widget.setStyleSheet("""
+            QWidget#invalid_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_input_label = QLabel("Invalid Input")
+        self.invalid_input_label.setWordWrap(True)
+        self.invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_input_label.setObjectName("invalid_input_label")
+        self.invalid_input_label.setStyleSheet("""
+            QLabel#invalid_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        invalid_input_layout = QVBoxLayout(self.invalid_input_widget)
+        invalid_input_layout.addWidget(self.invalid_input_label)
+        invalid_input_layout.setSpacing(0)
+        invalid_input_layout.setContentsMargins(0,0,0,0)
+
+        self.valid_input_widget.setMaximumHeight(50)
+        self.invalid_input_widget.setMaximumHeight(50)
+
+        self.valid_input_widget.hide()
+        self.invalid_input_widget.hide()
+
         #Create a layout for the ncol adjustment section and add the line edit object to it
         ncol_section_layout = QVBoxLayout(self.ncol_adjustment_section)
         ncol_section_layout.addWidget(self.ncol_input)
+        ncol_section_layout.addWidget(self.valid_input_widget)
+        ncol_section_layout.addWidget(self.invalid_input_widget)
     
         #Add the margins, spacing, and stretch to the layout to make it look good
         ncol_section_layout.setContentsMargins(10,10,10,10)
@@ -1458,8 +1635,11 @@ class ncol_adjustment_section(QWidget):
         #Only update the ncol value in the json file if the input is valid
         try:
             self.ncol_value = int(ncol_input)
+            self.valid_input_widget.show()
+            self.invalid_input_widget.hide()
         except:
-            pass
+            self.valid_input_widget.hide()
+            self.invalid_input_widget.show()
         else:
             self.update_ncol()
 
