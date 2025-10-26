@@ -1008,183 +1008,83 @@ class loc_adjustment_section(QWidget):
         """)
 
         #Store the loc buttons created in a list and list out the possible positions
-        self.loc_buttons = []
         self.available_loc_arguments = ["best","upper right","upper left","lower left",
                                     "lower right","right","center left","center right",
                                     "lower center","upper center","center"]
 
         #Use a index to control the current location of the legend
-        self.loc_idx = 0
         self.loc_argument_name = self.available_loc_arguments[0]
 
-        #Create a scrolling section just in case there was too much buttons
-        self.scroll_section = QScrollArea()
-        self.scroll_section.setFrameShape(QScrollArea.Shape.NoFrame)
-        self.scroll_section.setWidgetResizable(True)
-
-        #Display the location buttons and highlight the current button selected (first one initially)
-        self.loc_parameter_section()
-        self.highlighted_selected_column()
-
-        #Place the scrollable area on the button section
-        self.scroll_section.setWidget(self.loc_adjustment_section)
-        self.scroll_section.setStyleSheet("""
-            QScrollArea{
-                background: transparent;
-                border: none;
-                border-radius: 24px;
-            }
-        """)
-
-        #Hide the handle
-        self.scroll_section.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        #Create the loc parameter section
+        self.create_loc_parameter_section()
 
         #Add the legend loc adjustment section to the main widget to display on the other QDialog
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.scroll_section)
+        main_layout.addWidget(self.loc_adjustment_section)
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0,0,0,0)
 
-        #Create a shortcut for the user to go to the previous column by press up
-        up_shortcut = QShortcut(QKeySequence("left"), self) 
-        up_shortcut.activated.connect(self.move_selected_button_up)  
-
-        down_shortcut = QShortcut(QKeySequence("right"),self)
-        down_shortcut.activated.connect(self.move_selected_button_down)
-
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
-    def loc_parameter_section(self):
-        #Do this when it's all on the same layout and not switching between layouts on the widgets
+    def create_loc_parameter_section(self):
+        loc_parameter_layout = QVBoxLayout(self.loc_adjustment_section)
 
-        #Make sure that there is no old buttons in the layout
-        for btn in self.loc_buttons:
-            self.layout.removeWidget(btn)
-            btn.deleteLater()
-        self.loc_buttons.clear()
-        self.remove_layout()
-
-        #Create a vertical box to put the buttons in. Make sure they are positioned vertically.
-        button_layout = QVBoxLayout(self.loc_adjustment_section)
-        #Go through each arugment in the list and create a button for each of them
-        for argument in self.available_loc_arguments:
-
-            #Make a copy of the current arugment name
-            arugment_name = str(argument)
-
-            #Create the button with the column name, give it an object name, and give it a fixedHeight for consistency
-            argument_button = QPushButton(arugment_name)
-            argument_button.setObjectName("not_selected")
-            argument_button.setFixedHeight(45)
-
-            #Connect each button to the change arugment feature to ensure that dataset being displayed changes with the button
-            argument_button.clicked.connect(lambda checked=False, argument=arugment_name: self.change_argument(argument))
-
-            #Add the button to the list and the layout
-            self.loc_buttons.append(argument_button)
-            button_layout.addWidget(argument_button)
-
-        #Add margins and spacing to make it look and push all the buttons to the top
-        button_layout.setContentsMargins(10,10,10,10)
-        button_layout.setSpacing(5) 
-        button_layout.addStretch()
-        
-    def change_argument(self, argument_name):
-        #Keep track of the old idx and change both the argument name and new idx
-        old_idx = self.loc_idx
-        self.loc_argument_name = argument_name
-        self.loc_idx = self.available_loc_arguments.index(self.loc_argument_name)
-
-        #Change the current arugment that's being displayed and highlights the selected button
-        self.highlighted_selected_column(old_idx)
-
-    def move_selected_button_up(self):
-        #Keep track of the old idx and change both the column name and idx
-        #Change the column display and the button selected
-        old_idx = self.loc_idx
-        self.loc_idx -= 1
-
-        self.loc_idx %= len(self.available_loc_arguments)
-        self.highlighted_selected_column(old_idx)
-        self.loc_argument_name = self.available_loc_arguments[self.loc_idx]
-
-        vertical_scroll_bar = self.scroll_section.verticalScrollBar()
-        if (old_idx == 0 and self.loc_idx == len(self.available_loc_arguments)-1):
-            max_scroll_value = vertical_scroll_bar.maximum()
-            vertical_scroll_bar.setValue(max_scroll_value)
-        elif (self.loc_idx == 0):
-            vertical_scroll_bar.setValue(0)
-        elif self.loc_idx < len(self.available_loc_arguments) - 9:
-            scroll_value = max(0, vertical_scroll_bar.value() - 50)
-            vertical_scroll_bar.setValue(scroll_value)
-
-        self.update_parameter_argument()
-
-    def move_selected_button_down(self):
-        old_idx = self.loc_idx
-        self.loc_idx += 1
-        self.loc_idx %= len(self.available_loc_arguments)
-        self.highlighted_selected_column(old_idx)
-        self.loc_adjustment_name = self.available_loc_arguments[self.loc_idx]
-
-        vertical_scroll_bar = self.scroll_section.verticalScrollBar()
-        if (old_idx == len(self.available_loc_arguments)-1 and self.loc_idx == 0):
-            vertical_scroll_bar.setValue(0)
-        elif (self.loc_idx == len(self.available_loc_arguments)-1):
-            vertical_scroll_bar.setValue(vertical_scroll_bar.maximum())
-        elif self.loc_idx > 8 and self.loc_idx < len(self.available_loc_arguments):
-            scroll_value = min(vertical_scroll_bar.maximum(), vertical_scroll_bar.value() + 50)
-            vertical_scroll_bar.setValue(scroll_value)
-
-        self.update_parameter_argument()
-
-    def remove_layout(self):    
-        layout = self.loc_adjustment_section.layout()
-        if layout is not None:
-            while layout.count():
-                item = layout.takeAt(0)
-                child = item.widget()
-                if child is not None:
-                    child.setParent(None)
-            QWidget().setLayout(layout)
-
-    def highlighted_selected_column(self,old_idx=-1):
-        #Set the current button selected to be called selected
-        self.loc_buttons[self.loc_idx].setObjectName("selected")
-
-        #If there is a old_idx then change the old button to be not selected
-        if (old_idx != -1):
-            self.loc_buttons[old_idx].setObjectName("not_selected")
-
-        #Customize the dialog window and each button selected and not selected
-        self.setStyleSheet("""
-            QWidget#adjust_loc_section{
+        self.loc_search_bar = QLineEdit()
+        self.loc_search_bar.setObjectName("search_bar")
+        self.loc_search_bar.setPlaceholderText("Search: ")
+        self.loc_search_bar.setStyleSheet("""
+            QLineEdit#search_bar{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
                     stop:0.5 #f7f5fc,
                     stop:1 #f0f0ff
                 );
+                color: black;
+                font-size: 24pt;
                 border: 2px solid black;
                 border-radius: 24px;
             }
-            QPushButton#selected{
+        """)
+        self.loc_search_bar.setMinimumHeight(60)
+        loc_parameter_layout.addWidget(self.loc_search_bar)
+        loc_parameter_layout.addSpacing(15)
+    
+        self.loc_list_view = QListView()
+        self.loc_position_model = QStringListModel(self.available_loc_arguments)
+
+        self.filter_proxy = QSortFilterProxyModel()
+        self.filter_proxy.setSourceModel(self.loc_position_model)
+        self.filter_proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive) 
+        self.filter_proxy.setFilterKeyColumn(0)  
+
+        self.loc_search_bar.textChanged.connect(self.filter_proxy.setFilterFixedString)
+
+        self.loc_list_view.setModel(self.filter_proxy)
+        self.loc_list_view.setObjectName("loc_list_view")
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.loc_list_view.setItemDelegate(CustomDelegate())
+
+        self.loc_list_view.setStyleSheet("""
+            QListView#loc_list_view{
                 background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
                 );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
+                border: transparent;
+                border-radius: 24px;
             }
-            QPushButton#not_selected{
+            QListView#loc_list_view::item {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -1195,13 +1095,10 @@ class loc_adjustment_section(QWidget):
                 );
                 border: 2px solid black;
                 border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
                 color: black;
+                min-height: 41px;
             }
-            QPushButton#not_selected:hover{
+            QListView#loc_list_view::item:selected {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -1211,24 +1108,53 @@ class loc_adjustment_section(QWidget):
                 );
                 border: 2px solid black;
                 border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
                 color: black;
+                min-height: 41px;
+            }
+            QListView#loc_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
             }
         """)
+
+        self.loc_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.loc_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.loc_list_view.setSpacing(3)
+
+        self.loc_list_view.clicked.connect(self.change_loc_position)
+
+        loc_parameter_layout.addWidget(self.loc_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        loc_parameter_layout.setContentsMargins(10, 10, 10, 10)
+
+    def change_loc_position(self,index):
+        self.loc_argument_name = self.loc_position_model.data(index,Qt.ItemDataRole.DisplayRole)
+        self.update_parameter_argument()
 
     def update_parameter_argument(self):
         db = self.plot_manager.get_db()
         if (db != []):
-            if (db["legend"]["loc"] != self.loc_adjustment_name):
-                self.plot_manager.update_legend("loc",self.loc_adjustment_name)
+            self.plot_manager.update_legend("loc",self.loc_argument_name)
         else:
             plot_parameters = plot_json[self.selected_graph].copy()
-            plot_parameters["legend"]["loc"] = self.loc_adjustment_name
+            plot_parameters["legend"]["loc"] = self.loc_argument_name
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
+    def mousePressEvent(self, event):
+        if not self.loc_search_bar.geometry().contains(event.position().toPoint()):
+            self.loc_search_bar.clearFocus()
+        super().mousePressEvent(event)
+        
 class bbox_to_anchor_adjustment_section(QWidget):
     def __init__(self,selected_graph):
         super().__init__()
@@ -5163,6 +5089,11 @@ class framealpha_adjustment_section(QWidget):
             plot_parameters["legend"]["framealpha"] = self.framealpha_value
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
+    def mousePressEvent(self, event):
+        if not self.framealpha_input.geometry().contains(event.position().toPoint()):
+            self.framealpha_input.clearFocus()
+        super().mousePressEvent(event)
+
 class legend_button(QDialog):
     def __init__(self,selected_graph):
         super().__init__()
@@ -5252,7 +5183,7 @@ class legend_button(QDialog):
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.scroll_section,stretch=1)
         self.layout.addSpacing(10)
-        self.layout.addWidget(fontsize_adjustment_section(self.selected_graph),stretch=1)
+        self.layout.addWidget(loc_adjustment_section(self.selected_graph),stretch=1)
 
         #Create a shortcut for the user to go to the previous column by press up
         up_shortcut = QShortcut(QKeySequence("up"), self) 
