@@ -1,11 +1,9 @@
-from functools import partial
-from PyQt6.QtCore import QLine, QStringListModel, Qt
+from PyQt6.QtCore import QStringListModel, Qt
 from PyQt6.QtGui import QFont, QKeySequence, QPixmap, QShortcut
 from PyQt6.QtWidgets import (
-    QDialog, QGridLayout, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QPushButton, QScrollArea, 
+    QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QPushButton, QScrollArea, 
     QSizePolicy, QTableView, QWidget, QVBoxLayout, QStyledItemDelegate
 )
-from numpy.strings import startswith
 from sections.dataset import PrepareDataset
 from sections.plot_manager import PlotManager
 import matplotlib.colors as mcolors
@@ -2871,7 +2869,29 @@ class face_color_adjustment_section(QWidget):
         self.create_hex_code_screen()
         self.hex_code_color_screen.hide()
 
-        self.available_screens = [self.face_color_adjustment_homescreen,self.named_color_screen,self.hex_code_color_screen]
+        #------RGBA Color Screen-----
+
+        self.rgba_color_screen = QWidget()
+        self.rgba_color_screen.setObjectName("rgba_color_screen")
+        self.rgba_color_screen.setStyleSheet("""
+            QWidget#rgba_color_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }  
+        """)
+        self.create_rgba_color_screen()
+        self.rgba_color_screen.hide()
+
+        self.initial_rgba = [0,0,0,1]
+
+        self.available_screens = [self.face_color_adjustment_homescreen,self.named_color_screen,
+                                self.hex_code_color_screen,self.rgba_color_screen]
         self.previous_screen_idx = 0
         self.current_screen_idx = 0
 
@@ -2879,6 +2899,7 @@ class face_color_adjustment_section(QWidget):
         main_layout.addWidget(self.face_color_adjustment_homescreen)
         main_layout.addWidget(self.named_color_screen)
         main_layout.addWidget(self.hex_code_color_screen)
+        main_layout.addWidget(self.rgba_color_screen)
         main_layout.setContentsMargins(0,0,0,0)
         main_layout.setSpacing(0)
 
@@ -3012,10 +3033,10 @@ class face_color_adjustment_section(QWidget):
 
         self.hex_code_input.textChanged.connect(self.change_hex_code_color)
 
-        self.valid_input_widget = QWidget()
-        self.valid_input_widget.setObjectName("valid_input")
-        self.valid_input_widget.setStyleSheet("""
-            QWidget#valid_input{
+        self.hex_valid_input_widget = QWidget()
+        self.hex_valid_input_widget.setObjectName("hex_valid_input")
+        self.hex_valid_input_widget.setStyleSheet("""
+            QWidget#hex_valid_input{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 rgba(94, 255, 234, 1),   
@@ -3028,12 +3049,12 @@ class face_color_adjustment_section(QWidget):
             }
         """)
 
-        self.valid_input_label = QLabel("Valid Input")
-        self.valid_input_label.setWordWrap(True)
-        self.valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.valid_input_label.setObjectName("valid_input_label")
-        self.valid_input_label.setStyleSheet("""
-            QLabel#valid_input_label{
+        self.hex_valid_input_label = QLabel("Valid Input")
+        self.hex_valid_input_label.setWordWrap(True)
+        self.hex_valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.hex_valid_input_label.setObjectName("hex_valid_input_label")
+        self.hex_valid_input_label.setStyleSheet("""
+            QLabel#hex_valid_input_label{
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
@@ -3044,15 +3065,15 @@ class face_color_adjustment_section(QWidget):
             }
         """)
 
-        valid_input_layout = QVBoxLayout(self.valid_input_widget)
-        valid_input_layout.addWidget(self.valid_input_label)
-        valid_input_layout.setSpacing(0)
-        valid_input_layout.setContentsMargins(0,0,0,0)
+        hex_valid_input_layout = QVBoxLayout(self.hex_valid_input_widget)
+        hex_valid_input_layout.addWidget(self.hex_valid_input_label)
+        hex_valid_input_layout.setSpacing(0)
+        hex_valid_input_layout.setContentsMargins(0,0,0,0)
 
-        self.invalid_input_widget = QWidget()
-        self.invalid_input_widget.setObjectName("invalid_input")
-        self.invalid_input_widget.setStyleSheet("""
-            QWidget#invalid_input{
+        self.hex_invalid_input_widget = QWidget()
+        self.hex_invalid_input_widget.setObjectName("hex_invalid_input")
+        self.hex_invalid_input_widget.setStyleSheet("""
+            QWidget#hex_invalid_input{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 rgba(255, 100, 100, 1),   
@@ -3065,12 +3086,12 @@ class face_color_adjustment_section(QWidget):
             }
         """)
 
-        self.invalid_input_label = QLabel("Invalid Input")
-        self.invalid_input_label.setWordWrap(True)
-        self.invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.invalid_input_label.setObjectName("invalid_input_label")
-        self.invalid_input_label.setStyleSheet("""
-            QLabel#invalid_input_label{
+        self.hex_invalid_input_label = QLabel("Invalid Input")
+        self.hex_invalid_input_label.setWordWrap(True)
+        self.hex_invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.hex_invalid_input_label.setObjectName("hex_invalid_input_label")
+        self.hex_invalid_input_label.setStyleSheet("""
+            QLabel#hex_invalid_input_label{
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
@@ -3081,26 +3102,199 @@ class face_color_adjustment_section(QWidget):
             }
         """)
 
-        invalid_input_layout = QVBoxLayout(self.invalid_input_widget)
-        invalid_input_layout.addWidget(self.invalid_input_label)
-        invalid_input_layout.setSpacing(0)
-        invalid_input_layout.setContentsMargins(0,0,0,0)
+        hex_invalid_input_layout = QVBoxLayout(self.hex_invalid_input_widget)
+        hex_invalid_input_layout.addWidget(self.hex_invalid_input_label)
+        hex_invalid_input_layout.setSpacing(0)
+        hex_invalid_input_layout.setContentsMargins(0,0,0,0)
 
-        self.valid_input_widget.setMaximumHeight(50)
-        self.invalid_input_widget.setMaximumHeight(50)
+        self.hex_valid_input_widget.setMaximumHeight(50)
+        self.hex_invalid_input_widget.setMaximumHeight(50)
 
-        self.valid_input_widget.hide()
-        self.invalid_input_widget.hide()
+        self.hex_valid_input_widget.hide()
+        self.hex_invalid_input_widget.hide()
 
         hex_code_color_screen_layout.addWidget(self.hex_code_input)
-        hex_code_color_screen_layout.addWidget(self.valid_input_widget)
-        hex_code_color_screen_layout.addWidget(self.invalid_input_widget)
+        hex_code_color_screen_layout.addWidget(self.hex_valid_input_widget)
+        hex_code_color_screen_layout.addWidget(self.hex_invalid_input_widget)
         hex_code_color_screen_layout.setContentsMargins(10,10,10,10)
         hex_code_color_screen_layout.setSpacing(10)
         hex_code_color_screen_layout.addStretch()
 
     def create_rgba_color_screen(self):
-        pass
+        rgba_color_screen_layout = QVBoxLayout(self.rgba_color_screen)
+
+        self.r_input = QLineEdit()
+        self.r_input.setObjectName("r_input")
+        self.r_input.setPlaceholderText("r:")
+        self.r_input.setStyleSheet("""
+            QLineEdit#r_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        self.g_input = QLineEdit()
+        self.g_input.setObjectName("g_input")
+        self.g_input.setPlaceholderText("g:")
+        self.g_input.setStyleSheet("""
+            QLineEdit#g_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        self.b_input = QLineEdit()
+        self.b_input.setObjectName("b_input")
+        self.b_input.setPlaceholderText("b:")
+        self.b_input.setStyleSheet("""
+            QLineEdit#b_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        self.a_input = QLineEdit()
+        self.a_input.setObjectName("a_input")
+        self.a_input.setPlaceholderText("a:")
+        self.a_input.setStyleSheet("""
+            QLineEdit#a_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        self.r_input.setMinimumHeight(60)
+        self.g_input.setMinimumHeight(60)
+        self.b_input.setMinimumHeight(60)
+        self.a_input.setMinimumHeight(60)
+
+        self.r_input.textChanged.connect(self.change_rgba_color)
+        self.g_input.textChanged.connect(self.change_rgba_color)
+        self.b_input.textChanged.connect(self.change_rgba_color)
+        self.a_input.textChanged.connect(self.change_rgba_color)
+
+        self.rgba_valid_input_widget = QWidget()
+        self.rgba_valid_input_widget.setObjectName("rgba_valid_input")
+        self.rgba_valid_input_widget.setStyleSheet("""
+            QWidget#rgba_valid_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.rgba_valid_input_label = QLabel("Valid Input")
+        self.rgba_valid_input_label.setWordWrap(True)
+        self.rgba_valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.rgba_valid_input_label.setObjectName("rgba_valid_input_label")
+        self.rgba_valid_input_label.setStyleSheet("""
+            QLabel#rgba_valid_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        rgba_valid_input_layout = QVBoxLayout(self.rgba_valid_input_widget)
+        rgba_valid_input_layout.addWidget(self.rgba_valid_input_label)
+        rgba_valid_input_layout.setSpacing(0)
+        rgba_valid_input_layout.setContentsMargins(0,0,0,0)
+
+        self.rgba_invalid_input_widget = QWidget()
+        self.rgba_invalid_input_widget.setObjectName("rgba_invalid_input")
+        self.rgba_invalid_input_widget.setStyleSheet("""
+            QWidget#rgba_invalid_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.rgba_invalid_input_label = QLabel("Invalid Input")
+        self.rgba_invalid_input_label.setWordWrap(True)
+        self.rgba_invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.rgba_invalid_input_label.setObjectName("rgba_invalid_input_label")
+        self.rgba_invalid_input_label.setStyleSheet("""
+            QLabel#rgba_invalid_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        rgba_invalid_input_layout = QVBoxLayout(self.rgba_invalid_input_widget)
+        rgba_invalid_input_layout.addWidget(self.rgba_invalid_input_label)
+        rgba_invalid_input_layout.setSpacing(0)
+        rgba_invalid_input_layout.setContentsMargins(0,0,0,0)
+
+        self.rgba_valid_input_widget.setMaximumHeight(50)
+        self.rgba_invalid_input_widget.setMaximumHeight(50)
+
+        self.rgba_valid_input_widget.hide()
+        self.rgba_invalid_input_widget.hide()
+    
+        rgba_color_screen_layout.addWidget(self.r_input)
+        rgba_color_screen_layout.addWidget(self.g_input)
+        rgba_color_screen_layout.addWidget(self.b_input)
+        rgba_color_screen_layout.addWidget(self.a_input)
+        rgba_color_screen_layout.addWidget(self.rgba_valid_input_widget)
+        rgba_color_screen_layout.addWidget(self.rgba_invalid_input_widget)
+
+        rgba_color_screen_layout.setContentsMargins(10,10,10,10)
+        rgba_color_screen_layout.setSpacing(10)
+        rgba_color_screen_layout.addStretch()
 
     def create_grayscale_color_screen(self):
         pass
@@ -3144,6 +3338,11 @@ class face_color_adjustment_section(QWidget):
     def change_hex_code_color(self):
         hex_code = self.hex_code_input.text().strip()
 
+        if (hex_code == ""):
+            self.hex_valid_input_widget.hide()
+            self.hex_invalid_input_widget.hide()
+            return
+
         def check_valid_hex_code(hex_code):
             if (hex_code[0] != "#"):
                 new_hex_code = "#" + hex_code
@@ -3160,13 +3359,51 @@ class face_color_adjustment_section(QWidget):
         if (hex_code != ""):
             validity = check_valid_hex_code(hex_code)
             if (validity):
-                self.valid_input_widget.show()
-                self.invalid_input_widget.hide()
+                self.hex_valid_input_widget.show()
+                self.hex_invalid_input_widget.hide()
                 self.current_facecolor = hex_code if hex_code[0] == "#" else "#" + hex_code
                 self.update_color()
             else:
-                self.valid_input_widget.hide()
-                self.invalid_input_widget.show()
+                self.hex_valid_input_widget.hide()
+                self.hex_invalid_input_widget.show()
+
+    def change_rgba_color(self):
+        r_value = self.r_input.text().strip()
+        g_value = self.g_input.text().strip()
+        b_value = self.b_input.text().strip()
+        a_value = self.a_input.text().strip()
+
+        if (not(r_value or g_value or b_value or a_value)):
+            self.rgba_valid_input_widget.hide()
+            self.rgba_invalid_input_widget.hide()
+            return 
+
+        valid = None
+
+        try:
+            r_value = int(r_value) if r_value != "" else self.initial_rgba[0]
+            g_value = int(g_value) if g_value != "" else self.initial_rgba[1]
+            b_value = int(b_value) if b_value != "" else self.initial_rgba[2]
+            a_value = int(a_value) if a_value != "" else self.initial_rgba[3]
+            valid = True
+        except:
+            valid = False
+
+        if (valid):
+            self.initial_rgba[0] = r_value 
+            self.initial_rgba[1] = g_value
+            self.initial_rgba[2] = b_value 
+            self.initial_rgba[3] = a_value
+
+            self.rgba_valid_input_widget.show()
+            self.rgba_invalid_input_widget.hide()
+
+            self.current_facecolor = self.initial_rgba
+
+            self.update_color()
+        else:
+            self.rgba_valid_input_widget.hide()
+            self.rgba_invalid_input_widget.show()
 
     def update_color(self):
         db = self.plot_manager.get_db()
@@ -3180,6 +3417,14 @@ class face_color_adjustment_section(QWidget):
     def mousePressEvent(self, event):
         if not self.hex_code_input.geometry().contains(event.position().toPoint()):
             self.hex_code_input.clearFocus()
+        if not self.r_input.geometry().contains(event.position().toPoint()):
+            self.r_input.clearFocus()
+        if not self.g_input.geometry().contains(event.position().toPoint()):
+            self.g_input.clearFocus()
+        if not self.b_input.geometry().contains(event.position().toPoint()):
+            self.b_input.clearFocus()
+        if not self.a_input.geometry().contains(event.position().toPoint()):
+            self.a_input.clearFocus()
         super().mousePressEvent(event)
 
 class legend_button(QDialog):
