@@ -182,7 +182,7 @@ class graph_parameter_table(QWidget):
                 border-radius: 16px;
                 font-family: "SF Pro Display";
                 font-weight: 600;
-                font-size: 18px;
+                font-size: 20px;
                 padding: 6px;
                 color: black;
             }
@@ -199,7 +199,7 @@ class graph_parameter_table(QWidget):
                 border-radius: 16px;
                 font-family: "SF Pro Display";
                 font-weight: 600;
-                font-size: 18px;
+                font-size: 20px;
                 padding: 6px;
                 color: black;
             }
@@ -216,7 +216,7 @@ class graph_parameter_table(QWidget):
                 border-radius: 16px;
                 font-family: "SF Pro Display";
                 font-weight: 600;
-                font-size: 18px;
+                font-size: 20px;
                 padding: 6px;
                 color: black;
             }
