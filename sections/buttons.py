@@ -1,5 +1,5 @@
 from functools import partial
-from PyQt6.QtCore import QStringListModel, Qt
+from PyQt6.QtCore import QLine, QStringListModel, Qt
 from PyQt6.QtGui import QFont, QKeySequence, QPixmap, QShortcut
 from PyQt6.QtWidgets import (
     QDialog, QGridLayout, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QPushButton, QScrollArea, 
@@ -2543,7 +2543,7 @@ class face_color_adjustment_section(QWidget):
                 padding: 6px;
                 color: black;
             }
-            QPushButton#hex_code:hover{
+            QPushButton#rgba_color:hover{
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -2639,7 +2639,7 @@ class face_color_adjustment_section(QWidget):
 
         self.named_color_button.clicked.connect(self.change_to_named_color_screen)
         self.hex_code_button.clicked.connect(self.change_to_hex_code_screen)
-        self.rgba_color_button.clicked.connect(self.change_to_rgba_colors_screen)
+        self.rgba_color_button.clicked.connect(self.change_to_rgba_color_screen)
         self.grayscale_color_button.clicked.connect(self.change_to_grayscale_colors_screen)
         self.none_button.clicked.connect(self.set_color_to_none)
 
@@ -2672,11 +2672,38 @@ class face_color_adjustment_section(QWidget):
         self.create_named_color_screen()
         self.named_color_screen.hide()
 
+        #-----Hex Code Color Screen-----
+
+        self.hex_code_color_screen = QWidget()
+        self.hex_code_color_screen.setObjectName("hex_code_color_screen")
+        self.hex_code_color_screen.setStyleSheet("""
+            QWidget#hex_code_color_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }  
+        """)
+        self.create_hex_code_screen()
+        self.hex_code_color_screen.hide()
+
+        self.available_screens = [self.face_color_adjustment_homescreen,self.named_color_screen,self.hex_code_color_screen]
+        self.previous_screen_idx = 0
+        self.current_screen_idx = 0
+
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.face_color_adjustment_homescreen)
         main_layout.addWidget(self.named_color_screen)
+        main_layout.addWidget(self.hex_code_color_screen)
         main_layout.setContentsMargins(0,0,0,0)
         main_layout.setSpacing(0)
+
+        original_screen_shortcut = QShortcut(QKeySequence("left"),self)
+        original_screen_shortcut.activated.connect(self.change_to_original_screen)
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
@@ -2780,19 +2807,152 @@ class face_color_adjustment_section(QWidget):
 
         # Add margins and spacing to make it look good and push content to the top
         named_color_screen_layout.setContentsMargins(10, 10, 10, 10)
-    
+
+    def create_hex_code_screen(self):
+        hex_code_color_screen_layout = QVBoxLayout(self.hex_code_color_screen)
+
+        self.hex_code_input = QLineEdit()
+        self.hex_code_input.setObjectName("hex_code")
+        self.hex_code_input.setPlaceholderText("Hex Code:")
+        self.hex_code_input.setStyleSheet("""
+            QLineEdit#hex_code{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+        self.hex_code_input.setMinimumHeight(60)
+
+        self.hex_code_input.textChanged.connect(self.change_hex_code_color)
+
+        self.valid_input_widget = QWidget()
+        self.valid_input_widget.setObjectName("valid_input")
+        self.valid_input_widget.setStyleSheet("""
+            QWidget#valid_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_input_label = QLabel("Valid Input")
+        self.valid_input_label.setWordWrap(True)
+        self.valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_input_label.setObjectName("valid_input_label")
+        self.valid_input_label.setStyleSheet("""
+            QLabel#valid_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_input_layout = QVBoxLayout(self.valid_input_widget)
+        valid_input_layout.addWidget(self.valid_input_label)
+        valid_input_layout.setSpacing(0)
+        valid_input_layout.setContentsMargins(0,0,0,0)
+
+        self.invalid_input_widget = QWidget()
+        self.invalid_input_widget.setObjectName("invalid_input")
+        self.invalid_input_widget.setStyleSheet("""
+            QWidget#invalid_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_input_label = QLabel("Invalid Input")
+        self.invalid_input_label.setWordWrap(True)
+        self.invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_input_label.setObjectName("invalid_input_label")
+        self.invalid_input_label.setStyleSheet("""
+            QLabel#invalid_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        invalid_input_layout = QVBoxLayout(self.invalid_input_widget)
+        invalid_input_layout.addWidget(self.invalid_input_label)
+        invalid_input_layout.setSpacing(0)
+        invalid_input_layout.setContentsMargins(0,0,0,0)
+
+        self.valid_input_widget.setMaximumHeight(50)
+        self.invalid_input_widget.setMaximumHeight(50)
+
+        self.valid_input_widget.hide()
+        self.invalid_input_widget.hide()
+
+        hex_code_color_screen_layout.addWidget(self.hex_code_input)
+        hex_code_color_screen_layout.addWidget(self.valid_input_widget)
+        hex_code_color_screen_layout.addWidget(self.invalid_input_widget)
+        hex_code_color_screen_layout.setContentsMargins(10,10,10,10)
+        hex_code_color_screen_layout.setSpacing(10)
+        hex_code_color_screen_layout.addStretch()
+
+    def create_rgba_color_screen(self):
+        pass
+
+    def create_grayscale_color_screen(self):
+        pass
+
+    def change_to_original_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 0
+        self.face_color_adjustment_homescreen.show()
+
     def change_to_named_color_screen(self):
-        self.face_color_adjustment_homescreen.hide()
+        self.available_screens[self.current_screen_idx].hide()
+        self.previous_screen_idx = self.current_screen_idx
+        self.current_screen_idx = 1
         self.named_color_screen.show()
 
     def change_to_hex_code_screen(self):
-        pass
+        self.available_screens[self.current_screen_idx].hide()
+        self.previous_screen_idx = self.current_screen_idx
+        self.current_screen_idx = 2
+        self.hex_code_color_screen.show()
 
-    def change_to_rgba_colors_screen(self):
-        pass
+    def change_to_rgba_color_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.previous_screen_idx = self.current_screen_idx
+        self.current_screen_idx = 3
+        self.rgba_color_screen.show()
 
     def change_to_grayscale_colors_screen(self):
-        pass
+        self.available_screens[self.current_screen_idx].hide()
+        self.previous_screen_idx = self.current_screen_idx
+        self.current_screen_idx = 4
+        self.grayscale_color_screen.show()
 
     def set_color_to_none(self):
         pass
@@ -2801,13 +2961,32 @@ class face_color_adjustment_section(QWidget):
         self.current_facecolor = self.model.data(index, Qt.ItemDataRole.DisplayRole)
         self.update_color()
 
-    def change_color(self,color_name):
-        old_idx = self.named_color_idx
-        self.current_facecolor = color_name
-        self.named_color_idx = self.named_colors.index(self.current_facecolor)
+    def change_hex_code_color(self):
+        hex_code = self.hex_code_input.text().strip()
 
-        #Change the current button that's being displayed and highlight the selected button
-        self.highlighted_selected_button(old_idx)
+        def check_valid_hex_code(hex_code):
+            if (hex_code[0] != "#"):
+                new_hex_code = "#" + hex_code
+                return check_valid_hex_code(new_hex_code)
+            hex_code = hex_code[1:]
+            if (len(hex_code) not in [3,6,8]):
+                return False
+            try:
+                int(hex_code,16)
+                return True
+            except:
+                return False
+        
+        if (hex_code != ""):
+            validity = check_valid_hex_code(hex_code)
+            if (validity):
+                self.valid_input_widget.show()
+                self.invalid_input_widget.hide()
+                self.current_facecolor = hex_code if hex_code[0] == "#" else "#" + hex_code
+                self.update_color()
+            else:
+                self.valid_input_widget.hide()
+                self.invalid_input_widget.show()
 
     def update_color(self):
         db = self.plot_manager.get_db()
@@ -2817,6 +2996,11 @@ class face_color_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["facecolor"] = self.current_facecolor
             self.plot_manager.insert_plot_parameter(plot_parameters)
+
+    def mousePressEvent(self, event):
+        if not self.hex_code_input.geometry().contains(event.position().toPoint()):
+            self.hex_code_input.clearFocus()
+        super().mousePressEvent(event)
 
 class legend_button(QDialog):
     def __init__(self,selected_graph):
@@ -3005,6 +3189,9 @@ class legend_button(QDialog):
             vertical_scroll_bar.setValue(scroll_value)
 
     def highlighted_selected_column(self,old_idx=-1):
+        if (self.buttons[self.idx].objectName() == "selected"):
+            return
+
         #Set the current button selected to be called selected
         self.buttons[self.idx].setObjectName("selected")
         #If there is a old_idx then change the old button to be not selected
