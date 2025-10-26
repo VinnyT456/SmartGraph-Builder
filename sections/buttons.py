@@ -1,4 +1,4 @@
-from PyQt6.QtCore import QStringListModel, Qt
+from PyQt6.QtCore import QSortFilterProxyModel, QStringListModel, Qt
 from PyQt6.QtGui import QFont, QKeySequence, QPixmap, QShortcut
 from PyQt6.QtWidgets import (
     QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QPushButton, QScrollArea, 
@@ -2890,19 +2890,44 @@ class face_color_adjustment_section(QWidget):
 
         self.initial_rgba = [0,0,0,1]
 
+        #------Grayscale Color Screen-----
+
+        self.grayscale_color_screen = QWidget()
+        self.grayscale_color_screen.setObjectName("grayscale_color_screen")
+        self.grayscale_color_screen.setStyleSheet("""
+            QWidget#grayscale_color_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }  
+        """)
+        self.create_grayscale_color_screen()
+        self.grayscale_color_screen.hide()
+
+        #-----Initialize Screen Value-----
+
         self.available_screens = [self.face_color_adjustment_homescreen,self.named_color_screen,
-                                self.hex_code_color_screen,self.rgba_color_screen]
+                                self.hex_code_color_screen,self.rgba_color_screen,
+                                self.grayscale_color_screen]
         self.previous_screen_idx = 0
         self.current_screen_idx = 0
 
+        #-----Main Screen-----
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.face_color_adjustment_homescreen)
         main_layout.addWidget(self.named_color_screen)
         main_layout.addWidget(self.hex_code_color_screen)
         main_layout.addWidget(self.rgba_color_screen)
+        main_layout.addWidget(self.grayscale_color_screen)
         main_layout.setContentsMargins(0,0,0,0)
         main_layout.setSpacing(0)
 
+        #-----Shortcuts-----
         original_screen_shortcut = QShortcut(QKeySequence("left"),self)
         original_screen_shortcut.activated.connect(self.change_to_original_screen)
 
@@ -2934,8 +2959,16 @@ class face_color_adjustment_section(QWidget):
     
         self.list_view = QListView()
         self.model = QStringListModel(self.named_colors)
-        self.list_view.setModel(self.model)
-        
+
+        self.filter_proxy = QSortFilterProxyModel()
+        self.filter_proxy.setSourceModel(self.model)
+        self.filter_proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive) 
+        self.filter_proxy.setFilterKeyColumn(0)  
+
+        self.color_search_bar.textChanged.connect(self.filter_proxy.setFilterFixedString)
+
+        self.list_view.setModel(self.filter_proxy)
+
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -3297,7 +3330,115 @@ class face_color_adjustment_section(QWidget):
         rgba_color_screen_layout.addStretch()
 
     def create_grayscale_color_screen(self):
-        pass
+        grayscale_color_screen_layout = QVBoxLayout(self.grayscale_color_screen)
+
+        self.grayscale_input = QLineEdit()
+        self.grayscale_input.setObjectName("grayscale")
+        self.grayscale_input.setPlaceholderText("Grayscale:")
+        self.grayscale_input.setStyleSheet("""
+            QLineEdit#grayscale{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+        self.grayscale_input.setMinimumHeight(60)
+
+        self.grayscale_input.textChanged.connect(self.change_grayscale_color)
+
+        self.grayscale_valid_input_widget = QWidget()
+        self.grayscale_valid_input_widget.setObjectName("grayscale_valid_input")
+        self.grayscale_valid_input_widget.setStyleSheet("""
+            QWidget#grayscale_valid_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.grayscale_valid_input_label = QLabel("Valid Input")
+        self.grayscale_valid_input_label.setWordWrap(True)
+        self.grayscale_valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.grayscale_valid_input_label.setObjectName("grayscale_valid_input_label")
+        self.grayscale_valid_input_label.setStyleSheet("""
+            QLabel#grayscale_valid_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        grayscale_valid_input_layout = QVBoxLayout(self.grayscale_valid_input_widget)
+        grayscale_valid_input_layout.addWidget(self.grayscale_valid_input_label)
+        grayscale_valid_input_layout.setSpacing(0)
+        grayscale_valid_input_layout.setContentsMargins(0,0,0,0)
+
+        self.grayscale_invalid_input_widget = QWidget()
+        self.grayscale_invalid_input_widget.setObjectName("grayscale_invalid_input")
+        self.grayscale_invalid_input_widget.setStyleSheet("""
+            QWidget#grayscale_invalid_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.grayscale_invalid_input_label = QLabel("Invalid Input")
+        self.grayscale_invalid_input_label.setWordWrap(True)
+        self.grayscale_invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.grayscale_invalid_input_label.setObjectName("grayscale_invalid_input_label")
+        self.grayscale_invalid_input_label.setStyleSheet("""
+            QLabel#grayscale_invalid_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        grayscale_invalid_input_layout = QVBoxLayout(self.grayscale_invalid_input_widget)
+        grayscale_invalid_input_layout.addWidget(self.grayscale_invalid_input_label)
+        grayscale_invalid_input_layout.setSpacing(0)
+        grayscale_invalid_input_layout.setContentsMargins(0,0,0,0)
+
+        self.grayscale_valid_input_widget.setMaximumHeight(50)
+        self.grayscale_invalid_input_widget.setMaximumHeight(50)
+
+        self.grayscale_valid_input_widget.hide()
+        self.grayscale_invalid_input_widget.hide()
+
+        grayscale_color_screen_layout.addWidget(self.grayscale_input)
+        grayscale_color_screen_layout.addWidget(self.grayscale_valid_input_widget)
+        grayscale_color_screen_layout.addWidget(self.grayscale_invalid_input_widget)
+        grayscale_color_screen_layout.setContentsMargins(10,10,10,10)
+        grayscale_color_screen_layout.setSpacing(10)
+        grayscale_color_screen_layout.addStretch()
 
     def change_to_original_screen(self):
         self.available_screens[self.current_screen_idx].hide()
@@ -3329,10 +3470,12 @@ class face_color_adjustment_section(QWidget):
         self.grayscale_color_screen.show()
 
     def set_color_to_none(self):
-        pass
+        self.current_facecolor = None
+        self.update_color()
 
     def change_named_color(self,index):
-        self.current_facecolor = self.model.data(index, Qt.ItemDataRole.DisplayRole)
+        source_index = self.filter_proxy.mapToSource(index)
+        self.current_facecolor = self.model.data(source_index, Qt.ItemDataRole.DisplayRole)
         self.update_color()
 
     def change_hex_code_color(self):
@@ -3405,6 +3548,27 @@ class face_color_adjustment_section(QWidget):
             self.rgba_valid_input_widget.hide()
             self.rgba_invalid_input_widget.show()
 
+    def change_grayscale_color(self):
+        grayscale_value = self.grayscale_input.text().strip()
+
+        if (grayscale_value == ""): 
+            self.grayscale_valid_input_widget.hide() 
+            self.grayscale_invalid_input_widget.hide()
+            return
+
+        try: 
+            grayscale_value = float(grayscale_value)
+            if (0 > grayscale_value or grayscale_value > 1):
+                raise Exception
+            self.grayscale_valid_input_widget.show()
+            self.grayscale_invalid_input_widget.hide()
+        except:
+            self.grayscale_valid_input_widget.hide()
+            self.grayscale_invalid_input_widget.show()
+
+        self.current_facecolor = grayscale_value
+        self.update_color()
+
     def update_color(self):
         db = self.plot_manager.get_db()
         if (db != []):
@@ -3425,6 +3589,8 @@ class face_color_adjustment_section(QWidget):
             self.b_input.clearFocus()
         if not self.a_input.geometry().contains(event.position().toPoint()):
             self.a_input.clearFocus()
+        if not self.grayscale_input.geometry().contains(event.position().toPoint()):
+            self.grayscale_input.clearFocus()
         super().mousePressEvent(event)
 
 class legend_button(QDialog):
@@ -3706,4 +3872,3 @@ class grid_button(QPushButton):
             plot_parameter = plot_json[self.selected_graph].copy()
             plot_parameter["grid"] = self.initial_grid_state
             self.plot_manager.insert_plot_parameter(plot_parameter) 
-
