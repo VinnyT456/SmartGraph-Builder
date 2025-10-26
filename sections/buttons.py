@@ -1475,6 +1475,17 @@ class bbox_to_anchor_adjustment_section(QWidget):
             plot_parameters["legend"]["bbox_to_anchor"] = new_bbox_anchor
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
+    def mousePressEvent(self, event):
+        if not self.x_input.geometry().contains(event.position().toPoint()):
+            self.x_input.clearFocus()
+        if not self.y_input.geometry().contains(event.position().toPoint()):
+            self.y_input.clearFocus()
+        if not self.width_input.geometry().contains(event.position().toPoint()):
+            self.width_input.clearFocus()
+        if not self.height_input.geometry().contains(event.position().toPoint()):
+            self.height_input.clearFocus()
+        super().mousePressEvent(event)
+
 class ncol_adjustment_section(QWidget):
     def __init__(self,selected_graph):
         super().__init__()
@@ -1654,6 +1665,11 @@ class ncol_adjustment_section(QWidget):
             plot_parameters["legend"]["ncol"] = self.ncol_value
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
+    def mousePressEvent(self, event):
+        if not self.ncol_input.geometry().contains(event.position().toPoint()):
+            self.ncol_input.clearFocus()
+        super().mousePressEvent(event)
+
 class fontsize_adjustment_section(QWidget):
     def __init__(self,selected_graph):
         super().__init__()
@@ -1662,8 +1678,7 @@ class fontsize_adjustment_section(QWidget):
 
         self.selected_graph = selected_graph
 
-        #Initialize the custom fontsize and the options for the fixed fontsize
-        self.custom_fontsize = 0
+        #Initialize the options for the fixed fontsize
         self.fixed_fontsizes = ["xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large"]
         
         #Set the initial fontsize to be none
@@ -1671,10 +1686,6 @@ class fontsize_adjustment_section(QWidget):
     
         #Use current page to control going back and forth on pages and idx to control which font size is chosen
         self.current_page = 0
-        self.font_idx = 0
-
-        #Store all the fixed fontsize buttons in here
-        self.fontsize_buttons = []
 
         #Create a new widget for the fontsize adjustment section and style it to match the other ones
         self.fontsize_adjustment_section = QWidget()
@@ -1771,8 +1782,8 @@ class fontsize_adjustment_section(QWidget):
         """)
 
         #Connect both the custom and fixed fontsize buttons to their associated function
-        self.custom_fontsize_button.clicked.connect(self.change_to_custom_fontsize)
-        self.fixed_fontsize_button.clicked.connect(self.change_to_fixed_fontsize)
+        self.custom_fontsize_button.clicked.connect(self.change_to_custom_fontsize_screen)
+        self.fixed_fontsize_button.clicked.connect(self.change_to_fixed_fontsize_screen)
 
         #Create a layout to store all the buttons in
         button_layout = QVBoxLayout(self.fontsize_adjustment_section)
@@ -1784,9 +1795,49 @@ class fontsize_adjustment_section(QWidget):
         button_layout.setSpacing(5)
         button_layout.addStretch()
 
+        #Create the custom fontsize adjustment screen
+        self.custom_fontsize_screen = QWidget()
+        self.custom_fontsize_screen.setObjectName("custom_fontsize_screen")
+        self.custom_fontsize_screen.setStyleSheet("""
+            QWidget#custom_fontsize_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+        self.create_custom_fontsize_screen()
+        self.custom_fontsize_screen.hide()
+
+        #Create the fixed fontsize adjustment screen
+        self.fixed_fontsize_screen = QWidget()
+        self.fixed_fontsize_screen.setObjectName("fixed_fontsize_screen")
+        self.fixed_fontsize_screen.setStyleSheet("""
+            QWidget#fixed_fontsize_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+        self.create_fixed_fontsize_screen()
+        self.fixed_fontsize_screen.hide()
+
+        self.available_screen = [self.fontsize_adjustment_section,self.custom_fontsize_screen,self.fixed_fontsize_screen]
+
         #Create a layout for the main widget and add the adjustment section to it
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.fontsize_adjustment_section)
+        main_layout.addWidget(self.custom_fontsize_screen)
+        main_layout.addWidget(self.fixed_fontsize_screen)
 
         #Add the spacing and margin to ensure the section fits nicely with the main widget
         main_layout.setSpacing(0)
@@ -1798,52 +1849,8 @@ class fontsize_adjustment_section(QWidget):
         go_back_shortcut = QShortcut(QKeySequence("left"), self) 
         go_back_shortcut.activated.connect(self.change_to_original_screen)
 
-        go_to_previous_screen_shortcut = QShortcut(QKeySequence("right"), self) 
-        go_to_previous_screen_shortcut.activated.connect(self.change_to_old_page)
-
-    #Remove everything from the current layout.
-    def clear_layout(self):
-        layout = self.fontsize_adjustment_section.layout()
-        if layout:
-            while layout.count():
-                item = layout.takeAt(0)
-                widget = item.widget()
-                if widget:
-                    widget.setParent(None)
-
-    def change_to_original_screen(self):
-        #Clear everything to make sure we're starting with a blank screen
-        self.clear_layout()
-
-        #Get the current layout of the fontsize adjustment section
-        button_layout = self.fontsize_adjustment_section.layout()
-
-        #Add all the buttons to that layout and the margins, spacing, and stretch to replicate what was there before
-        button_layout.addWidget(self.custom_fontsize_button)
-        button_layout.addWidget(self.fixed_fontsize_button)
-        button_layout.setContentsMargins(10,10,10,10)
-        button_layout.setSpacing(5)
-        button_layout.addStretch()
-
-        #Make sure that it draws the right thing
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-
-    def change_to_old_page(self):
-        #Only change the page when the user has went to a screen already
-        if (self.current_page != 0):
-            #Based on the current page variable adjust what is shown on the widget
-            self.clear_layout()
-            if (self.current_page == 1):
-                self.change_to_custom_fontsize()
-            elif (self.current_page == 2):
-                self.change_to_fixed_fontsize()
-
-    def change_to_custom_fontsize(self):
-        #Clear everything to make sure we're starting with a blank screen
-        self.clear_layout()
-
-        #Set the current page to 1 to allow the user to switch back later if necessary
-        self.current_page = 1
+    def create_custom_fontsize_screen(self):
+        custom_fontsize_layout = QVBoxLayout(self.custom_fontsize_screen)
 
         #Create a QLineEdit object to allow the user input the custom fontsize
         #Give it a placeholder text to make sure that the user knows what to input and style the button
@@ -1869,101 +1876,127 @@ class fontsize_adjustment_section(QWidget):
         self.custom_fontsize_input.setFixedHeight(60) 
         
         #Connect the QLineEdit object with a update to automatically update the user inputs
-        self.custom_fontsize_input.textChanged.connect(self.process_custom_fontsize)
+        self.custom_fontsize_input.textChanged.connect(self.change_custom_fontsize)
 
-        #Grab the layout that the fontsize_adjustment_section is using to ensure that it will also apply to the main widget later
-        custom_fontsize_layout = self.fontsize_adjustment_section.layout()
-        
+        #Create two widget to display valid and invalid inputs
+        self.valid_input_widget = QWidget()
+        self.valid_input_widget.setObjectName("valid_input")
+        self.valid_input_widget.setStyleSheet("""
+            QWidget#valid_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_input_label = QLabel("Valid Input")
+        self.valid_input_label.setWordWrap(True)
+        self.valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_input_label.setObjectName("valid_input_label")
+        self.valid_input_label.setStyleSheet("""
+            QLabel#valid_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_input_layout = QVBoxLayout(self.valid_input_widget)
+        valid_input_layout.addWidget(self.valid_input_label)
+        valid_input_layout.setSpacing(0)
+        valid_input_layout.setContentsMargins(0,0,0,0)
+
+        self.invalid_input_widget = QWidget()
+        self.invalid_input_widget.setObjectName("invalid_input")
+        self.invalid_input_widget.setStyleSheet("""
+            QWidget#invalid_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_input_label = QLabel("Invalid Input")
+        self.invalid_input_label.setWordWrap(True)
+        self.invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_input_label.setObjectName("invalid_input_label")
+        self.invalid_input_label.setStyleSheet("""
+            QLabel#invalid_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        invalid_input_layout = QVBoxLayout(self.invalid_input_widget)
+        invalid_input_layout.addWidget(self.invalid_input_label)
+        invalid_input_layout.setSpacing(0)
+        invalid_input_layout.setContentsMargins(0,0,0,0)
+
+        self.valid_input_widget.setMaximumHeight(50)
+        self.invalid_input_widget.setMaximumHeight(50)
+
+        self.valid_input_widget.hide()
+        self.invalid_input_widget.hide()
+
         #Add the QLineEdit object to the layout and add the margins, spacing, and stretch to make it look good
         custom_fontsize_layout.addWidget(self.custom_fontsize_input)
+        custom_fontsize_layout.addWidget(self.valid_input_widget)
+        custom_fontsize_layout.addWidget(self.invalid_input_widget)
         custom_fontsize_layout.setContentsMargins(10,10,10,10)
-        custom_fontsize_layout.setSpacing(0)
+        custom_fontsize_layout.setSpacing(10)
         custom_fontsize_layout.addStretch()
 
-    def change_to_fixed_fontsize(self):
-        #Clear the screen to make sure where working with a empty widget
-        self.clear_layout()
+    def create_fixed_fontsize_screen(self):
+        fixed_fontsize_screen_layout = QVBoxLayout(self.fixed_fontsize_screen)
+    
+        self.fixed_fontsize_list_view = QListView()
+        self.fixed_fontsize_model = QStringListModel(self.fixed_fontsizes)
 
-        #Set the current page variable to 2 to make sure that the user can switch screens later
-        self.current_page = 2 
+        self.fixed_fontsize_list_view.setModel(self.fixed_fontsize_model)
+        self.fixed_fontsize_list_view.setObjectName("fixed_fontsize_list_view")
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.fixed_fontsize_list_view.setItemDelegate(CustomDelegate())
 
-        #Make sure that there is no old buttons in the layout
-        self.fontsize_buttons.clear()
-        self.current_fontsize = self.fixed_fontsizes[self.font_idx]
-
-        #Create a vertical box to put the buttons in. Make sure they are positioned vertically.
-        button_layout = self.fontsize_adjustment_section.layout()
-        #Go through each parameter in the list and create a button for each of them
-        for size in self.fixed_fontsizes:
-
-            #Make a copy of the current fontsize name
-            fontsize = str(size)
-
-            #Create the button with the fontsize name, give it an object name, and give it a fixedHeight for consistency
-            fontsize_button = QPushButton(size)
-            fontsize_button.setObjectName("not_selected")
-            fontsize_button.setFixedHeight(45)
-
-            #Connect each button to the change parameter feature to ensure that dataset being displayed changes with the button
-            fontsize_button.clicked.connect(lambda checked=False, fontsize=fontsize: self.change_fontsize(fontsize))
-
-            #Add the button to the list and the layout
-            self.fontsize_buttons.append(fontsize_button)
-            button_layout.addWidget(fontsize_button)
-
-        #Add margins and spacing to make it look and push all the buttons to the top
-        button_layout.setContentsMargins(10,10,10,10)
-        button_layout.setSpacing(5) 
-        button_layout.addStretch()
-
-        self.highlighted_selected_button()
-
-    def change_fontsize(self,fontsize):
-        #Keep track of the old idx and change both the column name and new idx
-        old_idx = self.font_idx
-        self.current_fontsize = fontsize
-        self.font_idx = self.fixed_fontsizes.index(self.current_fontsize)
-
-        #Change the current button that's being displayed and highlight the selected button
-        self.highlighted_selected_button(old_idx)
-
-    def highlighted_selected_button(self,old_idx=-1):
-        self.update_fontsize()
-        #Set the current button selected to be called selected
-        self.fontsize_buttons[self.font_idx].setObjectName("selected")
-        #If there is a old_idx then change the old button to be not selected
-        if (old_idx != -1):
-            self.fontsize_buttons[old_idx].setObjectName("not_selected")
-
-        #Customize the dialog window and each button selected and not selected
-        self.setStyleSheet("""
-            QWidget#adjust_fontsize_section{
+        self.fixed_fontsize_list_view.setStyleSheet("""
+            QListView#fixed_fontsize_list_view{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
                     stop:0.5 #f7f5fc,
                     stop:1 #f0f0ff
                 );
-                border: 2px solid black;
+                border: transparent;
                 border-radius: 24px;
             }
-            QPushButton#selected{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#not_selected{
+            QListView#fixed_fontsize_list_view::item {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -1974,13 +2007,10 @@ class fontsize_adjustment_section(QWidget):
                 );
                 border: 2px solid black;
                 border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
                 color: black;
+                min-height: 41px;
             }
-            QPushButton#not_selected:hover{
+            QListView#fixed_fontsize_list_view::item:selected {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -1990,25 +2020,75 @@ class fontsize_adjustment_section(QWidget):
                 );
                 border: 2px solid black;
                 border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
                 color: black;
+                min-height: 41px;
+            }
+            QListView#fixed_fontsize_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
             }
         """)
 
-    def process_custom_fontsize(self):
-        #Extract the fontsize from the user input and remove any excess text
-        self.current_fontsize = self.custom_fontsize_input.text().strip()
+        self.fixed_fontsize_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.fixed_fontsize_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.fixed_fontsize_list_view.setSpacing(3)
 
-        #Check if the input is valid and only update it if it's valid
+        self.fixed_fontsize_list_view.clicked.connect(self.change_fixed_fontsize)
+
+        fixed_fontsize_screen_layout.addWidget(self.fixed_fontsize_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        fixed_fontsize_screen_layout.setContentsMargins(10, 10, 10, 10)
+
+    def change_to_original_screen(self):
+        self.available_screen[self.current_page].hide()
+        self.current_page = 0
+        self.fontsize_adjustment_section.show()
+
+    def change_to_custom_fontsize_screen(self):
+        self.available_screen[self.current_page].hide()
+        self.current_page = 1
+        self.custom_fontsize_screen.show()
+
+    def change_to_fixed_fontsize_screen(self):
+        self.available_screen[self.current_page].hide()
+        self.current_page = 2
+        self.fixed_fontsize_screen.show()
+
+    def change_custom_fontsize(self):
+        custom_fontsize_input = self.custom_fontsize_input.text().strip()
+
+        if (custom_fontsize_input == ""):
+            self.valid_input_widget.hide()
+            self.invalid_input_widget.hide()
+            self.current_fontsize = None
+            return
+
         try:
-            self.current_fontsize = int(self.current_fontsize)
+            custom_fontsize_value = int(custom_fontsize_input)
+            if (0 >= custom_fontsize_value):
+                raise Exception
+            self.valid_input_widget.show()
+            self.invalid_input_widget.hide()
         except:
-            pass
+            self.valid_input_widget.hide()
+            self.invalid_input_widget.show()
         else:
+            self.current_fontsize = custom_fontsize_value
             self.update_fontsize()
+
+    def change_fixed_fontsize(self,index):
+        self.current_fontsize = self.fixed_fontsize_model.data(index,Qt.ItemDataRole.DisplayRole)
+        self.update_fontsize()
 
     def update_fontsize(self):
         #Get the newest entry from the json file
@@ -2022,6 +2102,11 @@ class fontsize_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["fontsize"] = self.current_fontsize
             self.plot_manager.insert_plot_parameter(plot_parameters)
+
+    def mousePressEvent(self, event):
+        if not self.custom_fontsize_input.geometry().contains(event.position().toPoint()):
+            self.custom_fontsize_input.clearFocus()
+        super().mousePressEvent(event)
 
 class legend_title_adjustment_section(QWidget):
     def __init__(self,selected_graph):
@@ -5167,7 +5252,7 @@ class legend_button(QDialog):
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.scroll_section,stretch=1)
         self.layout.addSpacing(10)
-        self.layout.addWidget(framealpha_adjustment_section(self.selected_graph),stretch=1)
+        self.layout.addWidget(fontsize_adjustment_section(self.selected_graph),stretch=1)
 
         #Create a shortcut for the user to go to the previous column by press up
         up_shortcut = QShortcut(QKeySequence("up"), self) 
