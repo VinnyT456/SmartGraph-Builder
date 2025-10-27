@@ -1,10 +1,9 @@
 from PyQt6.QtCore import QSortFilterProxyModel, QStringListModel, Qt
-from PyQt6.QtGui import QFont, QImageWriter, QKeySequence, QPixmap, QShortcut
+from PyQt6.QtGui import QFont, QKeySequence, QPixmap, QShortcut
 from PyQt6.QtWidgets import (
     QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QPushButton, QScrollArea, 
     QSizePolicy, QTableView, QWidget, QVBoxLayout, QStyledItemDelegate
 )
-from matplotlib import streamplot
 from sections.dataset import PrepareDataset
 from sections.plot_manager import PlotManager
 import matplotlib.colors as mcolors
@@ -8110,7 +8109,7 @@ class legend_button(QDialog):
         down_shortcut.activated.connect(self.columns_go_down)
 
         #Create a shortcut for the user to close the dialog window
-        close_shortcut = QShortcut(QKeySequence("Return"), self) 
+        close_shortcut = QShortcut(QKeySequence("ESC"), self) 
         close_shortcut.activated.connect(self.close_application)
 
         #Make sure this gets drawn.
