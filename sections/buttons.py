@@ -5659,8 +5659,8 @@ class borderpad_adjustment_section(QWidget):
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
     def mousePressEvent(self, event):
-        if not self.ncol_input.geometry().contains(event.position().toPoint()):
-            self.ncol_input.clearFocus()
+        if not self.borderpad_input.geometry().contains(event.position().toPoint()):
+            self.borderpad_input.clearFocus()
         super().mousePressEvent(event)
 
 class label_color_adjustment_section(QWidget):
@@ -6944,6 +6944,196 @@ class alignment_adjustment_section(QWidget):
             plot_parameters["legend"]["alignment"] = self.current_alignment
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
+class columnspacing_adjustment_section(QWidget):
+    def __init__(self, selected_graph):
+        super().__init__()
+
+        self.plot_manager = PlotManager()
+        
+        self.selected_graph = selected_graph
+
+        #Create a section to display the loc section and style it
+        self.columnspacing_adjustment_section = QWidget()
+        self.columnspacing_adjustment_section.setObjectName("columnspacing_adjustment_section")
+        self.columnspacing_adjustment_section.setStyleSheet("""
+            QWidget#columnspacing_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+            QLineEdit{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        #Initialize the ncol value to be 0
+        self.columnspacing_value = 0
+
+        #Create a line edit object for the user to input the ncol
+        self.columnspacing_input = QLineEdit()
+        self.columnspacing_input.setPlaceholderText("columnspacing: ")
+
+        #Set the height of the line edit object to make it look good
+        self.columnspacing_input.setFixedHeight(60)
+
+        #Connect any changes with the text to an update function
+        self.columnspacing_input.textChanged.connect(self.change_columnspacing)
+
+        #Create two widget to display valid and invalid inputs
+        self.valid_input_widget = QWidget()
+        self.valid_input_widget.setObjectName("valid_input")
+        self.valid_input_widget.setStyleSheet("""
+            QWidget#valid_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_input_label = QLabel("Valid Input")
+        self.valid_input_label.setWordWrap(True)
+        self.valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_input_label.setObjectName("valid_input_label")
+        self.valid_input_label.setStyleSheet("""
+            QLabel#valid_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_input_layout = QVBoxLayout(self.valid_input_widget)
+        valid_input_layout.addWidget(self.valid_input_label)
+        valid_input_layout.setSpacing(0)
+        valid_input_layout.setContentsMargins(0,0,0,0)
+
+        self.invalid_input_widget = QWidget()
+        self.invalid_input_widget.setObjectName("invalid_input")
+        self.invalid_input_widget.setStyleSheet("""
+            QWidget#invalid_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_input_label = QLabel("Invalid Input")
+        self.invalid_input_label.setWordWrap(True)
+        self.invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_input_label.setObjectName("invalid_input_label")
+        self.invalid_input_label.setStyleSheet("""
+            QLabel#invalid_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        invalid_input_layout = QVBoxLayout(self.invalid_input_widget)
+        invalid_input_layout.addWidget(self.invalid_input_label)
+        invalid_input_layout.setSpacing(0)
+        invalid_input_layout.setContentsMargins(0,0,0,0)
+
+        self.valid_input_widget.setMaximumHeight(50)
+        self.invalid_input_widget.setMaximumHeight(50)
+
+        self.valid_input_widget.hide()
+        self.invalid_input_widget.hide()
+
+        #Create a layout for the ncol adjustment section and add the line edit object to it
+        columnspacing_section_layout = QVBoxLayout(self.columnspacing_adjustment_section)
+        columnspacing_section_layout.addWidget(self.columnspacing_input)
+        columnspacing_section_layout.addWidget(self.valid_input_widget)
+        columnspacing_section_layout.addWidget(self.invalid_input_widget)
+    
+        #Add the margins, spacing, and stretch to the layout to make it look good
+        columnspacing_section_layout.setContentsMargins(10,10,10,10)
+        columnspacing_section_layout.setSpacing(10)
+        columnspacing_section_layout.addStretch()
+
+        #Add the ncol adjustment section to the main widget
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.columnspacing_adjustment_section)
+        
+        #Set both the spacing and margins for the main widget to make sure it fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+    
+    def change_columnspacing(self):
+        #Extract the ncol input from the user and remove any excess text from it
+        columnspacing_input = self.columnspacing_input.text().strip()
+
+        if (columnspacing_input == ""):
+            self.valid_input_widget.hide()
+            self.invalid_input_widget.hide()
+            self.columnspacing_value = 0
+            return 
+
+        #Only update the ncol value in the json file if the input is valid
+        try:
+            self.columnspacing_value = float(columnspacing_input)
+            self.valid_input_widget.show()
+            self.invalid_input_widget.hide()
+        except:
+            self.valid_input_widget.hide()
+            self.invalid_input_widget.show()
+        else:
+            self.update_columnspacing()
+
+    def update_columnspacing(self):
+        #Get the newest json entries from the plot manager
+        db = self.plot_manager.get_db()
+
+        #Check if db is empty or not. If it is empty then create a new entry with the ncol value
+        #If the db isn't empty then update the db with the new ncol value.
+        if (db != []):
+            self.plot_manager.update_legend("columnspacing",self.columnspacing_value)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["columnspacing"] = self.columnspacing_value
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+
+    def mousePressEvent(self, event):
+        if not self.columnspacing_input.geometry().contains(event.position().toPoint()):
+            self.columnspacing_input.clearFocus()
+        super().mousePressEvent(event)
+
 class legend_button(QDialog):
     def __init__(self,selected_graph):
         super().__init__()
@@ -6997,7 +7187,7 @@ class legend_button(QDialog):
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.legend_parameters_section,stretch=1)
         self.layout.addSpacing(10)
-        self.layout.addWidget(alignment_adjustment_section(self.selected_graph),stretch=1)
+        self.layout.addWidget(columnspacing_adjustment_section(self.selected_graph),stretch=1)
 
         #Create a shortcut for the user to go to the previous column by press up
         up_shortcut = QShortcut(QKeySequence("up"), self) 
