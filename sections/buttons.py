@@ -1,7 +1,7 @@
 from PyQt6.QtCore import QSortFilterProxyModel, QStringListModel, Qt
 from PyQt6.QtGui import QFont, QImageWriter, QKeySequence, QPixmap, QShortcut
 from PyQt6.QtWidgets import (
-    QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QPushButton, QScrollArea, 
+    QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QPushButton, QScrollArea, 
     QSizePolicy, QTableView, QWidget, QVBoxLayout, QStyledItemDelegate
 )
 from sections.dataset import PrepareDataset
@@ -2593,9 +2593,26 @@ class frameon_adjustment_section(QWidget):
                 border-radius: 24px;
             }
         """)
+
+        #Create a label to put on top of the QPushButton
+        self.frameon_label = QLabel("Frameon")
+        self.frameon_label.setWordWrap(True)
+        self.frameon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.frameon_label.setObjectName("frameon_label")
+        self.frameon_label.setStyleSheet("""
+            QLabel#frameon_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
     
         #Create a button to allow the user to switch between Frameon
-        self.frameon_button = QPushButton("Frameon")
+        self.frameon_button = QPushButton()
         self.frameon_button.setObjectName("frameon_button")
         self.frameon_button.setStyleSheet("""
             QPushButton#frameon_button{
@@ -2611,7 +2628,7 @@ class frameon_adjustment_section(QWidget):
                 border-radius: 16px;
                 font-family: "SF Pro Display";
                 font-weight: 600;
-                font-size: 24px;
+                font-size: 16px;
                 padding: 6px;
                 color: black;
             }
@@ -2632,6 +2649,13 @@ class frameon_adjustment_section(QWidget):
                 color: black;
             }
         """)
+        self.frameon_button.setMinimumHeight(45)
+        
+        #Put the label on top of the button we created for control frameon
+        frameon_button_layout = QVBoxLayout(self.frameon_button)
+        frameon_button_layout.addWidget(self.frameon_label)
+        frameon_button_layout.setContentsMargins(0,0,0,0)
+        frameon_button_layout.setSpacing(0)
 
         #Connect the frameon button to a function to switch between the two states
         self.frameon_button.clicked.connect(self.switch_on_frameon)
@@ -2660,6 +2684,10 @@ class frameon_adjustment_section(QWidget):
     def switch_on_frameon(self):
         #Change the frameon_state to be the opposite of the current state and update it in the json
         self.frameon_state = not self.frameon_state
+        if (self.frameon_state):
+            self.frameon_label.setText("Frameon")
+        else:
+            self.frameon_label.setText("Frameoff")
         self.update_frameon()
 
     def update_frameon(self):
@@ -5173,9 +5201,13 @@ class legend_button(QDialog):
         self.selected_graph = selected_graph
 
         self.legend_parameters = list(plot_json[self.selected_graph]["legend"].keys())
-        self.idx = 0
+        self.current_screen_index = 0
 
-        self.parameter_name = ""
+        self.available_screens = [loc_adjustment_section,bbox_to_anchor_adjustment_section,
+                                  ncol_adjustment_section,fontsize_adjustment_section,
+                                  legend_title_adjustment_section,legend_title_fontsize_adjustment_section,
+                                  frameon_adjustment_section,face_color_adjustment_section,
+                                  edge_color_adjustment_section,framealpha_adjustment_section]
 
         self.setStyleSheet("""
             QDialog{
@@ -5193,9 +5225,9 @@ class legend_button(QDialog):
         self.setFixedWidth(600)
         self.setFixedHeight(500)
 
-        self.parameters_section = QWidget()
-        self.parameters_section.setObjectName("legend_parameter_section")
-        self.parameters_section.setStyleSheet("""
+        self.legend_parameters_section = QWidget()
+        self.legend_parameters_section.setObjectName("legend_parameter_section")
+        self.legend_parameters_section.setStyleSheet("""
             QWidget#legend_parameter_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
@@ -5207,53 +5239,13 @@ class legend_button(QDialog):
                 border-radius: 24px;
             }
         """)
-
-        #Create a section to display the dataset and style it
-        self.adjust_parameters_section = QWidget()
-        self.adjust_parameters_section.setObjectName("adjust_parameters_section")
-        self.adjust_parameters_section.setStyleSheet("""
-            QWidget#adjust_parameters_section{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 2px solid black;
-                border-radius: 24px;
-            }
-        """)
-
-        #Create a scrollable area to allow the user to scroll through the buttons
-        self.scroll_section = QScrollArea()
-        self.scroll_section.setFrameShape(QScrollArea.Shape.NoFrame)
-        self.scroll_section.setWidgetResizable(True)
-
-        #Place the scrollable area on the button section
-        self.scroll_section.setWidget(self.parameters_section)
-        self.scroll_section.setStyleSheet("""
-            QScrollArea{
-                background: transparent;
-                border: none;
-                border-radius: 24px;
-            }
-        """)
-        #Hide the handle
-        self.scroll_section.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-
-        #Store the buttons created
-        self.buttons = []
-
-        #Create the buttons
         self.create_legend_parameter_buttons()
-        #Highlight the selected column in the buttons
-        self.highlighted_selected_column()
 
         #Place the buttons and the dataset next to each other side by side
         self.layout = QHBoxLayout(self)
-        self.layout.addWidget(self.scroll_section,stretch=1)
+        self.layout.addWidget(self.legend_parameters_section,stretch=1)
         self.layout.addSpacing(10)
-        self.layout.addWidget(legend_title_fontsize_adjustment_section(self.selected_graph),stretch=1)
+        self.layout.addWidget(frameon_adjustment_section(self.selected_graph),stretch=1)
 
         #Create a shortcut for the user to go to the previous column by press up
         up_shortcut = QShortcut(QKeySequence("up"), self) 
@@ -5271,124 +5263,39 @@ class legend_button(QDialog):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         
     def create_legend_parameter_buttons(self):
+        legend_parameter_button_layout = QVBoxLayout(self.legend_parameters_section)
+    
+        self.legend_parameter_list_view = QListView()
+        self.legend_parameter_model = QStringListModel(self.legend_parameters)
 
-        #Make sure that there is no old buttons in the layout
-        for btn in self.buttons:
-            self.layout.removeWidget(btn)
-            btn.deleteLater()
-        self.buttons.clear()
+        self.legend_parameter_list_view.setModel(self.legend_parameter_model)
+        self.legend_parameter_list_view.setObjectName("legend_parameter_list_view")
 
-        #Create a vertical box to put the buttons in. Make sure they are positioned vertically.
-        button_layout = QVBoxLayout(self.parameters_section)
-        #Go through each parameter in the list and create a button for each of them
-        for parameter in self.legend_parameters:
+        screen_index = self.legend_parameter_model.index(0)  
+        self.legend_parameter_list_view.setCurrentIndex(screen_index)
 
-            #Make a copy of the current parameter name
-            parameter_name = str(parameter)
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.legend_parameter_list_view.setItemDelegate(CustomDelegate())
 
-            #Create the button with the parameter name, give it an object name, and give it a fixedHeight for consistency
-            parameter_button = QPushButton(parameter_name)
-            parameter_button.setObjectName("not_selected")
-            parameter_button.setFixedHeight(45)
-
-            #Connect each button to the change parameter feature to ensure that dataset being displayed changes with the button
-            parameter_button.clicked.connect(lambda checked=False, parameter=parameter_name: self.change_parameter(parameter))
-
-            #Add the button to the list and the layout
-            self.buttons.append(parameter_button)
-            button_layout.addWidget(parameter_button)
-
-        #Add margins and spacing to make it look and push all the buttons to the top
-        button_layout.setContentsMargins(10,10,10,10)
-        button_layout.setSpacing(5) 
-        button_layout.addStretch()
-
-    def display_current_parameter_adjustment(self):
-        pass
-
-    def change_parameter(self,parameter_name):
-        #Keep track of the old idx and change both the column name and new idx
-        old_idx = self.idx
-        self.parameter_name = parameter_name
-        self.idx = self.legend_parameters.index(self.parameter_name)
-
-        #Change the current column that's being displayed and highlight the selected button
-        self.highlighted_selected_column(old_idx)
-
-    def columns_go_up(self):
-        #Keep track of the old idx and change both the column name and idx
-        #Change the column display and the button selected
-        old_idx = self.idx
-        self.idx -= 1
-        self.idx %= len(self.legend_parameters)
-        self.highlighted_selected_column(old_idx)
-        self.parameter_name = self.legend_parameters[self.idx]
-
-        vertical_scroll_bar = self.scroll_section.verticalScrollBar()
-        if (old_idx == 0 and self.idx == len(self.legend_parameters)-1):
-            max_scroll_value = vertical_scroll_bar.maximum()
-            vertical_scroll_bar.setValue(max_scroll_value)
-        elif (self.idx == 0):
-            vertical_scroll_bar.setValue(0)
-        elif self.idx < len(self.legend_parameters) - 9:
-            scroll_value = max(0, vertical_scroll_bar.value() - 50)
-            vertical_scroll_bar.setValue(scroll_value)
-
-    def columns_go_down(self):
-        old_idx = self.idx
-        self.idx += 1
-        self.idx %= len(self.legend_parameters)
-        self.highlighted_selected_column(old_idx)
-        self.parameter_name = self.legend_parameters[self.idx]
-
-        vertical_scroll_bar = self.scroll_section.verticalScrollBar()
-        if (old_idx == len(self.legend_parameters)-1 and self.idx == 0):
-            vertical_scroll_bar.setValue(0)
-        elif (self.idx == len(self.legend_parameters)-1):
-            vertical_scroll_bar.setValue(vertical_scroll_bar.maximum())
-        elif self.idx > 8 and self.idx < len(self.legend_parameters):
-            scroll_value = min(vertical_scroll_bar.maximum(), vertical_scroll_bar.value() + 50)
-            vertical_scroll_bar.setValue(scroll_value)
-
-    def highlighted_selected_column(self,old_idx=-1):
-        if (self.buttons[self.idx].objectName() == "selected"):
-            return
-
-        #Set the current button selected to be called selected
-        self.buttons[self.idx].setObjectName("selected")
-        #If there is a old_idx then change the old button to be not selected
-        if (old_idx != -1):
-            self.buttons[old_idx].setObjectName("not_selected")
-
-        #Customize the dialog window and each button selected and not selected
-        self.setStyleSheet("""
-            QDialog{
+        self.legend_parameter_list_view.setStyleSheet("""
+            QListView#legend_parameter_list_view{
                 background: qlineargradient(
-                    x1: 0, y1: 1, 
-                    x2: 0, y2: 0,
-                    stop: 0 rgba(25, 191, 188, 1),
-                    stop: 0.28 rgba(27, 154, 166, 1),
-                    stop: 0.65 rgba(78, 160, 242, 1),
-                    stop: 0.89 rgba(33, 218, 255, 1)
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
                 );
+                border: transparent;
+                border-radius: 24px;
             }
-            QPushButton#selected{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#not_selected{
+            QListView#legend_parameter_list_view::item {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -5399,13 +5306,10 @@ class legend_button(QDialog):
                 );
                 border: 2px solid black;
                 border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
                 color: black;
+                min-height: 41px;
             }
-            QPushButton#not_selected:hover{
+            QListView#legend_parameter_list_view::item:selected {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -5415,13 +5319,51 @@ class legend_button(QDialog):
                 );
                 border: 2px solid black;
                 border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
                 color: black;
+                min-height: 41px;
+            }
+            QListView#legend_parameter_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
             }
         """)
+
+        self.legend_parameter_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.legend_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.legend_parameter_list_view.setSpacing(3)
+
+        self.legend_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+
+        legend_parameter_button_layout.addWidget(self.legend_parameter_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        legend_parameter_button_layout.setContentsMargins(10, 10, 10, 10)
+
+    def change_current_parameter_screen(self):
+        pass
+    
+    def columns_go_up(self):
+        self.current_screen_index -= 1
+        self.current_screen_index %= len(self.legend_parameters)
+        new_screen_index = self.legend_parameter_model.index(self.current_screen_index)
+        self.legend_parameter_list_view.setCurrentIndex(new_screen_index)
+        self.legend_parameter_list_view.scrollTo(new_screen_index,QAbstractItemView.ScrollHint.PositionAtCenter)
+
+    def columns_go_down(self):
+        self.current_screen_index += 1
+        self.current_screen_index %= len(self.legend_parameters)
+        new_screen_index = self.legend_parameter_model.index(self.current_screen_index)
+        self.legend_parameter_list_view.setCurrentIndex(new_screen_index)
+        self.legend_parameter_list_view.scrollTo(new_screen_index,QAbstractItemView.ScrollHint.PositionAtCenter)
 
     def close_application(self):
         self.close()
