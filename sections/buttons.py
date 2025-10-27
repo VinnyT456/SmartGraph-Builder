@@ -3845,6 +3845,8 @@ class face_color_adjustment_section(QWidget):
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
     def mousePressEvent(self, event):
+        if not self.color_search_bar.geometry().contains(event.position().toPoint()):
+            self.color_search_bar.clearFocus()
         if not self.hex_code_input.geometry().contains(event.position().toPoint()):
             self.hex_code_input.clearFocus()
         if not self.r_input.geometry().contains(event.position().toPoint()):
@@ -4996,6 +4998,8 @@ class edge_color_adjustment_section(QWidget):
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
     def mousePressEvent(self, event):
+        if not self.color_search_bar.geometry().contains(event.position().toPoint()):
+            self.color_search_bar.clearFocus()
         if not self.hex_code_input.geometry().contains(event.position().toPoint()):
             self.hex_code_input.clearFocus()
         if not self.r_input.geometry().contains(event.position().toPoint()):
@@ -5659,6 +5663,1159 @@ class borderpad_adjustment_section(QWidget):
             self.ncol_input.clearFocus()
         super().mousePressEvent(event)
 
+class label_color_adjustment_section(QWidget):
+    def __init__(self,selected_graph):
+        super().__init__()
+
+        self.plot_manager = PlotManager()
+        self.selected_graph = selected_graph
+        self.named_colors = list(mcolors.get_named_colors_mapping().keys())
+        self.short_code_colors = self.named_colors[-8:]
+        self.named_colors = [c.replace("xkcd:","") for c in self.named_colors]
+        self.named_colors = [c.replace("tab:","") for c in self.named_colors]
+        self.named_colors = self.named_colors[:-8]
+
+        self.current_label_color = ""
+
+        #-----Home Screen-----
+
+        self.label_color_adjustment_homescreen = QWidget()
+        self.label_color_adjustment_homescreen.setObjectName("label_color_adjustment")
+        self.label_color_adjustment_homescreen.setStyleSheet("""
+            QWidget#label_color_adjustment{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }            
+        """)
+
+        self.named_color_button = QPushButton("Named Colors")
+        self.named_color_button.setObjectName("named_color")
+        self.named_color_button.setStyleSheet("""
+            QPushButton#named_color{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#named_color:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.hex_code_button = QPushButton("Hex Code Color")
+        self.hex_code_button.setObjectName("hex_code")
+        self.hex_code_button.setStyleSheet("""
+            QPushButton#hex_code{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#hex_code:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.rgba_color_button = QPushButton("RGBA Color")
+        self.rgba_color_button.setObjectName("rgba_color")
+        self.rgba_color_button.setStyleSheet("""
+            QPushButton#rgba_color{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#rgba_color:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.grayscale_color_button = QPushButton("Grayscale Color")
+        self.grayscale_color_button.setObjectName("grayscale")
+        self.grayscale_color_button.setStyleSheet("""
+            QPushButton#grayscale{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#grayscale:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.short_code_color_button = QPushButton("Short Code Color")
+        self.short_code_color_button.setObjectName("short_code_color")
+        self.short_code_color_button.setStyleSheet("""
+            QPushButton#short_code_color{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#short_code_color:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.none_button = QPushButton("None")
+        self.none_button.setObjectName("none")
+        self.none_button.setStyleSheet("""
+            QPushButton#none{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#none:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.named_color_button.clicked.connect(self.change_to_named_color_screen)
+        self.hex_code_button.clicked.connect(self.change_to_hex_code_screen)
+        self.rgba_color_button.clicked.connect(self.change_to_rgba_color_screen)
+        self.grayscale_color_button.clicked.connect(self.change_to_grayscale_colors_screen)
+        self.short_code_color_button.clicked.connect(self.change_to_short_code_color_screen)
+        self.none_button.clicked.connect(self.set_color_to_none)
+
+        button_layout = QVBoxLayout(self.label_color_adjustment_homescreen)
+        button_layout.addWidget(self.named_color_button)
+        button_layout.addWidget(self.hex_code_button)
+        button_layout.addWidget(self.rgba_color_button)
+        button_layout.addWidget(self.grayscale_color_button)
+        button_layout.addWidget(self.short_code_color_button)
+        button_layout.addWidget(self.none_button)
+        button_layout.setContentsMargins(10,10,10,10)
+        button_layout.setSpacing(5)
+        button_layout.addStretch()
+
+        #-----Named Color Screen-----
+
+        self.named_color_screen = QWidget()
+        self.named_color_screen.setObjectName("named_color_screen")
+        self.named_color_screen.setStyleSheet("""
+            QWidget#named_color_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }   
+        """)
+        self.create_named_color_screen()
+        self.named_color_screen.hide()
+
+        #-----Hex Code Color Screen-----
+
+        self.hex_code_color_screen = QWidget()
+        self.hex_code_color_screen.setObjectName("hex_code_color_screen")
+        self.hex_code_color_screen.setStyleSheet("""
+            QWidget#hex_code_color_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }  
+        """)
+        self.create_hex_code_screen()
+        self.hex_code_color_screen.hide()
+
+        #------RGBA Color Screen-----
+
+        self.rgba_color_screen = QWidget()
+        self.rgba_color_screen.setObjectName("rgba_color_screen")
+        self.rgba_color_screen.setStyleSheet("""
+            QWidget#rgba_color_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }  
+        """)
+        self.create_rgba_color_screen()
+        self.rgba_color_screen.hide()
+
+        self.initial_rgba = [0,0,0,1]
+
+        #------Grayscale Color Screen-----
+
+        self.grayscale_color_screen = QWidget()
+        self.grayscale_color_screen.setObjectName("grayscale_color_screen")
+        self.grayscale_color_screen.setStyleSheet("""
+            QWidget#grayscale_color_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }  
+        """)
+        self.create_grayscale_color_screen()
+        self.grayscale_color_screen.hide()
+
+        #-----Short Code Colors-----
+
+        self.short_code_color_screen = QWidget()
+        self.short_code_color_screen.setObjectName("short_code_color")
+        self.short_code_color_screen.setStyleSheet("""
+            QWidget#short_code_color{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }  
+        """)
+        self.create_short_code_color_screen()
+        self.short_code_color_screen.hide()
+
+        #-----Initialize Screen Value-----
+
+        self.available_screens = [self.label_color_adjustment_homescreen,self.named_color_screen,
+                                self.hex_code_color_screen,self.rgba_color_screen,
+                                self.grayscale_color_screen,self.short_code_color_screen]
+        self.previous_screen_idx = 0
+        self.current_screen_idx = 0
+
+        #-----Main Screen-----
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.label_color_adjustment_homescreen)
+        main_layout.addWidget(self.named_color_screen)
+        main_layout.addWidget(self.hex_code_color_screen)
+        main_layout.addWidget(self.rgba_color_screen)
+        main_layout.addWidget(self.grayscale_color_screen)
+        main_layout.addWidget(self.short_code_color_screen)
+        main_layout.setContentsMargins(0,0,0,0)
+        main_layout.setSpacing(0)
+
+        #-----Shortcuts-----
+        original_screen_shortcut = QShortcut(QKeySequence("left"),self)
+        original_screen_shortcut.activated.connect(self.change_to_original_screen)
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+    def create_named_color_screen(self):
+        named_color_screen_layout = QVBoxLayout(self.named_color_screen)
+
+        self.color_search_bar = QLineEdit()
+        self.color_search_bar.setObjectName("search_bar")
+        self.color_search_bar.setPlaceholderText("Search: ")
+        self.color_search_bar.setStyleSheet("""
+            QLineEdit#search_bar{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+        self.color_search_bar.setMinimumHeight(60)
+        named_color_screen_layout.addWidget(self.color_search_bar)
+        named_color_screen_layout.addSpacing(15)
+    
+        self.named_color_list_view = QListView()
+        self.named_color_model = QStringListModel(self.named_colors)
+
+        self.filter_proxy = QSortFilterProxyModel()
+        self.filter_proxy.setSourceModel(self.named_color_model)
+        self.filter_proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive) 
+        self.filter_proxy.setFilterKeyColumn(0)  
+
+        self.color_search_bar.textChanged.connect(self.filter_proxy.setFilterFixedString)
+
+        self.named_color_list_view.setModel(self.filter_proxy)
+        self.named_color_list_view.setObjectName("named_color_list_view")
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.named_color_list_view.setItemDelegate(CustomDelegate())
+
+        self.named_color_list_view.setStyleSheet("""
+            QListView#named_color_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 24px;
+            }
+            QListView#named_color_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#named_color_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#named_color_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.named_color_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.named_color_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.named_color_list_view.setSpacing(3)
+
+        self.named_color_list_view.clicked.connect(self.change_named_color)
+
+        named_color_screen_layout.addWidget(self.named_color_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        named_color_screen_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_hex_code_screen(self):
+        hex_code_color_screen_layout = QVBoxLayout(self.hex_code_color_screen)
+
+        self.hex_code_input = QLineEdit()
+        self.hex_code_input.setObjectName("hex_code")
+        self.hex_code_input.setPlaceholderText("Hex Code:")
+        self.hex_code_input.setStyleSheet("""
+            QLineEdit#hex_code{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+        self.hex_code_input.setMinimumHeight(60)
+
+        self.hex_code_input.textChanged.connect(self.change_hex_code_color)
+
+        self.hex_valid_input_widget = QWidget()
+        self.hex_valid_input_widget.setObjectName("hex_valid_input")
+        self.hex_valid_input_widget.setStyleSheet("""
+            QWidget#hex_valid_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.hex_valid_input_label = QLabel("Valid Input")
+        self.hex_valid_input_label.setWordWrap(True)
+        self.hex_valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.hex_valid_input_label.setObjectName("hex_valid_input_label")
+        self.hex_valid_input_label.setStyleSheet("""
+            QLabel#hex_valid_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        hex_valid_input_layout = QVBoxLayout(self.hex_valid_input_widget)
+        hex_valid_input_layout.addWidget(self.hex_valid_input_label)
+        hex_valid_input_layout.setSpacing(0)
+        hex_valid_input_layout.setContentsMargins(0,0,0,0)
+
+        self.hex_invalid_input_widget = QWidget()
+        self.hex_invalid_input_widget.setObjectName("hex_invalid_input")
+        self.hex_invalid_input_widget.setStyleSheet("""
+            QWidget#hex_invalid_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.hex_invalid_input_label = QLabel("Invalid Input")
+        self.hex_invalid_input_label.setWordWrap(True)
+        self.hex_invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.hex_invalid_input_label.setObjectName("hex_invalid_input_label")
+        self.hex_invalid_input_label.setStyleSheet("""
+            QLabel#hex_invalid_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        hex_invalid_input_layout = QVBoxLayout(self.hex_invalid_input_widget)
+        hex_invalid_input_layout.addWidget(self.hex_invalid_input_label)
+        hex_invalid_input_layout.setSpacing(0)
+        hex_invalid_input_layout.setContentsMargins(0,0,0,0)
+
+        self.hex_valid_input_widget.setMaximumHeight(50)
+        self.hex_invalid_input_widget.setMaximumHeight(50)
+
+        self.hex_valid_input_widget.hide()
+        self.hex_invalid_input_widget.hide()
+
+        hex_code_color_screen_layout.addWidget(self.hex_code_input)
+        hex_code_color_screen_layout.addWidget(self.hex_valid_input_widget)
+        hex_code_color_screen_layout.addWidget(self.hex_invalid_input_widget)
+        hex_code_color_screen_layout.setContentsMargins(10,10,10,10)
+        hex_code_color_screen_layout.setSpacing(10)
+        hex_code_color_screen_layout.addStretch()
+
+    def create_rgba_color_screen(self):
+        rgba_color_screen_layout = QVBoxLayout(self.rgba_color_screen)
+
+        self.r_input = QLineEdit()
+        self.r_input.setObjectName("r_input")
+        self.r_input.setPlaceholderText("r:")
+        self.r_input.setStyleSheet("""
+            QLineEdit#r_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        self.g_input = QLineEdit()
+        self.g_input.setObjectName("g_input")
+        self.g_input.setPlaceholderText("g:")
+        self.g_input.setStyleSheet("""
+            QLineEdit#g_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        self.b_input = QLineEdit()
+        self.b_input.setObjectName("b_input")
+        self.b_input.setPlaceholderText("b:")
+        self.b_input.setStyleSheet("""
+            QLineEdit#b_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        self.a_input = QLineEdit()
+        self.a_input.setObjectName("a_input")
+        self.a_input.setPlaceholderText("a:")
+        self.a_input.setStyleSheet("""
+            QLineEdit#a_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        self.r_input.setMinimumHeight(60)
+        self.g_input.setMinimumHeight(60)
+        self.b_input.setMinimumHeight(60)
+        self.a_input.setMinimumHeight(60)
+
+        self.r_input.textChanged.connect(self.change_rgba_color)
+        self.g_input.textChanged.connect(self.change_rgba_color)
+        self.b_input.textChanged.connect(self.change_rgba_color)
+        self.a_input.textChanged.connect(self.change_rgba_color)
+
+        self.rgba_valid_input_widget = QWidget()
+        self.rgba_valid_input_widget.setObjectName("rgba_valid_input")
+        self.rgba_valid_input_widget.setStyleSheet("""
+            QWidget#rgba_valid_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.rgba_valid_input_label = QLabel("Valid Input")
+        self.rgba_valid_input_label.setWordWrap(True)
+        self.rgba_valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.rgba_valid_input_label.setObjectName("rgba_valid_input_label")
+        self.rgba_valid_input_label.setStyleSheet("""
+            QLabel#rgba_valid_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        rgba_valid_input_layout = QVBoxLayout(self.rgba_valid_input_widget)
+        rgba_valid_input_layout.addWidget(self.rgba_valid_input_label)
+        rgba_valid_input_layout.setSpacing(0)
+        rgba_valid_input_layout.setContentsMargins(0,0,0,0)
+
+        self.rgba_invalid_input_widget = QWidget()
+        self.rgba_invalid_input_widget.setObjectName("rgba_invalid_input")
+        self.rgba_invalid_input_widget.setStyleSheet("""
+            QWidget#rgba_invalid_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.rgba_invalid_input_label = QLabel("Invalid Input")
+        self.rgba_invalid_input_label.setWordWrap(True)
+        self.rgba_invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.rgba_invalid_input_label.setObjectName("rgba_invalid_input_label")
+        self.rgba_invalid_input_label.setStyleSheet("""
+            QLabel#rgba_invalid_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        rgba_invalid_input_layout = QVBoxLayout(self.rgba_invalid_input_widget)
+        rgba_invalid_input_layout.addWidget(self.rgba_invalid_input_label)
+        rgba_invalid_input_layout.setSpacing(0)
+        rgba_invalid_input_layout.setContentsMargins(0,0,0,0)
+
+        self.rgba_valid_input_widget.setMaximumHeight(50)
+        self.rgba_invalid_input_widget.setMaximumHeight(50)
+
+        self.rgba_valid_input_widget.hide()
+        self.rgba_invalid_input_widget.hide()
+    
+        rgba_color_screen_layout.addWidget(self.r_input)
+        rgba_color_screen_layout.addWidget(self.g_input)
+        rgba_color_screen_layout.addWidget(self.b_input)
+        rgba_color_screen_layout.addWidget(self.a_input)
+        rgba_color_screen_layout.addWidget(self.rgba_valid_input_widget)
+        rgba_color_screen_layout.addWidget(self.rgba_invalid_input_widget)
+
+        rgba_color_screen_layout.setContentsMargins(10,10,10,10)
+        rgba_color_screen_layout.setSpacing(10)
+        rgba_color_screen_layout.addStretch()
+
+    def create_grayscale_color_screen(self):
+        grayscale_color_screen_layout = QVBoxLayout(self.grayscale_color_screen)
+
+        self.grayscale_input = QLineEdit()
+        self.grayscale_input.setObjectName("grayscale")
+        self.grayscale_input.setPlaceholderText("Grayscale:")
+        self.grayscale_input.setStyleSheet("""
+            QLineEdit#grayscale{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+        self.grayscale_input.setMinimumHeight(60)
+
+        self.grayscale_input.textChanged.connect(self.change_grayscale_color)
+
+        self.grayscale_valid_input_widget = QWidget()
+        self.grayscale_valid_input_widget.setObjectName("grayscale_valid_input")
+        self.grayscale_valid_input_widget.setStyleSheet("""
+            QWidget#grayscale_valid_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.grayscale_valid_input_label = QLabel("Valid Input")
+        self.grayscale_valid_input_label.setWordWrap(True)
+        self.grayscale_valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.grayscale_valid_input_label.setObjectName("grayscale_valid_input_label")
+        self.grayscale_valid_input_label.setStyleSheet("""
+            QLabel#grayscale_valid_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        grayscale_valid_input_layout = QVBoxLayout(self.grayscale_valid_input_widget)
+        grayscale_valid_input_layout.addWidget(self.grayscale_valid_input_label)
+        grayscale_valid_input_layout.setSpacing(0)
+        grayscale_valid_input_layout.setContentsMargins(0,0,0,0)
+
+        self.grayscale_invalid_input_widget = QWidget()
+        self.grayscale_invalid_input_widget.setObjectName("grayscale_invalid_input")
+        self.grayscale_invalid_input_widget.setStyleSheet("""
+            QWidget#grayscale_invalid_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.grayscale_invalid_input_label = QLabel("Invalid Input")
+        self.grayscale_invalid_input_label.setWordWrap(True)
+        self.grayscale_invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.grayscale_invalid_input_label.setObjectName("grayscale_invalid_input_label")
+        self.grayscale_invalid_input_label.setStyleSheet("""
+            QLabel#grayscale_invalid_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        grayscale_invalid_input_layout = QVBoxLayout(self.grayscale_invalid_input_widget)
+        grayscale_invalid_input_layout.addWidget(self.grayscale_invalid_input_label)
+        grayscale_invalid_input_layout.setSpacing(0)
+        grayscale_invalid_input_layout.setContentsMargins(0,0,0,0)
+
+        self.grayscale_valid_input_widget.setMaximumHeight(50)
+        self.grayscale_invalid_input_widget.setMaximumHeight(50)
+
+        self.grayscale_valid_input_widget.hide()
+        self.grayscale_invalid_input_widget.hide()
+
+        grayscale_color_screen_layout.addWidget(self.grayscale_input)
+        grayscale_color_screen_layout.addWidget(self.grayscale_valid_input_widget)
+        grayscale_color_screen_layout.addWidget(self.grayscale_invalid_input_widget)
+        grayscale_color_screen_layout.setContentsMargins(10,10,10,10)
+        grayscale_color_screen_layout.setSpacing(10)
+        grayscale_color_screen_layout.addStretch()
+
+    def create_short_code_color_screen(self):
+        short_code_color_screen_layout = QVBoxLayout(self.short_code_color_screen)
+    
+        self.short_code_color_list_view = QListView()
+        self.short_code_color_model = QStringListModel(self.short_code_colors)
+        self.short_code_color_list_view.setModel(self.short_code_color_model)
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.short_code_color_list_view.setItemDelegate(CustomDelegate())
+
+        self.short_code_color_list_view.setObjectName("short_code_color_list_view")
+        self.short_code_color_list_view.setStyleSheet("""
+            QListView#short_code_color_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 24px;
+            }
+            QListView#short_code_color_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#short_code_color_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#short_code_color_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+        self.short_code_color_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.short_code_color_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.short_code_color_list_view.setSpacing(3)
+
+        self.short_code_color_list_view.clicked.connect(self.change_short_code_color)
+
+        short_code_color_screen_layout.addWidget(self.short_code_color_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        short_code_color_screen_layout.setContentsMargins(10, 10, 10, 10)
+
+    def change_to_original_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 0
+        self.label_color_adjustment_homescreen.show()
+
+    def change_to_named_color_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.previous_screen_idx = self.current_screen_idx
+        self.current_screen_idx = 1
+        self.named_color_screen.show()
+
+    def change_to_hex_code_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.previous_screen_idx = self.current_screen_idx
+        self.current_screen_idx = 2
+        self.hex_code_color_screen.show()
+
+    def change_to_rgba_color_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.previous_screen_idx = self.current_screen_idx
+        self.current_screen_idx = 3
+        self.rgba_color_screen.show()
+
+    def change_to_grayscale_colors_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.previous_screen_idx = self.current_screen_idx
+        self.current_screen_idx = 4
+        self.grayscale_color_screen.show()
+
+    def change_to_short_code_color_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.previous_screen_idx = self.current_screen_idx
+        self.current_screen_idx = 5
+        self.short_code_color_screen.show()
+
+    def set_color_to_none(self):
+        self.current_label_color = None
+        self.update_color()
+
+    def change_named_color(self,index):
+        source_index = self.filter_proxy.mapToSource(index)
+        self.current_label_color = self.named_color_model.data(source_index, Qt.ItemDataRole.DisplayRole)
+        self.update_color()
+
+    def change_hex_code_color(self):
+        hex_code = self.hex_code_input.text().strip()
+
+        if (hex_code == ""):
+            self.hex_valid_input_widget.hide()
+            self.hex_invalid_input_widget.hide()
+            return
+
+        def check_valid_hex_code(hex_code):
+            if (hex_code[0] != "#"):
+                new_hex_code = "#" + hex_code
+                return check_valid_hex_code(new_hex_code)
+            hex_code = hex_code[1:]
+            if (len(hex_code) not in [3,6,8]):
+                return False
+            try:
+                int(hex_code,16)
+                return True
+            except:
+                return False
+        
+        if (hex_code != ""):
+            validity = check_valid_hex_code(hex_code)
+            if (validity):
+                self.hex_valid_input_widget.show()
+                self.hex_invalid_input_widget.hide()
+                self.current_label_color = hex_code if hex_code[0] == "#" else "#" + hex_code
+                self.update_color()
+            else:
+                self.hex_valid_input_widget.hide()
+                self.hex_invalid_input_widget.show()
+
+    def change_rgba_color(self):
+        r_value = self.r_input.text().strip()
+        g_value = self.g_input.text().strip()
+        b_value = self.b_input.text().strip()
+        a_value = self.a_input.text().strip()
+
+        if (not(r_value or g_value or b_value or a_value)):
+            self.rgba_valid_input_widget.hide()
+            self.rgba_invalid_input_widget.hide()
+            return 
+
+        valid = None
+
+        try:
+            r_value = int(r_value) if r_value != "" else self.initial_rgba[0]
+            g_value = int(g_value) if g_value != "" else self.initial_rgba[1]
+            b_value = int(b_value) if b_value != "" else self.initial_rgba[2]
+            a_value = int(a_value) if a_value != "" else self.initial_rgba[3]
+            valid = True
+        except:
+            valid = False
+
+        if (valid):
+            self.initial_rgba[0] = r_value 
+            self.initial_rgba[1] = g_value
+            self.initial_rgba[2] = b_value 
+            self.initial_rgba[3] = a_value
+
+            self.rgba_valid_input_widget.show()
+            self.rgba_invalid_input_widget.hide()
+
+            self.current_label_color = self.initial_rgba
+
+            self.update_color()
+        else:
+            self.rgba_valid_input_widget.hide()
+            self.rgba_invalid_input_widget.show()
+
+    def change_grayscale_color(self):
+        grayscale_value = self.grayscale_input.text().strip()
+
+        if (grayscale_value == ""): 
+            self.grayscale_valid_input_widget.hide() 
+            self.grayscale_invalid_input_widget.hide()
+            return
+
+        try: 
+            grayscale_value = float(grayscale_value)
+            if (0 > grayscale_value or grayscale_value > 1):
+                raise Exception
+            self.grayscale_valid_input_widget.show()
+            self.grayscale_invalid_input_widget.hide()
+        except:
+            self.grayscale_valid_input_widget.hide()
+            self.grayscale_invalid_input_widget.show()
+
+        self.current_label_color = grayscale_value
+        self.update_color()
+
+    def change_short_code_color(self,index):
+        self.current_label_color = self.short_code_color_model.data(index, Qt.ItemDataRole.DisplayRole)
+        self.update_color()
+
+    def update_color(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_legend("facecolor",self.current_label_color)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["facecolor"] = self.current_label_color
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+
+    def mousePressEvent(self, event):
+        if not self.color_search_bar.geometry().contains(event.position().toPoint()):
+            self.color_search_bar.clearFocus()
+        if not self.hex_code_input.geometry().contains(event.position().toPoint()):
+            self.hex_code_input.clearFocus()
+        if not self.r_input.geometry().contains(event.position().toPoint()):
+            self.r_input.clearFocus()
+        if not self.g_input.geometry().contains(event.position().toPoint()):
+            self.g_input.clearFocus()
+        if not self.b_input.geometry().contains(event.position().toPoint()):
+            self.b_input.clearFocus()
+        if not self.a_input.geometry().contains(event.position().toPoint()):
+            self.a_input.clearFocus()
+        if not self.grayscale_input.geometry().contains(event.position().toPoint()):
+            self.grayscale_input.clearFocus()
+        super().mousePressEvent(event)
+
 class legend_button(QDialog):
     def __init__(self,selected_graph):
         super().__init__()
@@ -5712,7 +6869,7 @@ class legend_button(QDialog):
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.legend_parameters_section,stretch=1)
         self.layout.addSpacing(10)
-        self.layout.addWidget(borderpad_adjustment_section(self.selected_graph),stretch=1)
+        self.layout.addWidget(label_color_adjustment_section(self.selected_graph),stretch=1)
 
         #Create a shortcut for the user to go to the previous column by press up
         up_shortcut = QShortcut(QKeySequence("up"), self) 
