@@ -2610,6 +2610,7 @@ class frameon_adjustment_section(QWidget):
                 background: transparent;
             }
         """)
+        self.frameon_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
     
         #Create a button to allow the user to switch between Frameon
         self.frameon_button = QPushButton()
@@ -5235,6 +5236,7 @@ class shadow_adjustment_section(QWidget):
                 background: transparent;
             }
         """)
+        self.shadow_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
     
         #Create a button to allow the user to switch between shadow
         self.shadow_button = QPushButton()
@@ -5326,6 +5328,141 @@ class shadow_adjustment_section(QWidget):
             plot_parameters["legend"]["shadow"] = self.shadow_state
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
+class fancybox_adjustment_section(QWidget):
+    def __init__(self,selected_graph):
+        super().__init__()
+
+        self.plot_manager = PlotManager()
+        
+        self.selected_graph = selected_graph
+        
+        #Initialize the frameon state
+        self.fancybox_state = True
+        
+        #Create a widget to display the frameon adjustment section and style it for consistency
+        self.fancybox_adjustment_section = QWidget()
+        self.fancybox_adjustment_section.setObjectName("fancybox_adjustment_section")
+        self.fancybox_adjustment_section.setStyleSheet("""
+            QWidget#fancybox_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        #Create a label to put on top of the QPushButton
+        self.fancybox_label = QLabel("Fancybox On")
+        self.fancybox_label.setWordWrap(True)
+        self.fancybox_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.fancybox_label.setObjectName("fancybox_label")
+        self.fancybox_label.setStyleSheet("""
+            QLabel#fancybox_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.fancybox_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+    
+        #Create a button to allow the user to switch between shadow
+        self.fancybox_button = QPushButton()
+        self.fancybox_button.setObjectName("fancybox_button")
+        self.fancybox_button.setStyleSheet("""
+            QPushButton#fancybox_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#fancybox_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.fancybox_button.setMinimumHeight(45)
+        
+        #Put the label on top of the button we created for control frameon
+        fancybox_button_layout = QVBoxLayout(self.fancybox_button)
+        fancybox_button_layout.addWidget(self.fancybox_label)
+        fancybox_button_layout.setContentsMargins(0,0,0,0)
+        fancybox_button_layout.setSpacing(0)
+
+        #Connect the frameon button to a function to switch between the two states
+        self.fancybox_button.clicked.connect(self.switch_fancybox_state)
+
+        #Create a button layout for the frameon adjustment section
+        button_layout = QVBoxLayout(self.fancybox_adjustment_section)
+
+        #Add the frameon button to the layout
+        button_layout.addWidget(self.fancybox_button)
+
+        #Set the spacing, margins, and stretch to make it look good
+        button_layout.setSpacing(0)
+        button_layout.setContentsMargins(10,10,10,10)
+        button_layout.addStretch()
+
+        #Create a layout for the main widget and store the frameon adjustment section in
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.fancybox_adjustment_section)
+
+        #Add the spacing and margins to make sure that the section fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+    def switch_fancybox_state(self):
+        #Change the frameon_state to be the opposite of the current state and update it in the json
+        self.fancybox_state = not self.fancybox_state
+        if (self.fancybox_state):
+            self.fancybox_label.setText("Fancybox On")
+        else:
+            self.fancybox_label.setText("Fancybox Off")
+        self.update_fancybox()
+
+    def update_fancybox(self):
+        #Grab the newest entry in the json
+        db = self.plot_manager.get_db()
+        #Check if the entry is empty or not and update if it's not empty and create one with the state if it's empty
+        if (db != []):
+            self.plot_manager.update_legend("fancybox",self.fancybox_state)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["fancybox"] = self.fancybox_state
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+
 class legend_button(QDialog):
     def __init__(self,selected_graph):
         super().__init__()
@@ -5379,7 +5516,7 @@ class legend_button(QDialog):
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.legend_parameters_section,stretch=1)
         self.layout.addSpacing(10)
-        self.layout.addWidget(shadow_adjustment_section(self.selected_graph),stretch=1)
+        self.layout.addWidget(fancybox_adjustment_section(self.selected_graph),stretch=1)
 
         #Create a shortcut for the user to go to the previous column by press up
         up_shortcut = QShortcut(QKeySequence("up"), self) 
