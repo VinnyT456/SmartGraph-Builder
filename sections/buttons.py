@@ -6816,6 +6816,134 @@ class label_color_adjustment_section(QWidget):
             self.grayscale_input.clearFocus()
         super().mousePressEvent(event)
 
+class alignment_adjustment_section(QWidget):
+    def __init__(self,selected_graph):
+        super().__init__()
+        
+        self.plot_manager = PlotManager()
+        self.selected_graph = selected_graph
+
+        self.available_alignments = ["left","center","right"]
+        self.current_alignment = "center"
+
+        self.alignment_adjustment_screen = QWidget()
+        self.alignment_adjustment_screen.setObjectName("alignment_adjustment_screen")
+        self.alignment_adjustment_screen.setStyleSheet("""
+            QWidget#alignment_adjustment_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+        self.create_alignment_adjustment_screen()
+
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.alignment_adjustment_screen)
+        main_layout.setContentsMargins(0,0,0,0)
+        main_layout.setSpacing(0)
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground,True)
+
+    def create_alignment_adjustment_screen(self):
+        alignment_adjustment_screen_layout = QVBoxLayout(self.alignment_adjustment_screen)
+    
+        self.alignment_list_view = QListView()
+        self.alignment_model = QStringListModel(self.available_alignments)
+
+        self.alignment_list_view.setModel(self.alignment_model)
+        self.alignment_list_view.setObjectName("alignment_list_view")
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.alignment_list_view.setItemDelegate(CustomDelegate())
+
+        self.alignment_list_view.setStyleSheet("""
+            QListView#alignment_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 24px;
+            }
+            QListView#alignment_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#alignment_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#alignment_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.alignment_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.alignment_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.alignment_list_view.setSpacing(3)
+
+        self.alignment_list_view.clicked.connect(self.change_alignment)
+
+        alignment_adjustment_screen_layout.addWidget(self.alignment_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        alignment_adjustment_screen_layout.setContentsMargins(10, 10, 10, 10)
+
+    def change_alignment(self,index):
+        self.current_alignment = self.alignment_model.data(index,Qt.ItemDataRole.DisplayRole)
+        self.update_alignment()
+
+    def update_alignment(self): 
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_legend("alignment",self.current_alignment)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["alignment"] = self.current_alignment
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+
 class legend_button(QDialog):
     def __init__(self,selected_graph):
         super().__init__()
@@ -6869,7 +6997,7 @@ class legend_button(QDialog):
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.legend_parameters_section,stretch=1)
         self.layout.addSpacing(10)
-        self.layout.addWidget(label_color_adjustment_section(self.selected_graph),stretch=1)
+        self.layout.addWidget(alignment_adjustment_section(self.selected_graph),stretch=1)
 
         #Create a shortcut for the user to go to the previous column by press up
         up_shortcut = QShortcut(QKeySequence("up"), self) 
