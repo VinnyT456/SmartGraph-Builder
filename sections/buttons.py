@@ -7894,6 +7894,141 @@ class handleheight_adjustment_section(QWidget):
             self.handleheight_input.clearFocus()
         super().mousePressEvent(event)
 
+class markerfist_adjustment_section(QWidget):
+    def __init__(self,selected_graph):
+        super().__init__()
+
+        self.plot_manager = PlotManager()
+        
+        self.selected_graph = selected_graph
+        
+        #Initialize the frameon state
+        self.markerfirst_state = True
+        
+        #Create a widget to display the frameon adjustment section and style it for consistency
+        self.markerfirst_adjustment_section = QWidget()
+        self.markerfirst_adjustment_section.setObjectName("markerfirst_adjustment_section")
+        self.markerfirst_adjustment_section.setStyleSheet("""
+            QWidget#markerfirst_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        #Create a label to put on top of the QPushButton
+        self.markerfirst_label = QLabel("Markerfirst On")
+        self.markerfirst_label.setWordWrap(True)
+        self.markerfirst_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.markerfirst_label.setObjectName("markerfirst_label")
+        self.markerfirst_label.setStyleSheet("""
+            QLabel#markerfirst_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.markerfirst_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+    
+        #Create a button to allow the user to switch between shadow
+        self.markerfirst_button = QPushButton()
+        self.markerfirst_button.setObjectName("markerfirst_button")
+        self.markerfirst_button.setStyleSheet("""
+            QPushButton#markerfirst_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#markerfirst_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.markerfirst_button.setMinimumHeight(45)
+        
+        #Put the label on top of the button we created for control frameon
+        markerfirst_button_layout = QVBoxLayout(self.markerfirst_button)
+        markerfirst_button_layout.addWidget(self.markerfirst_label)
+        markerfirst_button_layout.setContentsMargins(0,0,0,0)
+        markerfirst_button_layout.setSpacing(0)
+
+        #Connect the frameon button to a function to switch between the two states
+        self.markerfirst_button.clicked.connect(self.switch_markerfirst_state)
+
+        #Create a button layout for the frameon adjustment section
+        button_layout = QVBoxLayout(self.markerfirst_adjustment_section)
+
+        #Add the frameon button to the layout
+        button_layout.addWidget(self.markerfirst_button)
+
+        #Set the spacing, margins, and stretch to make it look good
+        button_layout.setSpacing(0)
+        button_layout.setContentsMargins(10,10,10,10)
+        button_layout.addStretch()
+
+        #Create a layout for the main widget and store the frameon adjustment section in
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.markerfirst_adjustment_section)
+
+        #Add the spacing and margins to make sure that the section fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+    def switch_markerfirst_state(self):
+        #Change the frameon_state to be the opposite of the current state and update it in the json
+        self.markerfirst_state = not self.markerfirst_state
+        if (self.markerfirst_state):
+            self.markerfirst_label.setText("Markerfirst On")
+        else:
+            self.markerfirst_label.setText("Markerfirst Off")
+        self.update_markerfirst()
+
+    def update_markerfirst(self):
+        #Grab the newest entry in the json
+        db = self.plot_manager.get_db()
+        #Check if the entry is empty or not and update if it's not empty and create one with the state if it's empty
+        if (db != []):
+            self.plot_manager.update_legend("markerfirst",self.markerfirst_state)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["markerfirst"] = self.markerfirst_state
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+
 class legend_button(QDialog):
     def __init__(self,selected_graph):
         super().__init__()
@@ -7947,7 +8082,7 @@ class legend_button(QDialog):
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.legend_parameters_section,stretch=1)
         self.layout.addSpacing(10)
-        self.layout.addWidget(handleheight_adjustment_section(self.selected_graph),stretch=1)
+        self.layout.addWidget(markerfist_adjustment_section(self.selected_graph),stretch=1)
 
         #Create a shortcut for the user to go to the previous column by press up
         up_shortcut = QShortcut(QKeySequence("up"), self) 
