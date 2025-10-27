@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (
     QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QPushButton, QScrollArea, 
     QSizePolicy, QTableView, QWidget, QVBoxLayout, QStyledItemDelegate
 )
+from matplotlib import streamplot
 from sections.dataset import PrepareDataset
 from sections.plot_manager import PlotManager
 import matplotlib.colors as mcolors
@@ -2087,7 +2088,7 @@ class legend_title_adjustment_section(QWidget):
         self.title_input.setFixedHeight(60)
 
         #Connect the object to a function to allow it to update automatically
-        self.title_input.textChanged.connect(self.update_title)
+        self.title_input.textChanged.connect(self.change_title)
 
         #Create a layout for the title section and add the line edit object to the layout
         title_section_layout = QVBoxLayout(self.title_adjustment_section)
@@ -2108,7 +2109,7 @@ class legend_title_adjustment_section(QWidget):
     
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
-    def update_title(self):
+    def change_title(self):
         #Extract the title from the user input and remove any excess spaces.
         self.title_value = self.title_input.text().strip()
 
@@ -2507,7 +2508,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
         self.fixed_title_fontsize_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.fixed_title_fontsize_list_view.setSpacing(3)
 
-        self.fixed_title_fontsize_list_view.clicked.connect(self.change_to_fixed_title_fontsize)
+        self.fixed_title_fontsize_list_view.clicked.connect(self.change_fixed_title_fontsize)
 
         fixed_title_fontsize_screen_layout.addWidget(self.fixed_title_fontsize_list_view)
 
@@ -2542,27 +2543,26 @@ class legend_title_fontsize_adjustment_section(QWidget):
         #Check if the input is valid and only update if it's valid
         try:
             current_title_fontsize_value = int(current_title_fontsize_value)
-            if (0 >= current_title_fontsize_value):
+            if (current_title_fontsize_value <= 0):
                 raise Exception
             self.valid_input_widget.show()
             self.invalid_input_widget.hide()
+            self.current_title_fontsize = current_title_fontsize_value
+            self.update_title_fontsize()
         except:
             self.valid_input_widget.hide()
             self.invalid_input_widget.show()
-        else:
-            self.current_title_fontsize = current_title_fontsize_value
-            self.update_fontsize()
 
     def change_fixed_title_fontsize(self,index):
         self.current_title_fontsize = self.fixed_title_fontsize_model.data(index, Qt.ItemDataRole.DisplayRole)
-        self.update_fontsize()
+        self.update_title_fontsize()
 
-    def update_fontsize(self):
+    def update_title_fontsize(self):
         #Grab the newest entry in the json file
         db = self.plot_manager.get_db()
         #Check if the entry is empty or not and update if not empty and add if empty
         if (db != []):
-            self.plot_manager.update_legend("fontsize",self.current_title_fontsize)
+            self.plot_manager.update_legend("title_fontsize",self.current_title_fontsize)
         else:
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["title_fontsize"] = self.current_title_fontsize
@@ -6793,10 +6793,10 @@ class label_color_adjustment_section(QWidget):
     def update_color(self):
         db = self.plot_manager.get_db()
         if (db != []):
-            self.plot_manager.update_legend("facecolor",self.current_label_color)
+            self.plot_manager.update_legend("labelcolor",self.current_label_color)
         else:
             plot_parameters = plot_json[self.selected_graph].copy()
-            plot_parameters["legend"]["facecolor"] = self.current_label_color
+            plot_parameters["legend"]["labelcolor"] = self.current_label_color
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
     def mousePressEvent(self, event):
@@ -7894,7 +7894,7 @@ class handleheight_adjustment_section(QWidget):
             self.handleheight_input.clearFocus()
         super().mousePressEvent(event)
 
-class markerfist_adjustment_section(QWidget):
+class markerfirst_adjustment_section(QWidget):
     def __init__(self,selected_graph):
         super().__init__()
 
@@ -8040,11 +8040,19 @@ class legend_button(QDialog):
         self.legend_parameters = list(plot_json[self.selected_graph]["legend"].keys())
         self.current_screen_index = 0
 
-        self.available_screens = [loc_adjustment_section,bbox_to_anchor_adjustment_section,
+        self.available_screen_names = [loc_adjustment_section,bbox_to_anchor_adjustment_section,
                                   ncol_adjustment_section,fontsize_adjustment_section,
                                   legend_title_adjustment_section,legend_title_fontsize_adjustment_section,
                                   frameon_adjustment_section,face_color_adjustment_section,
-                                  edge_color_adjustment_section,framealpha_adjustment_section]
+                                  edge_color_adjustment_section,framealpha_adjustment_section,
+                                  shadow_adjustment_section,fancybox_adjustment_section,
+                                  borderpad_adjustment_section,label_color_adjustment_section,
+                                  alignment_adjustment_section,columnspacing_adjustment_section,
+                                  handletextpad_adjustment_section,borderaxespad_adjustment_section,
+                                  handlelength_adjustment_section,handleheight_adjustment_section,
+                                  markerfirst_adjustment_section]
+
+        self.available_screens = dict()
 
         self.setStyleSheet("""
             QDialog{
@@ -8082,7 +8090,16 @@ class legend_button(QDialog):
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.legend_parameters_section,stretch=1)
         self.layout.addSpacing(10)
-        self.layout.addWidget(markerfist_adjustment_section(self.selected_graph),stretch=1)
+        
+        #Add the parameters screen to the layout
+        for screen_name,screen in zip(self.legend_parameters,self.available_screen_names):
+            parameter_screen = screen(selected_graph)
+            parameter_screen.hide()
+            self.available_screens[screen_name] = parameter_screen
+            self.layout.addWidget(parameter_screen,stretch=1)
+        
+        #Show the first parameter screen
+        self.available_screens.get(self.legend_parameters[self.current_screen_index]).show()
 
         #Create a shortcut for the user to go to the previous column by press up
         up_shortcut = QShortcut(QKeySequence("up"), self) 
@@ -8185,19 +8202,26 @@ class legend_button(QDialog):
         # Add margins and spacing to make it look good and push content to the top
         legend_parameter_button_layout.setContentsMargins(10, 10, 10, 10)
 
-    def change_current_parameter_screen(self):
-        pass
+    def change_current_parameter_screen(self,index):
+        current_screen_name = self.legend_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
+        self.available_screens.get(self.legend_parameters[self.current_screen_index]).hide()
+        self.available_screens.get(current_screen_name).show()
+        self.current_screen_index = index.row()
     
     def columns_go_up(self):
+        self.available_screens.get(self.legend_parameters[self.current_screen_index]).hide()
         self.current_screen_index -= 1
         self.current_screen_index %= len(self.legend_parameters)
+        self.available_screens.get(self.legend_parameters[self.current_screen_index]).show()
         new_screen_index = self.legend_parameter_model.index(self.current_screen_index)
         self.legend_parameter_list_view.setCurrentIndex(new_screen_index)
         self.legend_parameter_list_view.scrollTo(new_screen_index,QAbstractItemView.ScrollHint.PositionAtCenter)
 
     def columns_go_down(self):
+        self.available_screens.get(self.legend_parameters[self.current_screen_index]).hide()
         self.current_screen_index += 1
         self.current_screen_index %= len(self.legend_parameters)
+        self.available_screens.get(self.legend_parameters[self.current_screen_index]).show()
         new_screen_index = self.legend_parameter_model.index(self.current_screen_index)
         self.legend_parameter_list_view.setCurrentIndex(new_screen_index)
         self.legend_parameter_list_view.scrollTo(new_screen_index,QAbstractItemView.ScrollHint.PositionAtCenter)
