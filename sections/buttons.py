@@ -2658,7 +2658,7 @@ class frameon_adjustment_section(QWidget):
         frameon_button_layout.setSpacing(0)
 
         #Connect the frameon button to a function to switch between the two states
-        self.frameon_button.clicked.connect(self.switch_on_frameon)
+        self.frameon_button.clicked.connect(self.switch_frameon_state)
 
         #Create a button layout for the frameon adjustment section
         button_layout = QVBoxLayout(self.frameon_adjustment_section)
@@ -2681,7 +2681,7 @@ class frameon_adjustment_section(QWidget):
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
-    def switch_on_frameon(self):
+    def switch_frameon_state(self):
         #Change the frameon_state to be the opposite of the current state and update it in the json
         self.frameon_state = not self.frameon_state
         if (self.frameon_state):
@@ -5192,6 +5192,140 @@ class framealpha_adjustment_section(QWidget):
             self.framealpha_input.clearFocus()
         super().mousePressEvent(event)
 
+class shadow_adjustment_section(QWidget):
+    def __init__(self,selected_graph):
+        super().__init__()
+
+        self.plot_manager = PlotManager()
+        
+        self.selected_graph = selected_graph
+        
+        #Initialize the frameon state
+        self.shadow_state = False
+        
+        #Create a widget to display the frameon adjustment section and style it for consistency
+        self.shadow_adjustment_section = QWidget()
+        self.shadow_adjustment_section.setObjectName("shadow_adjustment_section")
+        self.shadow_adjustment_section.setStyleSheet("""
+            QWidget#shadow_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        #Create a label to put on top of the QPushButton
+        self.shadow_label = QLabel("Shadow Off")
+        self.shadow_label.setWordWrap(True)
+        self.shadow_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.shadow_label.setObjectName("shadow_label")
+        self.shadow_label.setStyleSheet("""
+            QLabel#shadow_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+    
+        #Create a button to allow the user to switch between shadow
+        self.shadow_button = QPushButton()
+        self.shadow_button.setObjectName("shadow_button")
+        self.shadow_button.setStyleSheet("""
+            QPushButton#shadow_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#shadow_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.shadow_button.setMinimumHeight(45)
+        
+        #Put the label on top of the button we created for control frameon
+        shadow_button_layout = QVBoxLayout(self.shadow_button)
+        shadow_button_layout.addWidget(self.shadow_label)
+        shadow_button_layout.setContentsMargins(0,0,0,0)
+        shadow_button_layout.setSpacing(0)
+
+        #Connect the frameon button to a function to switch between the two states
+        self.shadow_button.clicked.connect(self.switch_shadow_state)
+
+        #Create a button layout for the frameon adjustment section
+        button_layout = QVBoxLayout(self.shadow_adjustment_section)
+
+        #Add the frameon button to the layout
+        button_layout.addWidget(self.shadow_button)
+
+        #Set the spacing, margins, and stretch to make it look good
+        button_layout.setSpacing(0)
+        button_layout.setContentsMargins(10,10,10,10)
+        button_layout.addStretch()
+
+        #Create a layout for the main widget and store the frameon adjustment section in
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.shadow_adjustment_section)
+
+        #Add the spacing and margins to make sure that the section fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+    def switch_shadow_state(self):
+        #Change the frameon_state to be the opposite of the current state and update it in the json
+        self.shadow_state = not self.shadow_state
+        if (self.shadow_state):
+            self.shadow_label.setText("Shadow On")
+        else:
+            self.shadow_label.setText("Shadow Off")
+        self.update_shadow()
+
+    def update_shadow(self):
+        #Grab the newest entry in the json
+        db = self.plot_manager.get_db()
+        #Check if the entry is empty or not and update if it's not empty and create one with the state if it's empty
+        if (db != []):
+            self.plot_manager.update_legend("shadow",self.shadow_state)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["shadow"] = self.shadow_state
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+
 class legend_button(QDialog):
     def __init__(self,selected_graph):
         super().__init__()
@@ -5245,7 +5379,7 @@ class legend_button(QDialog):
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.legend_parameters_section,stretch=1)
         self.layout.addSpacing(10)
-        self.layout.addWidget(frameon_adjustment_section(self.selected_graph),stretch=1)
+        self.layout.addWidget(shadow_adjustment_section(self.selected_graph),stretch=1)
 
         #Create a shortcut for the user to go to the previous column by press up
         up_shortcut = QShortcut(QKeySequence("up"), self) 
