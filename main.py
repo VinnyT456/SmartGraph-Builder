@@ -4,6 +4,7 @@ import sys
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
 )
+
 from sections.ai_summary import AI_Summary_Section
 from sections.dataset import Dataset_Section
 from sections.graph import Graph_Section
@@ -17,45 +18,52 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("SmartGraph Builder")
         self.setFixedSize(1400, 800)
 
+        self.dataset_section = Dataset_Section()
+        self.graph_section = Graph_Section()
+        self.graph_parameter_section = GraphParameter_Section(self)
+        self.data_preprocessing_section = DataPreprocessing_Section()
+        self.ai_summary_section = AI_Summary_Section()
+        self.code_section = Code_Section()
+
         #Create a vertical box layout and add the graph parameter and data preprocessing section in it
         preprocessing_parameters_layout = QVBoxLayout()
-        preprocessing_parameters_layout.addWidget(GraphParameter_Section(),stretch=6)
-        preprocessing_parameters_layout.addWidget(DataPreprocessing_Section(),stretch=4)
+        preprocessing_parameters_layout.addWidget(self.graph_parameter_section,stretch=6)
+        preprocessing_parameters_layout.addWidget(self.data_preprocessing_section,stretch=4)
         preprocessing_parameters_layout.setContentsMargins(0,0,0,0) 
         preprocessing_parameters_layout.setSpacing(20)
 
         #Add the layout we just created into the preprocessing/parameter section on the right
-        preprocessing_section = QWidget()
-        preprocessing_section.setLayout(preprocessing_parameters_layout) 
+        preprocessing_section_widget = QWidget()
+        preprocessing_section_widget.setLayout(preprocessing_parameters_layout) 
 
         #Create a vertical box layout and add the dataset and AI summary section in it
         dataset_ai_layout = QVBoxLayout()
-        dataset_ai_layout.addWidget(Dataset_Section(),stretch=6)
-        dataset_ai_layout.addWidget(AI_Summary_Section(),stretch=4)
+        dataset_ai_layout.addWidget(self.dataset_section,stretch=6)
+        dataset_ai_layout.addWidget(self.ai_summary_section,stretch=4)
         dataset_ai_layout.setContentsMargins(0,0,0,0)
         dataset_ai_layout.setSpacing(20)
 
         #Add the layout we just created to the dataset/AI summary section on the left
-        dataset_section = QWidget()
-        dataset_section.setLayout(dataset_ai_layout)
+        dataset_section_widget = QWidget()
+        dataset_section_widget.setLayout(dataset_ai_layout)
 
         #Create a vertical box layout and add the graph and code generation section in it
         graph_code_layout = QVBoxLayout()
-        graph_code_layout.addWidget(Graph_Section(),stretch=9)
-        graph_code_layout.addWidget(Code_Section(),stretch=1)
+        graph_code_layout.addWidget(self.graph_section,stretch=9)
+        graph_code_layout.addWidget(self.code_section,stretch=1)
         graph_code_layout.setContentsMargins(0,0,0,0)
         graph_code_layout.setSpacing(20)
 
-        graph_section = QWidget()
-        graph_section.setLayout(graph_code_layout)
+        graph_section_widget = QWidget()
+        graph_section_widget.setLayout(graph_code_layout)
 
         #Create a horizontal box layout to store all the sections that we have available
         window_layout = QHBoxLayout()
-        window_layout.addWidget(dataset_section)
+        window_layout.addWidget(dataset_section_widget)
         window_layout.addSpacing(20)
-        window_layout.addWidget(graph_section) 
+        window_layout.addWidget(graph_section_widget) 
         window_layout.addSpacing(20)
-        window_layout.addWidget(preprocessing_section)
+        window_layout.addWidget(preprocessing_section_widget)
         window_layout.setContentsMargins(20,20,20,20) 
         window_layout.setSpacing(0)                     
 
@@ -83,3 +91,5 @@ if __name__ == '__main__':
     window = MainWindow()
     window.show()
     app.exec()
+
+
