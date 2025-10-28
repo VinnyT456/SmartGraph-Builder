@@ -145,8 +145,11 @@ SEABORN_PLOTS = {
 }
 
 class graph_parameter_table(QWidget):
-    def __init__(self):
+    def __init__(self,main_window):
         super().__init__()
+
+        self.main_window = main_window
+        self.graph_display = self.main_window.graph_section.display_graph
 
         #Keep a dictionary of all the possible buttons and the features
         self.button_collections = {
@@ -237,9 +240,9 @@ class graph_parameter_table(QWidget):
         def handle_button_function(name,function):
             if (name not in self.dialogs.keys()):
                 if (name.lower() == "x-axis" or name.lower() == "y-axis"):
-                    instance = function(SEABORN_PLOTS,selected_graph)
+                    instance = function(SEABORN_PLOTS,selected_graph,self.graph_display)
                 else:
-                    instance = function(selected_graph)
+                    instance = function(selected_graph,self.graph_display)
                 self.dialogs[name] = instance
             
             instance = self.dialogs.get(name)
@@ -761,11 +764,13 @@ class GraphParameter_Table(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
 class GraphParameter_Section(QWidget):
-    def __init__(self):
+    def __init__(self,main_window):
         super().__init__()
 
+        self.main_window = main_window
+
         #Create an instance of the graph_parameters, graph_parameters_topbar, and graph_parameters_table 
-        self.graph_parameters = graph_parameter_table()
+        self.graph_parameters = graph_parameter_table(self.main_window)
         self.graph_parameters_topbar = GraphParameter_TopBar(self.graph_parameters)
         self.graph_parameters_table = GraphParameter_Table(self.graph_parameters)
 
