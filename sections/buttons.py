@@ -75,10 +75,7 @@ class x_axis_button(QDialog):
 
         #Keep track of the current column and index
         self.column_name = ''
-        self.idx = 0
-    
-        #Store all the buttons in a list for highlighting the selected one
-        self.buttons = []
+        self.current_column_index = 0
         
         #Style the Dialog window for selecting the x-axis
         self.setStyleSheet("""
@@ -98,6 +95,9 @@ class x_axis_button(QDialog):
         self.setFixedWidth(600)
         self.setFixedHeight(500)
 
+        self.get_dataset()
+        self.usable_columns = self.find_usable_columns()
+
         #Create a section to store all the buttons and style it
         self.button_section = QWidget()
         self.button_section.setObjectName("button_section")
@@ -113,6 +113,8 @@ class x_axis_button(QDialog):
                 border-radius: 24px;
             }
         """)
+        self.create_button_section()
+        self.update_x_axis()
 
         #Create a section to display the dataset and style it
         self.data_section = QWidget()
@@ -161,22 +163,7 @@ class x_axis_button(QDialog):
             }
         """)
 
-        #Create a scrollable area to allow the user to scroll through the buttons
-        self.scroll_section = QScrollArea()
-        self.scroll_section.setFrameShape(QScrollArea.Shape.NoFrame)
-        self.scroll_section.setWidgetResizable(True)
-
-        #Place the scrollable area on the button section
-        self.scroll_section.setWidget(self.button_section)
-        self.scroll_section.setStyleSheet("""
-            QScrollArea{
-                background: transparent;
-                border: none;
-                border-radius: 24px;
-            }
-        """)
-        #Hide the handle
-        self.scroll_section.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.display_dataset()
 
         #Place the dataset table on top of the dataset section
         layout = QVBoxLayout(self.data_section)
@@ -189,7 +176,7 @@ class x_axis_button(QDialog):
 
         #Place the buttons and the dataset next to each other side by side
         self.layout = QHBoxLayout(self)
-        self.layout.addWidget(self.scroll_section,stretch=1)
+        self.layout.addWidget(self.button_section,stretch=1)
         self.layout.addSpacing(10)
         self.layout.addWidget(self.data_section,stretch=1)
 
@@ -201,9 +188,8 @@ class x_axis_button(QDialog):
         down_shortcut = QShortcut(QKeySequence("down"), self) 
         down_shortcut.activated.connect(self.columns_go_down)
 
-        #Create a shortcut for the user to select the column by pressing enter/return
-        enter_shortcut = QShortcut(QKeySequence("Return"), self) 
-        enter_shortcut.activated.connect(self.select_x_axis_column) 
+        return_shortcut = QShortcut(QKeySequence("Return"),self)
+        return_shortcut.activated.connect(self.exit_dialog)
 
         #Make sure this gets drawn.
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
@@ -219,52 +205,91 @@ class x_axis_button(QDialog):
                 return columns.tolist()
         return []
 
-    def create_buttons(self):  
-        if (self.usable_columns == []):
-            return
+    def create_button_section(self):  
+        column_button_layout = QVBoxLayout(self.button_section)
+    
+        self.column_button_list_view = QListView()
+        self.column_button_model = QStringListModel(self.usable_columns)
 
-        def remove_layout(widget):
-            layout = widget.layout()
-            if layout is not None:
-                while layout.count():
-                    item = layout.takeAt(0)
-                    child = item.widget()
-                    if child is not None:
-                        child.setParent(None)
-                QWidget().setLayout(layout)
+        self.column_button_list_view.setModel(self.column_button_model)
+        self.column_button_list_view.setObjectName("column_button_list_view")
+
+        column_index = self.column_button_model.index(self.current_column_index)  
+        self.column_button_list_view.setCurrentIndex(column_index)
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
         
-        #Make sure that there is no old buttons in the layout
-        for btn in self.buttons:
-            self.layout.removeWidget(btn)
-            btn.deleteLater()
-        self.buttons.clear()
-        remove_layout(self.button_section)
+        self.column_button_list_view.setItemDelegate(CustomDelegate())
 
-        #Create a vertical box to put the buttons in. Make sure they are positioned vertically.
-        button_layout = QVBoxLayout(self.button_section)
+        self.column_button_list_view.setStyleSheet("""
+            QListView#column_button_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 24px;
+            }
+            QListView#column_button_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#column_button_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#column_button_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
 
-        #Go through each column in the list and create a button for each of them
-        for column in self.usable_columns:
+        self.column_button_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.column_button_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.column_button_list_view.setSpacing(3)
 
-            #Make a copy of the current column name
-            column_name = str(column)
+        self.column_button_list_view.clicked.connect(self.change_current_column)
 
-            #Create the button with the column name, give it an object name, and give it a fixedHeight for consistency
-            column_button = QPushButton(column_name)
-            column_button.setObjectName("not_selected")
-            column_button.setFixedHeight(45)
+        column_button_layout.addWidget(self.column_button_list_view)
 
-            #Connect each button to the change column feature to ensure that dataset being displayed changes with the button
-            column_button.clicked.connect(lambda checked=False, col=column_name: self.change_column(col))
-
-            #Add the button to the list and the layout
-            self.buttons.append(column_button)
-            button_layout.addWidget(column_button)
-
-        #Add margins and spacing to make it look and push all the buttons to the top
-        button_layout.setContentsMargins(10,10,10,10)
-        button_layout.setSpacing(5) 
-        button_layout.addStretch()
+        # Add margins and spacing to make it look good and push content to the top
+        column_button_layout.setContentsMargins(10, 10, 10, 10)
 
     def get_dataset(self):
         self.dataset = pd.read_csv("./dataset/user_dataset.csv")
@@ -278,136 +303,33 @@ class x_axis_button(QDialog):
         self.dataset_table.setShowGrid(True)
         self.dataset_table.setSortingEnabled(False)
 
-    def change_column(self,column):
-        if (self.usable_columns == []):
-            return
-        #Keep track of the old idx and change both the column name and new idx
-        old_idx = self.idx
-        self.column_name = column
-        self.idx = self.usable_columns.index(self.column_name)
-
-        if (old_idx != self.idx):
-            #Change the current column that's being displayed and highlight the selected button
-            self.display_dataset()
-            self.highlighted_selected_column(old_idx)
+    def change_current_column(self,index):
+        self.column_name = self.column_button_model.data(index, Qt.ItemDataRole.DisplayRole)
+        self.current_column_index = index.row()
+        self.display_dataset()
+        self.update_x_axis()
 
     def columns_go_down(self):
-        if (self.usable_columns == []):
-            return
-        #Keep track of the old idx and change both the column name and idx
-        #Change the column display and the button selected
-        old_idx = self.idx
-        self.idx += 1
-        self.idx %= len(self.usable_columns)
-        self.highlighted_selected_column(old_idx)
-        self.column_name = self.usable_columns[self.idx]
+        self.current_column_index += 1
+        self.current_column_index %= len(self.usable_columns)
+        new_screen_index = self.column_button_model.index(self.current_column_index)
+        self.column_button_list_view.setCurrentIndex(new_screen_index)
+        self.column_button_list_view.scrollTo(new_screen_index,QAbstractItemView.ScrollHint.PositionAtCenter)
+        self.column_name = self.usable_columns[self.current_column_index]
         self.display_dataset()
-
-        vertical_scroll_bar = self.scroll_section.verticalScrollBar()
-        if (old_idx == len(self.usable_columns)-1 and self.idx == 0):
-            vertical_scroll_bar.setValue(0)
-        elif (self.idx == len(self.usable_columns)-1):
-            vertical_scroll_bar.setValue(vertical_scroll_bar.maximum())
-        elif (self.idx > 8 and self.idx < len(self.usable_columns)):
-            scroll_value = min(vertical_scroll_bar.maximum(), vertical_scroll_bar.value() + 50)
-            vertical_scroll_bar.setValue(scroll_value)
+        self.update_x_axis()
 
     def columns_go_up(self):
-        if (self.usable_columns == []):
-            return
-        #Keep track of the old idx and change both the column name and idx
-        #Change the column display and the button selected
-        old_idx = self.idx
-        self.idx -= 1
-        self.idx %= len(self.usable_columns)
-        self.highlighted_selected_column(old_idx)
-        self.column_name = self.usable_columns[self.idx]
+        self.current_column_index -= 1
+        self.current_column_index %= len(self.usable_columns)
+        new_screen_index = self.column_button_model.index(self.current_column_index)
+        self.column_button_list_view.setCurrentIndex(new_screen_index)
+        self.column_button_list_view.scrollTo(new_screen_index,QAbstractItemView.ScrollHint.PositionAtCenter)
+        self.column_name = self.usable_columns[self.current_column_index]
         self.display_dataset()
+        self.update_x_axis()
 
-        vertical_scroll_bar = self.scroll_section.verticalScrollBar()
-        if (old_idx == 0 and self.idx == len(self.usable_columns)-1):
-            max_scroll_value = vertical_scroll_bar.maximum()
-            vertical_scroll_bar.setValue(max_scroll_value)
-        elif (self.idx == 0):
-            vertical_scroll_bar.setValue(0)
-        elif (self.idx < len(self.usable_columns) - 9):
-            scroll_value = max(0, vertical_scroll_bar.value() - 50)
-            vertical_scroll_bar.setValue(scroll_value)
-
-    def highlighted_selected_column(self,old_idx=-1):
-        if (self.usable_columns == []):
-            return
-        #Set the current button selected to be called selected
-        self.buttons[self.idx].setObjectName("selected")
-        #If there is a old_idx then change the old button to be not selected
-        if (old_idx != -1):
-            self.buttons[old_idx].setObjectName("not_selected")
-
-        #Customize the dialog window and each button selected and not selected
-        self.setStyleSheet("""
-            QDialog{
-                background: qlineargradient(
-                    x1: 0, y1: 1, 
-                    x2: 0, y2: 0,
-                    stop: 0 rgba(25, 191, 188, 1),
-                    stop: 0.28 rgba(27, 154, 166, 1),
-                    stop: 0.65 rgba(78, 160, 242, 1),
-                    stop: 0.89 rgba(33, 218, 255, 1)
-                );
-            }
-            QPushButton#selected{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#not_selected{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#not_selected:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-    #Close the window and record the selected column
-    def select_x_axis_column(self):
+    def update_x_axis(self):
         db = self.plot_manager.get_db()
         if (db != []):
             plot_parameters = db.copy()
@@ -416,41 +338,29 @@ class x_axis_button(QDialog):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["x"] = self.column_name
         self.plot_manager.insert_x_axis_data(plot_parameters)
-        self.close()
+        self.graph_display.show_graph()
 
-    def showEvent(self, event):
-        super().showEvent(event)
-        self.get_dataset()
-        #Generate the usable columns in the dataset
-        self.usable_columns = self.find_usable_columns()
-        #Create the buttons
-        self.create_buttons()
-        #Display the column in that dataset
-        self.display_dataset()
-        #Highlight the selected column in the buttons
-        self.highlighted_selected_column()
+    def exit_dialog(self):
+        self.close()
 
 class y_axis_button(QDialog):
     def __init__(self,plot_parameters,selected_graph,graph_display):
         super().__init__()
 
+        self.plot_manager = PlotManager()
+
         self.plot_parameters = plot_parameters
         self.selected_graph = selected_graph
         self.graph_display = graph_display
-
-        self.plot_manager = PlotManager()
         
         #Set the title of the window
         self.setWindowTitle("Select the y-axis")
 
         #Keep track of the current column and index
         self.column_name = ''
-        self.idx = 0
-
-        #Store all the buttons in a list for highlighting the selected one
-        self.buttons = []
+        self.current_column_index = 0
         
-        #Style the Dialog window for selecting the y-axis
+        #Style the Dialog window for selecting the x-axis
         self.setStyleSheet("""
             QDialog{
                background: qlineargradient(
@@ -468,6 +378,9 @@ class y_axis_button(QDialog):
         self.setFixedWidth(600)
         self.setFixedHeight(500)
 
+        self.get_dataset()
+        self.usable_columns = self.find_usable_columns()
+
         #Create a section to store all the buttons and style it
         self.button_section = QWidget()
         self.button_section.setObjectName("button_section")
@@ -483,6 +396,8 @@ class y_axis_button(QDialog):
                 border-radius: 24px;
             }
         """)
+        self.create_button_section()
+        self.update_y_axis()
 
         #Create a section to display the dataset and style it
         self.data_section = QWidget()
@@ -531,22 +446,7 @@ class y_axis_button(QDialog):
             }
         """)
 
-        #Create a scrollable area to allow the user to scroll through the buttons
-        self.scroll_section = QScrollArea()
-        self.scroll_section.setFrameShape(QScrollArea.Shape.NoFrame)
-        self.scroll_section.setWidgetResizable(True)
-
-        #Place the scrollable area on the button section
-        self.scroll_section.setWidget(self.button_section)
-        self.scroll_section.setStyleSheet("""
-            QScrollArea{
-                background: transparent;
-                border: none;
-                border-radius: 24px;
-            }
-        """)
-        #Hide the handle
-        self.scroll_section.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.display_dataset()
 
         #Place the dataset table on top of the dataset section
         layout = QVBoxLayout(self.data_section)
@@ -559,7 +459,7 @@ class y_axis_button(QDialog):
 
         #Place the buttons and the dataset next to each other side by side
         self.layout = QHBoxLayout(self)
-        self.layout.addWidget(self.scroll_section,stretch=1)
+        self.layout.addWidget(self.button_section,stretch=1)
         self.layout.addSpacing(10)
         self.layout.addWidget(self.data_section,stretch=1)
 
@@ -571,9 +471,8 @@ class y_axis_button(QDialog):
         down_shortcut = QShortcut(QKeySequence("down"), self) 
         down_shortcut.activated.connect(self.columns_go_down)
 
-        #Create a shortcut for the user to select the column by pressing enter/return
-        enter_shortcut = QShortcut(QKeySequence("Return"), self) 
-        enter_shortcut.activated.connect(self.select_y_axis_column) 
+        return_shortcut = QShortcut(QKeySequence("Return"),self)
+        return_shortcut.activated.connect(self.exit_dialog)
 
         #Make sure this gets drawn.
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
@@ -589,51 +488,91 @@ class y_axis_button(QDialog):
                 return columns.tolist()
         return []
 
-    def create_buttons(self):  
-        if (self.usable_columns == []):
-            return
+    def create_button_section(self):  
+        column_button_layout = QVBoxLayout(self.button_section)
+    
+        self.column_button_list_view = QListView()
+        self.column_button_model = QStringListModel(self.usable_columns)
 
-        def remove_layout(widget):
-            layout = widget.layout()
-            if layout is not None:
-                while layout.count():
-                    item = layout.takeAt(0)
-                    child = item.widget()
-                    if child is not None:
-                        child.setParent(None)
-                QWidget().setLayout(layout)
+        self.column_button_list_view.setModel(self.column_button_model)
+        self.column_button_list_view.setObjectName("column_button_list_view")
 
-        #Make sure that there is no old buttons in the layout
-        for btn in self.buttons:
-            self.layout.removeWidget(btn)
-            btn.deleteLater()
-        self.buttons.clear()
-        remove_layout(self.button_section)
+        column_index = self.column_button_model.index(self.current_column_index)  
+        self.column_button_list_view.setCurrentIndex(column_index)
 
-        #Create a vertical box to put the buttons in. Make sure they are positioned vertically.
-        button_layout = QVBoxLayout(self.button_section)
-        #Go through each column in the list and create a button for each of them
-        for column in self.usable_columns:
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.column_button_list_view.setItemDelegate(CustomDelegate())
 
-            #Make a copy of the current column name
-            column_name = str(column)
+        self.column_button_list_view.setStyleSheet("""
+            QListView#column_button_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 24px;
+            }
+            QListView#column_button_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#column_button_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#column_button_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
 
-            #Create the button with the column name, give it an object name, and give it a fixedHeight for consistency
-            column_button = QPushButton(column_name)
-            column_button.setObjectName("not_selected")
-            column_button.setFixedHeight(45)
+        self.column_button_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.column_button_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.column_button_list_view.setSpacing(3)
 
-            #Connect each button to the change column feature to ensure that dataset being displayed changes with the button
-            column_button.clicked.connect(lambda checked=False, col=column_name: self.change_column(col))
+        self.column_button_list_view.clicked.connect(self.change_current_column)
 
-            #Add the button to the list and the layout
-            self.buttons.append(column_button)
-            button_layout.addWidget(column_button)
+        column_button_layout.addWidget(self.column_button_list_view)
 
-        #Add margins and spacing to make it look and push all the buttons to the top
-        button_layout.setContentsMargins(10,10,10,10)
-        button_layout.setSpacing(5) 
-        button_layout.addStretch()
+        # Add margins and spacing to make it look good and push content to the top
+        column_button_layout.setContentsMargins(10, 10, 10, 10)
 
     def get_dataset(self):
         self.dataset = pd.read_csv("./dataset/user_dataset.csv")
@@ -647,131 +586,33 @@ class y_axis_button(QDialog):
         self.dataset_table.setShowGrid(True)
         self.dataset_table.setSortingEnabled(False)
 
-    def change_column(self,column):
-        if (self.usable_columns == []):
-            return
-        #Keep track of the old idx and change both the column name and new idx
-        old_idx = self.idx
-        self.column_name = column
-        self.idx = self.usable_columns.index(self.column_name)
-
-        #Change the current column that's being displayed and highlight the selected button
+    def change_current_column(self,index):
+        self.column_name = self.column_button_model.data(index, Qt.ItemDataRole.DisplayRole)
+        self.current_column_index = index.row()
         self.display_dataset()
-        self.highlighted_selected_column(old_idx)
+        self.update_y_axis()
 
     def columns_go_down(self):
-        if (self.usable_columns == []):
-            return
-        #Keep track of the old idx and change both the column name and idx
-        #Change the column display and the button selected
-        old_idx = self.idx
-        self.idx += 1
-        self.idx %= len(self.usable_columns)
-        self.highlighted_selected_column(old_idx)
-        self.column_name = self.usable_columns[self.idx]
+        self.current_column_index += 1
+        self.current_column_index %= len(self.usable_columns)
+        new_screen_index = self.column_button_model.index(self.current_column_index)
+        self.column_button_list_view.setCurrentIndex(new_screen_index)
+        self.column_button_list_view.scrollTo(new_screen_index,QAbstractItemView.ScrollHint.PositionAtCenter)
+        self.column_name = self.usable_columns[self.current_column_index]
         self.display_dataset()
-
-        vertical_scroll_bar = self.scroll_section.verticalScrollBar()
-        if (old_idx == len(self.usable_columns)-1 and self.idx == 0):
-            vertical_scroll_bar.setValue(0)
-        if self.idx > 8 and self.idx < len(self.usable_columns):
-            scroll_value = min(vertical_scroll_bar.maximum(), vertical_scroll_bar.value() + 50)
-            vertical_scroll_bar.setValue(scroll_value)
+        self.update_y_axis()
 
     def columns_go_up(self):
-        if (self.usable_columns == []):
-            return
-        #Keep track of the old idx and change both the column name and idx
-        #Change the column display and the button selected
-        old_idx = self.idx
-        self.idx -= 1
-        self.idx %= len(self.usable_columns)
-        self.highlighted_selected_column(old_idx)
-        self.column_name = self.usable_columns[self.idx]
+        self.current_column_index -= 1
+        self.current_column_index %= len(self.usable_columns)
+        new_screen_index = self.column_button_model.index(self.current_column_index)
+        self.column_button_list_view.setCurrentIndex(new_screen_index)
+        self.column_button_list_view.scrollTo(new_screen_index,QAbstractItemView.ScrollHint.PositionAtCenter)
+        self.column_name = self.usable_columns[self.current_column_index]
         self.display_dataset()
+        self.update_y_axis()
 
-        vertical_scroll_bar = self.scroll_section.verticalScrollBar()
-        if (old_idx == 0 and self.idx == len(self.usable_columns)-1):
-            max_scroll_value = vertical_scroll_bar.maximum()
-            vertical_scroll_bar.setValue(max_scroll_value)
-        elif self.idx < len(self.usable_columns) - 9:
-            scroll_value = max(0, vertical_scroll_bar.value() - 50)
-            vertical_scroll_bar.setValue(scroll_value)
-
-    def highlighted_selected_column(self,old_idx=-1):
-        if (self.usable_columns == []):
-            return
-        #Set the current button selected to be called selected
-        self.buttons[self.idx].setObjectName("selected")
-        #If there is a old_idx then change the old button to be not selected
-        if (old_idx != -1):
-            self.buttons[old_idx].setObjectName("not_selected")
-
-        #Customize the dialog window and each button selected and not selected
-        self.setStyleSheet("""
-            QDialog{
-                background: qlineargradient(
-                    x1: 0, y1: 1, 
-                    x2: 0, y2: 0,
-                    stop: 0 rgba(25, 191, 188, 1),
-                    stop: 0.28 rgba(27, 154, 166, 1),
-                    stop: 0.65 rgba(78, 160, 242, 1),
-                    stop: 0.89 rgba(33, 218, 255, 1)
-                );
-            }
-            QPushButton#selected{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#not_selected{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#not_selected:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-    #Close the window and record the selected column
-    def select_y_axis_column(self):
+    def update_y_axis(self):
         db = self.plot_manager.get_db()
         if (db != []):
             plot_parameters = db.copy()
@@ -780,19 +621,10 @@ class y_axis_button(QDialog):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["y"] = self.column_name
         self.plot_manager.insert_y_axis_data(plot_parameters)
-        self.close()
+        self.graph_display.show_graph()
 
-    def showEvent(self, event):
-        super().showEvent(event)
-        self.get_dataset()
-        #Generate the usable columns in the dataset
-        self.usable_columns = self.find_usable_columns()
-        #Create the buttons
-        self.create_buttons()
-        #Display the column in that dataset
-        self.display_dataset()
-        #Highlight the selected column in the buttons
-        self.highlighted_selected_column()
+    def exit_dialog(self):
+        self.close()
 
 class axis_title_button(QDialog):
     def __init__(self,selected_graph,graph_display):
