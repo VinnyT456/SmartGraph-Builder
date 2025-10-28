@@ -4,7 +4,6 @@ import sys
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
 )
-
 from sections.ai_summary import AI_Summary_Section
 from sections.dataset import Dataset_Section
 from sections.graph import Graph_Section

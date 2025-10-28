@@ -1,7 +1,79 @@
+from io import BytesIO
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtWidgets import (
-    QHBoxLayout, QLabel, QPushButton, QSizePolicy, QWidget, QVBoxLayout
+    QHBoxLayout, QLabel, QPushButton, QSizePolicy, QStackedLayout, QWidget, QVBoxLayout
 )
+from sections.plot_manager import PlotManager
+import seaborn as sns
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+
+class graph_generator(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        self.plot_manager = PlotManager()
+        self.default_config_plot_manager = PlotManager("./default_plot_config.json")
+
+    def prepare_plotting(self):
+        self.current_graph_parameters = self.plot_manager.get_db()
+
+        self.dataset = pd.read_csv(self.current_graph_parameters.get("data"))
+
+        self.graph_type = self.current_graph_parameters["type"]
+        self.available_graphs = {
+            "Scatter Plot":sns.scatterplot
+        }
+
+        self.graph_axis_titles = self.current_graph_parameters.get("axis-title")
+        self.graph_title = self.current_graph_parameters.get("title")
+        self.graph_grid = self.current_graph_parameters.get("grid")
+
+        self.graph_legend_parameters = self.current_graph_parameters.get("legend")
+
+        for key in ["legend","version","type","grid","axis-title","title"]:
+            self.current_graph_parameters.pop(key,None)
+
+        self.graph_parameters = self.current_graph_parameters.copy()
+        self.graph_parameters["data"] = self.dataset
+
+    def create_graph(self,parent=None):
+        self.prepare_plotting()
+
+        widget = QWidget(parent)
+        widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+        # make the matplotlib figure
+        graph = self.available_graphs.get(self.graph_type)(**self.graph_parameters)
+        fig = graph.get_figure()
+        buf = BytesIO()
+        fig.savefig(buf, format="png")
+        buf.seek(0)
+        plt.close(fig)
+
+        # check the QImage conversion
+        image = QImage.fromData(buf.getvalue())
+        pixmap = QPixmap.fromImage(image)
+        label = QLabel()
+        label.setObjectName("image_label")
+        label.setStyleSheet("""
+            QLabel#image_label{
+                border-radius: 16px;
+            }
+        """)
+        label.setPixmap(pixmap)
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        label.setScaledContents(True)
+        label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+        image_layout = QVBoxLayout(widget)
+        image_layout.addWidget(label)
+        image_layout.setContentsMargins(0,0,0,0)
+        image_layout.setSpacing(0)
+
+        return widget
 
 class new_graph_button(QPushButton):
     def __init__(self):
@@ -347,23 +419,39 @@ class Graph_TopBar(QWidget):
 class Graph_Display(QWidget):
     def __init__(self):
         super().__init__()
+        self.setObjectName("graph_display_main_screen")
         self.setStyleSheet("""
-            background: qlineargradient(
-                x1:0, y1:0, x2:1, y2:0,
-                stop:0 #f5f5ff,
-                stop:0.5 #f7f5fc,
-                stop:1 #f0f0ff
-            );
-            border: 2px solid #d0d0ff;
-            border-radius: 24px;
+            QWidget#graph_display_main_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid #d0d0ff;
+                border-radius: 24px;
+            }
         """)
 
-        #Control the size of the section
         self.setFixedWidth(620)
 
-        #Ensure that everything is properly drawn onto the main window
+        self.graph_generator = graph_generator()
+
+        # This layout is correct
+        self.graph_display_layout = QStackedLayout(self)
+        self.graph_display_layout.setContentsMargins(10,10,10,10)
+        self.graph_display_layout.setSpacing(0)
+
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+    def show_graph(self):
+        try:
+            graph_widget = self.graph_generator.create_graph()
+            self.graph_display_layout.addWidget(graph_widget)
+            self.graph_display_layout.setCurrentWidget(graph_widget)
+        except:
+            pass
 
 class Graph_Section(QWidget):
     def __init__(self):
