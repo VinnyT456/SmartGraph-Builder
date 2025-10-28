@@ -3,6 +3,10 @@ from tinydb import TinyDB, Query
 class PlotManager:
     def __init__(self, db_path="plot_config.json"):
         self.db = TinyDB(db_path)
+        self.graphs = ["Scatter Plot","Line Plot","Regression Plot","Bar Plot",
+                       "Count Plot","Box Plot","Violin Plot","Swarm Plot",
+                       "Strip Plot","Histogram","KDE Plot","ECDF Plot","Rug Plot",
+                       "Heatmap","Pair Plot","Joint Plot","Cluster Map"]
 
     @property
     def current_version(self):
@@ -16,13 +20,16 @@ class PlotManager:
             return self.db.all()[-1]
         return []
 
+    def get_specific_db(self,graph):
+        return self.db.all()[self.graphs.index(graph)]
+
     def insert_x_axis_data(self, plot_data):
-        if (self.db.all() != [] and self.db.all()[-1]["y-axis"] != ""):
+        if (self.db.all() != [] and self.db.all()[-1]["y"] != ""):
             self.db.truncate()
         self.db.insert(plot_data)
 
     def insert_y_axis_data(self, plot_data):
-        if (self.db.all() != [] and self.db.all()[-1]["x-axis"] != ""):
+        if (self.db.all() != [] and self.db.all()[-1]["x"] != ""):
             self.db.truncate()
         self.db.insert(plot_data)
 
