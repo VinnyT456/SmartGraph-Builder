@@ -1,0 +1,42 @@
+{
+    "Scatter Plot":{
+        "data":"./dataset/user_dataset.csv",
+        "x":null,
+        "y":null,
+        "x-axis-title":"",
+        "y-axis-title":"",
+        "title":null,
+        "legend":{
+            "loc":"best",
+            "bbox_to_anchor":null,
+            "ncol":1,
+            "fontsize":null,
+            "title":null,
+            "title_fontsize":null,
+            "frameon":true,
+            "facecolor":null,
+            "edgecolor":null,
+            "framealpha":null,
+            "shadow":false,
+            "fancybox":true,
+            "borderpad":0.4,
+            "labelcolor":"none",
+            "alignment":"center",
+            "columnspacing":2.0,
+            "handletextpad":0.8,
+            "borderaxespad":0.5,
+            "handlelength":2.0,
+            "handleheight":0.7,
+            "markerfirst":true
+        },
+        "grid":false,
+        "hue":null,
+        "style":null,
+        "size":null,
+        "palette":null,
+        "alpha":1.0,
+        "marker":"o",
+        "s":36,
+        "edgecolor":"w"
+    }
+}
