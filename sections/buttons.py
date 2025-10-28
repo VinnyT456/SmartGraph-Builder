@@ -14,12 +14,12 @@ plot_json = {
     "Scatter Plot":{
         "version":1,
         "type":"Scatter Plot",
-        "data":"./user_dataset.csv",
-        "x-axis":None,
-        "y-axis":None,
-        "axis title":{
-            "x-axis":"",
-            "y-axis":"",
+        "data":"./dataset/user_dataset.csv",
+        "x":None,
+        "y":None,
+        "axis-title":{
+            "x-axis-title":"",
+            "y-axis-title":"",
         },
         "title":None,
         "legend":{
@@ -61,13 +61,14 @@ if os.path.exists("plot_config.json"):
     os.remove("plot_config.json")
 
 class x_axis_button(QDialog):
-    def __init__(self,plot_parameters,selected_graph):
+    def __init__(self,plot_parameters,selected_graph,graph_display):
         super().__init__()
 
         self.plot_manager = PlotManager()
 
         self.plot_parameters = plot_parameters
         self.selected_graph = selected_graph
+        self.graph_display = graph_display
         
         #Set the title of the window
         self.setWindowTitle("Select the x-axis")
@@ -410,10 +411,10 @@ class x_axis_button(QDialog):
         db = self.plot_manager.get_db()
         if (db != []):
             plot_parameters = db.copy()
-            plot_parameters["x-axis"] = self.column_name
+            plot_parameters["x"] = self.column_name
         else:
             plot_parameters = plot_json[self.selected_graph].copy()
-            plot_parameters["x-axis"] = self.column_name
+            plot_parameters["x"] = self.column_name
         self.plot_manager.insert_x_axis_data(plot_parameters)
         self.close()
 
@@ -430,11 +431,12 @@ class x_axis_button(QDialog):
         self.highlighted_selected_column()
 
 class y_axis_button(QDialog):
-    def __init__(self,plot_parameters,selected_graph):
+    def __init__(self,plot_parameters,selected_graph,graph_display):
         super().__init__()
 
         self.plot_parameters = plot_parameters
         self.selected_graph = selected_graph
+        self.graph_display = graph_display
 
         self.plot_manager = PlotManager()
         
@@ -576,7 +578,6 @@ class y_axis_button(QDialog):
         #Make sure this gets drawn.
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
-
     def find_usable_columns(self):
         #Get the needed data type from the dictionary
         y_axis_data_type = self.plot_parameters[self.selected_graph].get("y-axis_data_type")
@@ -637,7 +638,6 @@ class y_axis_button(QDialog):
     def get_dataset(self):
         self.dataset = pd.read_csv("./dataset/user_dataset.csv")
 
-    #Display the dataset and make it look decent
     def display_dataset(self):
         if (self.usable_columns == []):
             return
@@ -775,10 +775,10 @@ class y_axis_button(QDialog):
         db = self.plot_manager.get_db()
         if (db != []):
             plot_parameters = db.copy()
-            plot_parameters["y-axis"] = self.column_name
+            plot_parameters["y"] = self.column_name
         else:
             plot_parameters = plot_json[self.selected_graph].copy()
-            plot_parameters["y-axis"] = self.column_name
+            plot_parameters["y"] = self.column_name
         self.plot_manager.insert_y_axis_data(plot_parameters)
         self.close()
 
@@ -795,11 +795,12 @@ class y_axis_button(QDialog):
         self.highlighted_selected_column()
 
 class axis_title_button(QDialog):
-    def __init__(self,selected_graph):
+    def __init__(self,selected_graph,graph_display):
         super().__init__()
 
         self.plot_manager = PlotManager()
         self.selected_graph = selected_graph
+        self.graph_display = graph_display
         self.axis_title_created = False
 
         self.setWindowTitle("Enter the x/y axis titles")
@@ -875,32 +876,33 @@ class axis_title_button(QDialog):
 
         db = self.plot_manager.get_db()
         if (db != []):
-            if ((db["axis title"]["x-axis"] == "" and db["axis title"]["y-axis"] == "") or not self.axis_title_created):
-                db["axis title"]["x-axis"] = x_axis_title
+            if ((db["axis title"]["x-axis-title"] == "" and db["axis title"]["y-axis-title"] == "") or not self.axis_title_created):
+                db["axis title"]["x-axis-title"] = x_axis_title
                 self.axis_title_created = True
                 self.plot_manager.insert_plot_parameter(db)
             else:
                 self.plot_manager.update_x_axis_title(x_axis_title)
         else:
             plot_parameter = plot_json[self.selected_graph].copy()
-            plot_parameter["axis title"]["x-axis"] = x_axis_title
+            plot_parameter["axis title"]["x-axis-title"] = x_axis_title
             self.axis_title_created = not self.axis_title_created
             self.plot_manager.insert_plot_parameter(plot_parameter)
+        
         
 
     def y_axis_update_text(self):
         y_axis_title = self.y_axis_title_section.text().strip()
         db = self.plot_manager.get_db()
         if (db != []):
-            if ((db["axis title"]["x-axis"] == "" and db["axis title"]["y-axis"] == "") or not self.axis_title_created):
-                db["axis title"]["y-axis"] = y_axis_title
+            if ((db["axis title"]["x-axis-title"] == "" and db["axis title"]["y-axis-title"] == "") or not self.axis_title_created):
+                db["axis title"]["y-axis-title"] = y_axis_title
                 self.plot_manager.insert_plot_parameter(db)
                 self.axis_title_created = True
             else:
                 self.plot_manager.update_y_axis_title(y_axis_title)
         else:
             plot_parameter = plot_json[self.selected_graph].copy()
-            plot_parameter["axis title"]["y-axis"] = y_axis_title
+            plot_parameter["axis title"]["y-axis-title"] = y_axis_title
             self.plot_manager.insert_plot_parameter(plot_parameter)
             self.axis_title_created = True
 
@@ -909,12 +911,14 @@ class axis_title_button(QDialog):
         self.close()
 
 class title_button(QDialog):
-    def __init__(self,selected_graph):
+    def __init__(self,selected_graph,graph_display):
         super().__init__()
 
         self.plot_manager = PlotManager()
         self.selected_graph = selected_graph
         self.title_created = False
+
+        self.graph_display = graph_display
 
         self.setWindowTitle("Enter the Title for the graph")
         self.setFixedHeight(80)
@@ -978,18 +982,20 @@ class title_button(QDialog):
             plot_parameters["title"] = title
             self.plot_manager.insert_plot_parameter(plot_parameters)
             self.title_created = True
+        self.graph_display.show_graph()
 
     def close_application(self):
         self.title_created = False
         self.close()
 
 class loc_adjustment_section(QWidget):
-    def __init__(self,selected_graph):
+    def __init__(self,selected_graph,graph_display):
         super().__init__()
 
         self.plot_manager = PlotManager()
 
         self.selected_graph = selected_graph
+        self.graph_display = graph_display
 
         #Create a section to display the loc section and style it
         self.loc_adjustment_section = QWidget()
@@ -1156,12 +1162,13 @@ class loc_adjustment_section(QWidget):
         super().mousePressEvent(event)
         
 class bbox_to_anchor_adjustment_section(QWidget):
-    def __init__(self,selected_graph):
+    def __init__(self,selected_graph,graph_display):
         super().__init__()
         
         self.plot_manager = PlotManager()
         
         self.selected_graph = selected_graph
+        self.graph_display = graph_display
 
         #Create a section to display the loc section and style it
         self.bbox_adjustment_section = QWidget()
@@ -1413,12 +1420,13 @@ class bbox_to_anchor_adjustment_section(QWidget):
         super().mousePressEvent(event)
 
 class ncol_adjustment_section(QWidget):
-    def __init__(self,selected_graph):
+    def __init__(self,selected_graph,graph_display):
         super().__init__()
         
         self.plot_manager = PlotManager()
         
         self.selected_graph = selected_graph
+        self.graph_display = graph_display
 
         #Create a section to display the loc section and style it
         self.ncol_adjustment_section = QWidget()
@@ -1603,12 +1611,13 @@ class ncol_adjustment_section(QWidget):
         super().mousePressEvent(event)
 
 class fontsize_adjustment_section(QWidget):
-    def __init__(self,selected_graph):
+    def __init__(self,selected_graph,graph_display):
         super().__init__()
         
         self.plot_manager = PlotManager()
 
         self.selected_graph = selected_graph
+        self.graph_display = graph_display
 
         #Initialize the options for the fixed fontsize
         self.fixed_fontsizes = ["xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large"]
@@ -2041,12 +2050,13 @@ class fontsize_adjustment_section(QWidget):
         super().mousePressEvent(event)
 
 class legend_title_adjustment_section(QWidget):
-    def __init__(self,selected_graph):
+    def __init__(self,selected_graph,graph_display):
         super().__init__()
         
         self.plot_manager = PlotManager()
         
         self.selected_graph = selected_graph
+        self.graph_display = graph_display
 
         #Create a section to display the loc section and style it
         self.title_adjustment_section = QWidget()
@@ -2133,12 +2143,13 @@ class legend_title_adjustment_section(QWidget):
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
 class legend_title_fontsize_adjustment_section(QWidget):
-    def __init__(self,selected_graph):
+    def __init__(self,selected_graph,graph_display):
         super().__init__()
         
         self.plot_manager = PlotManager()
 
         self.selected_graph = selected_graph
+        self.graph_display = graph_display
         
         #Initialize the fixed fontsizes
         self.fixed_title_fontsizes = ["xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large"]
@@ -2573,12 +2584,13 @@ class legend_title_fontsize_adjustment_section(QWidget):
         super().mousePressEvent(event)
 
 class frameon_adjustment_section(QWidget):
-    def __init__(self,selected_graph):
+    def __init__(self,selected_graph,graph_display):
         super().__init__()
         
         self.plot_manager = PlotManager()
 
         self.selected_graph = selected_graph
+        self.graph_display = graph_display
         
         #Initialize the frameon state
         self.frameon_state = True
@@ -2708,8 +2720,10 @@ class frameon_adjustment_section(QWidget):
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
 class face_color_adjustment_section(QWidget):
-    def __init__(self,selected_graph):
+    def __init__(self,selected_graph,graph_display):
         super().__init__()
+
+        self.graph_display = graph_display
 
         self.plot_manager = PlotManager()
         self.selected_graph = selected_graph
@@ -3861,8 +3875,10 @@ class face_color_adjustment_section(QWidget):
         super().mousePressEvent(event)
 
 class edge_color_adjustment_section(QWidget):
-    def __init__(self,selected_graph):
+    def __init__(self,selected_graph,graph_display):
         super().__init__()
+
+        self.graph_display = graph_display
 
         self.plot_manager = PlotManager()
         self.selected_graph = selected_graph
@@ -5014,9 +5030,11 @@ class edge_color_adjustment_section(QWidget):
         super().mousePressEvent(event)
 
 class framealpha_adjustment_section(QWidget):
-    def __init__(self,selected_graph):
+    def __init__(self,selected_graph,graph_display):
         super().__init__()
         
+        self.graph_display = graph_display
+
         self.plot_manager = PlotManager()
         
         self.selected_graph = selected_graph
@@ -5203,8 +5221,10 @@ class framealpha_adjustment_section(QWidget):
         super().mousePressEvent(event)
 
 class shadow_adjustment_section(QWidget):
-    def __init__(self,selected_graph):
+    def __init__(self,selected_graph,graph_display):
         super().__init__()
+
+        self.graph_display = graph_display
 
         self.plot_manager = PlotManager()
         
@@ -5338,8 +5358,10 @@ class shadow_adjustment_section(QWidget):
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
 class fancybox_adjustment_section(QWidget):
-    def __init__(self,selected_graph):
+    def __init__(self,selected_graph,graph_display):
         super().__init__()
+
+        self.graph_display = graph_display
 
         self.plot_manager = PlotManager()
         
@@ -5473,8 +5495,10 @@ class fancybox_adjustment_section(QWidget):
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
 class borderpad_adjustment_section(QWidget):
-    def __init__(self, selected_graph):
+    def __init__(self, selected_graph,graph_display):
         super().__init__()
+
+        self.graph_display = graph_display
 
         self.plot_manager = PlotManager()
         
@@ -5663,8 +5687,10 @@ class borderpad_adjustment_section(QWidget):
         super().mousePressEvent(event)
 
 class label_color_adjustment_section(QWidget):
-    def __init__(self,selected_graph):
+    def __init__(self,selected_graph,graph_display):
         super().__init__()
+
+        self.graph_display = graph_display
 
         self.plot_manager = PlotManager()
         self.selected_graph = selected_graph
@@ -6816,8 +6842,10 @@ class label_color_adjustment_section(QWidget):
         super().mousePressEvent(event)
 
 class alignment_adjustment_section(QWidget):
-    def __init__(self,selected_graph):
+    def __init__(self,selected_graph,graph_display):
         super().__init__()
+
+        self.graph_display = graph_display
         
         self.plot_manager = PlotManager()
         self.selected_graph = selected_graph
@@ -6944,8 +6972,10 @@ class alignment_adjustment_section(QWidget):
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
 class columnspacing_adjustment_section(QWidget):
-    def __init__(self, selected_graph):
+    def __init__(self, selected_graph,graph_display):
         super().__init__()
+
+        self.graph_display = graph_display
 
         self.plot_manager = PlotManager()
         
@@ -7134,8 +7164,10 @@ class columnspacing_adjustment_section(QWidget):
         super().mousePressEvent(event)
 
 class handletextpad_adjustment_section(QWidget):
-    def __init__(self, selected_graph):
+    def __init__(self, selected_graph,graph_display):
         super().__init__()
+
+        self.graph_display = graph_display
 
         self.plot_manager = PlotManager()
         
@@ -7324,8 +7356,10 @@ class handletextpad_adjustment_section(QWidget):
         super().mousePressEvent(event)
 
 class borderaxespad_adjustment_section(QWidget):
-    def __init__(self, selected_graph):
+    def __init__(self, selected_graph,graph_display):
         super().__init__()
+
+        self.graph_display = graph_display
 
         self.plot_manager = PlotManager()
         
@@ -7514,8 +7548,10 @@ class borderaxespad_adjustment_section(QWidget):
         super().mousePressEvent(event)
 
 class handlelength_adjustment_section(QWidget):
-    def __init__(self, selected_graph):
+    def __init__(self, selected_graph, graph_display):
         super().__init__()
+
+        self.graph_display = graph_display
 
         self.plot_manager = PlotManager()
         
@@ -7704,8 +7740,10 @@ class handlelength_adjustment_section(QWidget):
         super().mousePressEvent(event)
 
 class handleheight_adjustment_section(QWidget):
-    def __init__(self, selected_graph):
+    def __init__(self, selected_graph, graph_display):
         super().__init__()
+
+        self.graph_display = graph_display
 
         self.plot_manager = PlotManager()
         
@@ -7894,8 +7932,10 @@ class handleheight_adjustment_section(QWidget):
         super().mousePressEvent(event)
 
 class markerfirst_adjustment_section(QWidget):
-    def __init__(self,selected_graph):
+    def __init__(self,selected_graph,graph_display):
         super().__init__()
+
+        self.graph_display = graph_display
 
         self.plot_manager = PlotManager()
         
@@ -8029,12 +8069,12 @@ class markerfirst_adjustment_section(QWidget):
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
 class legend_button(QDialog):
-    def __init__(self,selected_graph):
+    def __init__(self,selected_graph, graph_display):
         super().__init__()
-
         self.setWindowTitle("Customize Legend")
 
         self.selected_graph = selected_graph
+        self.graph_display = graph_display
 
         self.legend_parameters = list(plot_json[self.selected_graph]["legend"].keys())
         self.current_screen_index = 0
@@ -8092,7 +8132,7 @@ class legend_button(QDialog):
         
         #Add the parameters screen to the layout
         for screen_name,screen in zip(self.legend_parameters,self.available_screen_names):
-            parameter_screen = screen(selected_graph)
+            parameter_screen = screen(self.selected_graph,self.graph_display)
             parameter_screen.hide()
             self.available_screens[screen_name] = parameter_screen
             self.layout.addWidget(parameter_screen,stretch=1)
