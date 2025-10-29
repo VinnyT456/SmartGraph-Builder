@@ -29,6 +29,9 @@ class graph_generator(QWidget):
         }
 
         self.graph_axis_titles = self.current_graph_parameters.get("axis-title")
+        self.x_axis_title = self.graph_axis_titles["x-axis-title"]
+        self.y_axis_title = self.graph_axis_titles["y-axis-title"]
+
         self.graph_title = self.current_graph_parameters.get("title")
         self.graph_grid = self.current_graph_parameters.get("grid")
 
@@ -40,14 +43,24 @@ class graph_generator(QWidget):
         self.graph_parameters = self.current_graph_parameters.copy()
         self.graph_parameters["data"] = self.dataset
 
-    def create_graph(self,parent=None):
+    def create_graph(self):
         self.prepare_plotting()
 
-        widget = QWidget(parent)
+        widget = QWidget()
         widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         # make the matplotlib figure
         graph = self.available_graphs.get(self.graph_type)(**self.graph_parameters)
+
+        if (self.x_axis_title != ""):
+            graph.set_xlabel(self.x_axis_title)
+        if (self.y_axis_title != ""):
+            graph.set_ylabel(self.y_axis_title)
+        if (self.graph_title != ""):
+            graph.set_title(self.graph_title)
+        if (self.graph_grid == True):
+            graph.grid(True)
+
         fig = graph.get_figure()
         buf = BytesIO()
         fig.savefig(buf, format="png")
