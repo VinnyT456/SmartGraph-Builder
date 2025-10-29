@@ -1,6 +1,7 @@
+from ctypes import alignment
 from io import BytesIO
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QImage, QPixmap
+from PyQt6.QtGui import QImage, QPainter, QPainterPath, QPixmap
 from PyQt6.QtWidgets import (
     QHBoxLayout, QLabel, QPushButton, QSizePolicy, QStackedLayout, QWidget, QVBoxLayout
 )
@@ -15,10 +16,10 @@ class graph_generator(QWidget):
         super().__init__()
 
         self.plot_manager = PlotManager()
-        self.default_config_plot_manager = PlotManager("./default_plot_config.json")
 
     def prepare_plotting(self):
         self.current_graph_parameters = self.plot_manager.get_db()
+        self.default_config_plot_manager = PlotManager("./default_plot_config.json")
 
         self.dataset = pd.read_csv(self.current_graph_parameters.get("data"))
 
@@ -53,19 +54,39 @@ class graph_generator(QWidget):
         buf.seek(0)
         plt.close(fig)
 
-        # check the QImage conversion
+        #Draw the pixmap with the round corners
         image = QImage.fromData(buf.getvalue())
         pixmap = QPixmap.fromImage(image)
+        mask = QPixmap(pixmap.size())
+        mask.fill(Qt.GlobalColor.transparent)
+
+        painter = QPainter(mask)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        path = QPainterPath()
+        path.addRoundedRect(0, 0, pixmap.width(), pixmap.height(), 20, 20)
+        painter.fillPath(path, Qt.GlobalColor.white)
+        painter.end()
+
+        pixmap.setMask(mask.createMaskFromColor(Qt.GlobalColor.transparent))
+
+        # check the QImage conversion
         label = QLabel()
         label.setObjectName("image_label")
         label.setStyleSheet("""
-            QLabel#image_label{
+            QLabel#image_label {
                 border-radius: 16px;
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                padding: 0px;
             }
         """)
+        label.setScaledContents(True)
         label.setPixmap(pixmap)
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.setScaledContents(True)
         label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         image_layout = QVBoxLayout(widget)
@@ -437,9 +458,18 @@ class Graph_Display(QWidget):
 
         self.graph_generator = graph_generator()
 
+        self.graph_widget = QWidget()
+        self.graph_widget.setObjectName("graph_widget")
+        self.graph_widget.setStyleSheet("""
+            QWidget{
+                background: transparent;
+                border-radius: 24px;
+            }
+        """)
+
         # This layout is correct
         self.graph_display_layout = QStackedLayout(self)
-        self.graph_display_layout.setContentsMargins(10,10,10,10)
+        self.graph_display_layout.setContentsMargins(0,0,0,0)
         self.graph_display_layout.setSpacing(0)
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
