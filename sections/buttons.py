@@ -708,8 +708,8 @@ class axis_title_button(QDialog):
 
         db = self.plot_manager.get_db()
         if (db != []):
-            if ((db["axis title"]["x-axis-title"] == "" and db["axis title"]["y-axis-title"] == "") or not self.axis_title_created):
-                db["axis title"]["x-axis-title"] = x_axis_title
+            if ((db["axis-title"]["x-axis-title"] == "" and db["axis-title"]["y-axis-title"] == "") or not self.axis_title_created):
+                db["axis-title"]["x-axis-title"] = x_axis_title
                 self.axis_title_created = True
                 self.plot_manager.insert_plot_parameter(db)
             else:
@@ -719,15 +719,14 @@ class axis_title_button(QDialog):
             plot_parameter["axis title"]["x-axis-title"] = x_axis_title
             self.axis_title_created = not self.axis_title_created
             self.plot_manager.insert_plot_parameter(plot_parameter)
-        
-        
+        self.graph_display.show_graph()
 
     def y_axis_update_text(self):
         y_axis_title = self.y_axis_title_section.text().strip()
         db = self.plot_manager.get_db()
         if (db != []):
-            if ((db["axis title"]["x-axis-title"] == "" and db["axis title"]["y-axis-title"] == "") or not self.axis_title_created):
-                db["axis title"]["y-axis-title"] = y_axis_title
+            if ((db["axis-title"]["x-axis-title"] == "" and db["axis-title"]["y-axis-title"] == "") or not self.axis_title_created):
+                db["axis-title"]["y-axis-title"] = y_axis_title
                 self.plot_manager.insert_plot_parameter(db)
                 self.axis_title_created = True
             else:
@@ -737,6 +736,7 @@ class axis_title_button(QDialog):
             plot_parameter["axis title"]["y-axis-title"] = y_axis_title
             self.plot_manager.insert_plot_parameter(plot_parameter)
             self.axis_title_created = True
+        self.graph_display.show_graph()
 
     def close_application(self):
         self.axis_title_created = False
@@ -8101,11 +8101,12 @@ class legend_button(QDialog):
         self.close()
 
 class grid_button(QPushButton):
-    def __init__(self,selected_graph):
+    def __init__(self,selected_graph,graph_display):
         super().__init__()
         self.plot_manager = PlotManager()
         self.initial_grid_state = True
         self.selected_graph = selected_graph
+        self.graph_display = graph_display
         self.update_grid()
 
     def update_grid(self):
@@ -8117,3 +8118,4 @@ class grid_button(QPushButton):
             plot_parameter = plot_json[self.selected_graph].copy()
             plot_parameter["grid"] = self.initial_grid_state
             self.plot_manager.insert_plot_parameter(plot_parameter) 
+            self.graph_display.show_graph()
