@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import (
 from sections.plot_manager import PlotManager
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 import pandas as pd
 import numpy as np
 
@@ -16,6 +17,11 @@ class graph_generator(QWidget):
         super().__init__()
 
         self.plot_manager = PlotManager()
+
+        self.gradient = None
+        gradient = np.linspace(0, 1, 1024).reshape(1, -1)
+        gradient = np.repeat(gradient, 1024, axis=0)
+        self.gradient = gradient
 
     def prepare_plotting(self):
         self.current_graph_parameters = self.plot_manager.get_db()
@@ -43,6 +49,32 @@ class graph_generator(QWidget):
         self.graph_parameters = self.current_graph_parameters.copy()
         self.graph_parameters["data"] = self.dataset
 
+    def apply_gradient_background(self, fig, ax):
+        colors = ["#f5f5ff", "#f7f5fc", "#f0f0ff"] 
+        cmap = LinearSegmentedColormap.from_list("qt_gradient", colors)
+        bg_ax = fig.add_axes([0, 0, 1, 1], zorder=0)
+        bg_ax.axis("off")  
+
+        bg_ax.imshow(
+            self.gradient,
+            aspect='auto',
+            cmap=cmap,
+            origin='lower',
+            extent=[0, 1, 0, 1],
+            transform=bg_ax.transAxes
+        )
+
+        ax.imshow(
+            self.gradient,
+            aspect="auto",
+            cmap=cmap,
+            origin="lower",
+            extent=[*ax.get_xlim(), *ax.get_ylim()],
+            zorder=0,
+        )
+        ax.set_facecolor((0, 0, 0, 0))
+        ax.set_zorder(1)
+
     def create_graph(self):
         self.prepare_plotting()
 
@@ -52,14 +84,20 @@ class graph_generator(QWidget):
         # make the matplotlib figure
         graph = self.available_graphs.get(self.graph_type)(**self.graph_parameters)
 
+        fig = graph.get_figure()
+        self.apply_gradient_background(fig, graph)
+
+        if not graph.has_data():
+            graph.set_xlim(0, 10)
+            graph.set_ylim(0, 10)
+
         if (self.x_axis_title != ""):
             graph.set_xlabel(self.x_axis_title)
         if (self.y_axis_title != ""):
             graph.set_ylabel(self.y_axis_title)
         if (self.graph_title != ""):
             graph.set_title(self.graph_title)
-        if (self.graph_grid == True):
-            graph.grid(True)
+        graph.grid(self.graph_grid)
 
         fig = graph.get_figure()
         buf = BytesIO()
