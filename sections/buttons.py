@@ -8039,9 +8039,9 @@ class seaborn_legend_adjustment_section(QWidget):
 
     def change_sns_legend_parameter(self,index):
         self.sns_legend_argument_name = self.sns_legend_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
-        self.update_parameter_argument()
+        self.update_legend_argument()
 
-    def update_parameter_argument(self):
+    def update_legend_argument(self):
         db = self.plot_manager.get_db()
         if (db != []):
             self.plot_manager.update_seaborn_legend("legend",self.sns_legend_argument_name)
@@ -8049,6 +8049,143 @@ class seaborn_legend_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["seaborn_legends"]["legend"] = self.sns_legend_argument_name
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
+
+class seaborn_legend_off_adjustment_section(QWidget):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+        
+        self.selected_graph = selected_graph
+        self.plot_manager = PlotManager()
+        self.graph_display = graph_display
+
+        #Initialize the frameon state
+        self.sns_legend_off_state = True
+        
+        #Create a widget to display the frameon adjustment section and style it for consistency
+        self.sns_legend_off_adjustment_section = QWidget()
+        self.sns_legend_off_adjustment_section.setObjectName("sns_legend_off_adjustment_section")
+        self.sns_legend_off_adjustment_section.setStyleSheet("""
+            QWidget#sns_legend_off_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        #Create a label to put on top of the QPushButton
+        self.sns_legend_off_label = QLabel("legend_off")
+        self.sns_legend_off_label.setWordWrap(True)
+        self.sns_legend_off_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.sns_legend_off_label.setObjectName("legend_off_label")
+        self.sns_legend_off_label.setStyleSheet("""
+            QLabel#legend_off_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.sns_legend_off_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+    
+        #Create a button to allow the user to switch between Frameon
+        self.sns_legend_off_button = QPushButton()
+        self.sns_legend_off_button.setObjectName("sns_legend_off_button")
+        self.sns_legend_off_button.setStyleSheet("""
+            QPushButton#sns_legend_off_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#frameon_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.sns_legend_off_button.setMinimumHeight(45)
+        
+        #Put the label on top of the button we created for control frameon
+        sns_legend_off_button_layout = QVBoxLayout(self.sns_legend_off_button)
+        sns_legend_off_button_layout.addWidget(self.sns_legend_off_label)
+        sns_legend_off_button_layout.setContentsMargins(0,0,0,0)
+        sns_legend_off_button_layout.setSpacing(0)
+
+        #Connect the frameon button to a function to switch between the two states
+        self.sns_legend_off_button.clicked.connect(self.switch_sns_legend_off_state)
+
+        #Create a button layout for the frameon adjustment section
+        button_layout = QVBoxLayout(self.sns_legend_off_adjustment_section)
+
+        #Add the frameon button to the layout
+        button_layout.addWidget(self.sns_legend_off_button)
+
+        #Set the spacing, margins, and stretch to make it look good
+        button_layout.setSpacing(0)
+        button_layout.setContentsMargins(10,10,10,10)
+        button_layout.addStretch()
+
+        #Create a layout for the main widget and store the frameon adjustment section in
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.sns_legend_off_adjustment_section)
+
+        #Add the spacing and margins to make sure that the section fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+    def switch_sns_legend_off_state(self):
+        #Change the frameon_state to be the opposite of the current state and update it in the json
+        self.sns_legend_off_state = not self.sns_legend_off_state
+        if (self.sns_legend_off_state):
+            self.sns_legend_off_label.setText("Frameon")
+        else:
+            self.sns_legend_off_label.setText("Frameoff")
+        self.update_sns_legend_off()
+
+    def update_sns_legend_off(self):
+        #Grab the newest entry in the json
+        db = self.plot_manager.get_db()
+        #Check if the entry is empty or not and update if it's not empty and create one with the state if it's empty
+        if (db != []):
+            self.plot_manager.update_seaborn_legend("legend_off",self.sns_legend_off_state)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["seaborn_legends"]["legend_off"] = self.sns_legend_off_state
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
 class legend_button(QDialog):
     def __init__(self,selected_graph, graph_display):
