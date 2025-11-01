@@ -44,6 +44,19 @@ plot_json = {
             "handlelength":2.0,
             "handleheight":0.7,
             "markerfirst":True,
+            "seaborn_legends":{
+                "legend":"brief",
+                "legend_out":False,
+                "hue":None,
+                "style":None,
+                "size":None,
+                "palette":"deep",
+                "markers":True,
+                "dashes":True,
+                "size_order":None,
+                "hue_order":None,
+                "style_order":None,
+            }
         },
         "grid":False,
         "hue":None,
@@ -7900,6 +7913,143 @@ class markerfirst_adjustment_section(QWidget):
             plot_parameters["legend"]["markerfirst"] = self.markerfirst_state
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
+class seaborn_legend_adjustment_section(QWidget):
+    def __init__(self,selected_graph,graph_display): 
+        super().__init__()
+
+        self.plot_manager = PlotManager()
+
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+
+        #Create a section to display the seaborn legend section and style it
+        self.sns_legend_adjustment_section = QWidget()
+        self.sns_legend_adjustment_section.setObjectName("sns_legend_adjustment_section")
+        self.sns_legend_adjustment_section.setStyleSheet("""
+            QWidget#sns_legend_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 24px;
+            }
+        """)
+
+        #Store the loc buttons created in a list and list out the possible positions
+        self.available_sns_legend_arguments = ["brief","full","True","False"]
+
+        #Use a index to control the current location of the legend
+        self.sns_legend_argument_name = self.available_sns_legend_arguments[0]
+
+        #Create the seaborn legend parameter section
+        self.create_sns_legend_parameter_section()
+
+        #Add the legend loc adjustment section to the main widget to display on the other QDialog
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.sns_legend_adjustment_section)
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+    def create_sns_legend_parameter_section(self):
+        sns_legend_parameter_layout = QVBoxLayout(self.sns_legend_adjustment_section)
+    
+        self.sns_legend_list_view = QListView()
+        self.sns_legend_parameter_model = QStringListModel(self.available_sns_legend_arguments)
+
+        self.sns_legend_list_view.setModel(self.sns_legend_parameter_model)
+        self.sns_legend_list_view.setObjectName("sns_legend_list_view")
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.sns_legend_list_view.setItemDelegate(CustomDelegate())
+
+        self.sns_legend_list_view.setStyleSheet("""
+            QListView#sns_legend_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 24px;
+            }
+            QListView#sns_legend_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#sns_legend_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#sns_legend_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.sns_legend_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.sns_legend_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.sns_legend_list_view.setSpacing(3)
+
+        self.sns_legend_list_view.clicked.connect(self.change_sns_legend_parameter)
+
+        sns_legend_parameter_layout.addWidget(self.sns_legend_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        sns_legend_parameter_layout.setContentsMargins(10, 10, 10, 10)
+
+    def change_sns_legend_parameter(self,index):
+        self.sns_legend_argument_name = self.sns_legend_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
+        self.update_parameter_argument()
+
+    def update_parameter_argument(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_seaborn_legend("legend",self.sns_legend_argument_name)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["seaborn_legends"]["legend"] = self.sns_legend_argument_name
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+
 class legend_button(QDialog):
     def __init__(self,selected_graph, graph_display):
         super().__init__()
@@ -7908,7 +8058,11 @@ class legend_button(QDialog):
         self.selected_graph = selected_graph
         self.graph_display = graph_display
 
-        self.legend_parameters = list(plot_json[self.selected_graph]["legend"].keys())
+        self.legend_parameters = list(plot_json[self.selected_graph]["legend"].keys())[:-1]
+        self.seaborn_specific_legend_parameters = list(plot_json[self.selected_graph]["legend"]["seaborn_legends"].keys())
+
+        self.legend_parameters.extend(self.seaborn_specific_legend_parameters)
+
         self.current_screen_index = 0
 
         self.available_screen_names = [loc_adjustment_section,bbox_to_anchor_adjustment_section,
@@ -7921,7 +8075,7 @@ class legend_button(QDialog):
                                   alignment_adjustment_section,columnspacing_adjustment_section,
                                   handletextpad_adjustment_section,borderaxespad_adjustment_section,
                                   handlelength_adjustment_section,handleheight_adjustment_section,
-                                  markerfirst_adjustment_section]
+                                  markerfirst_adjustment_section,seaborn_legend_adjustment_section]
 
         self.available_screens = dict()
 
@@ -8104,18 +8258,19 @@ class grid_button(QPushButton):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
         self.plot_manager = PlotManager()
-        self.initial_grid_state = True
+        self.initial_grid_state = False
         self.selected_graph = selected_graph
         self.graph_display = graph_display
-        self.update_grid()
+        self.clicked.connect(self.update_grid)
 
     def update_grid(self):
         db = self.plot_manager.get_db()
+        print('s')
+        self.initial_grid_state = not self.initial_grid_state
         if (db != []):
-            self.initial_grid_state = not self.initial_grid_state
-            self.plot_manager.update_legend("grid",self.initial_grid_state)
+            self.plot_manager.update_grid(self.initial_grid_state)
         else:
             plot_parameter = plot_json[self.selected_graph].copy()
             plot_parameter["grid"] = self.initial_grid_state
             self.plot_manager.insert_plot_parameter(plot_parameter) 
-            self.graph_display.show_graph()
+        self.graph_display.show_graph()
