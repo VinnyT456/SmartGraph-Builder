@@ -27,7 +27,20 @@
             "borderaxespad":0.5,
             "handlelength":2.0,
             "handleheight":0.7,
-            "markerfirst":true
+            "markerfirst":true,
+            "seaborn_legends":{
+                "legend":"brief",
+                "legend_out":false,
+                "hue":null,
+                "style":null,
+                "size":null,
+                "palette":"deep",
+                "markers":true,
+                "dashes":true,
+                "size_order":null,
+                "hue_order":null,
+                "style_order":null
+            }
         },
         "grid":false,
         "hue":null,
