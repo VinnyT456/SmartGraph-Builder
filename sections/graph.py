@@ -49,6 +49,9 @@ class graph_generator(QWidget):
         self.graph_parameters = self.current_graph_parameters.copy()
         self.graph_parameters["data"] = self.dataset
 
+        self.x_axis = self.current_graph_parameters.get("x-axis")
+        self.y_axis = self.current_graph_parameters.get("y-axis")
+
     def apply_gradient_background(self, fig, ax):
         colors = ["#f5f5ff", "#f7f5fc", "#f0f0ff"] 
         cmap = LinearSegmentedColormap.from_list("qt_gradient", colors)
@@ -77,6 +80,9 @@ class graph_generator(QWidget):
 
     def create_graph(self):
         self.prepare_plotting()
+
+        if (self.x_axis == None or self.y_axis == None):
+            return None
 
         widget = QWidget()
         widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -529,8 +535,9 @@ class Graph_Display(QWidget):
     def show_graph(self):
         try:
             graph_widget = self.graph_generator.create_graph()
-            self.graph_display_layout.addWidget(graph_widget)
-            self.graph_display_layout.setCurrentWidget(graph_widget)
+            if (graph_widget != None):
+                self.graph_display_layout.addWidget(graph_widget)
+                self.graph_display_layout.setCurrentWidget(graph_widget)
         except:
             pass
 
