@@ -1,3 +1,5 @@
+from logging import raiseExceptions
+import re
 from PyQt6.QtCore import QSortFilterProxyModel, QStringListModel, Qt
 from PyQt6.QtGui import QFont, QKeySequence, QPixmap, QShortcut
 from PyQt6.QtWidgets import (
@@ -124,7 +126,7 @@ class x_axis_button(QDialog):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
         self.create_button_section()
@@ -141,7 +143,7 @@ class x_axis_button(QDialog):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -152,7 +154,7 @@ class x_axis_button(QDialog):
         header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.dataset_table.setStyleSheet("""
             QTableView#dataset_table {
-                border-radius: 24px;
+                border-radius: 16px;
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -226,6 +228,7 @@ class x_axis_button(QDialog):
 
         self.column_button_list_view.setModel(self.column_button_model)
         self.column_button_list_view.setObjectName("column_button_list_view")
+        self.column_button_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         column_index = self.column_button_model.index(self.current_column_index)  
         self.column_button_list_view.setCurrentIndex(column_index)
@@ -249,7 +252,7 @@ class x_axis_button(QDialog):
                     stop:1 #f0f0ff
                 );
                 border: transparent;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QListView#column_button_list_view::item {
                 background: qlineargradient(
@@ -418,7 +421,7 @@ class y_axis_button(QDialog):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
         self.create_button_section()
@@ -436,7 +439,7 @@ class y_axis_button(QDialog):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -447,7 +450,7 @@ class y_axis_button(QDialog):
         header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.dataset_table.setStyleSheet("""
             QTableView#dataset_table {
-                border-radius: 24px;
+                border-radius: 16px;
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -521,6 +524,7 @@ class y_axis_button(QDialog):
 
         self.column_button_list_view.setModel(self.column_button_model)
         self.column_button_list_view.setObjectName("column_button_list_view")
+        self.column_button_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         column_index = self.column_button_model.index(self.current_column_index)  
         self.column_button_list_view.setCurrentIndex(column_index)
@@ -544,7 +548,7 @@ class y_axis_button(QDialog):
                     stop:1 #f0f0ff
                 );
                 border: transparent;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QListView#column_button_list_view::item {
                 background: qlineargradient(
@@ -703,7 +707,7 @@ class axis_title_button(QDialog):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -721,7 +725,7 @@ class axis_title_button(QDialog):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -820,7 +824,7 @@ class title_button(QDialog):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -878,7 +882,7 @@ class loc_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -918,7 +922,7 @@ class loc_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
         self.loc_search_bar.setMinimumHeight(60)
@@ -957,7 +961,7 @@ class loc_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: transparent;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QListView#loc_list_view::item {
                 background: qlineargradient(
@@ -1051,7 +1055,7 @@ class bbox_to_anchor_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QLineEdit{
                 background: qlineargradient(
@@ -1063,7 +1067,7 @@ class bbox_to_anchor_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -1324,7 +1328,7 @@ class ncol_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QLineEdit{
                 background: qlineargradient(
@@ -1336,7 +1340,7 @@ class ncol_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -1525,7 +1529,7 @@ class fontsize_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -1633,7 +1637,7 @@ class fontsize_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
         self.create_custom_fontsize_screen()
@@ -1651,7 +1655,7 @@ class fontsize_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
         self.create_fixed_fontsize_screen()
@@ -1694,7 +1698,7 @@ class fontsize_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -1801,6 +1805,7 @@ class fontsize_adjustment_section(QWidget):
 
         self.fixed_fontsize_list_view.setModel(self.fixed_fontsize_model)
         self.fixed_fontsize_list_view.setObjectName("fixed_fontsize_list_view")
+        self.fixed_fontsize_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -1820,7 +1825,7 @@ class fontsize_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: transparent;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QListView#fixed_fontsize_list_view::item {
                 background: qlineargradient(
@@ -1956,7 +1961,7 @@ class legend_title_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QLineEdit{
                 background: qlineargradient(
@@ -1968,7 +1973,7 @@ class legend_title_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -2058,7 +2063,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -2113,7 +2118,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
         self.create_custom_title_fontsize_screen()
@@ -2170,7 +2175,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
         self.create_fixed_title_fontsize_screen()
@@ -2230,7 +2235,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -2337,6 +2342,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
 
         self.fixed_title_fontsize_list_view.setModel(self.fixed_title_fontsize_model)
         self.fixed_title_fontsize_list_view.setObjectName("fixed_title_fontsize_list_view")
+        self.fixed_title_fontsize_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -2356,7 +2362,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: transparent;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QListView#fixed_title_fontsize_list_view::item {
                 background: qlineargradient(
@@ -2494,7 +2500,7 @@ class frameon_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -2635,7 +2641,7 @@ class face_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }            
         """)
 
@@ -2898,7 +2904,7 @@ class face_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }   
         """)
         self.create_named_color_screen()
@@ -2917,7 +2923,7 @@ class face_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }  
         """)
         self.create_hex_code_screen()
@@ -2936,7 +2942,7 @@ class face_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }  
         """)
         self.create_rgba_color_screen()
@@ -2957,7 +2963,7 @@ class face_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }  
         """)
         self.create_grayscale_color_screen()
@@ -2976,7 +2982,7 @@ class face_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }  
         """)
         self.create_short_code_color_screen()
@@ -3024,7 +3030,7 @@ class face_color_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
         self.color_search_bar.setMinimumHeight(60)
@@ -3063,7 +3069,7 @@ class face_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: transparent;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QListView#named_color_list_view::item {
                 background: qlineargradient(
@@ -3135,7 +3141,7 @@ class face_color_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
         self.hex_code_input.setMinimumHeight(60)
@@ -3246,7 +3252,7 @@ class face_color_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -3264,7 +3270,7 @@ class face_color_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -3282,7 +3288,7 @@ class face_color_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -3300,7 +3306,7 @@ class face_color_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -3422,7 +3428,7 @@ class face_color_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
         self.grayscale_input.setMinimumHeight(60)
@@ -3522,6 +3528,7 @@ class face_color_adjustment_section(QWidget):
         self.short_code_color_list_view = QListView()
         self.short_code_color_model = QStringListModel(self.short_code_colors)
         self.short_code_color_list_view.setModel(self.short_code_color_model)
+        self.short_code_color_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -3542,7 +3549,7 @@ class face_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: transparent;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QListView#short_code_color_list_view::item {
                 background: qlineargradient(
@@ -3796,7 +3803,7 @@ class edge_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }            
         """)
 
@@ -4059,7 +4066,7 @@ class edge_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }   
         """)
         self.create_named_color_screen()
@@ -4078,7 +4085,7 @@ class edge_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }  
         """)
         self.create_hex_code_screen()
@@ -4097,7 +4104,7 @@ class edge_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }  
         """)
         self.create_rgba_color_screen()
@@ -4118,7 +4125,7 @@ class edge_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }  
         """)
         self.create_grayscale_color_screen()
@@ -4137,7 +4144,7 @@ class edge_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }  
         """)
         self.create_short_code_color_screen()
@@ -4185,7 +4192,7 @@ class edge_color_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
         self.color_search_bar.setMinimumHeight(60)
@@ -4204,6 +4211,7 @@ class edge_color_adjustment_section(QWidget):
 
         self.named_color_list_view.setModel(self.filter_proxy)
         self.named_color_list_view.setObjectName("named_color_list_view")
+        self.named_color_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
@@ -4224,7 +4232,7 @@ class edge_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: transparent;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QListView#named_color_list_view::item {
                 background: qlineargradient(
@@ -4296,7 +4304,7 @@ class edge_color_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
         self.hex_code_input.setMinimumHeight(60)
@@ -4407,7 +4415,7 @@ class edge_color_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -4425,7 +4433,7 @@ class edge_color_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -4443,7 +4451,7 @@ class edge_color_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -4461,7 +4469,7 @@ class edge_color_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -4583,7 +4591,7 @@ class edge_color_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
         self.grayscale_input.setMinimumHeight(60)
@@ -4683,6 +4691,8 @@ class edge_color_adjustment_section(QWidget):
         self.short_code_color_list_view = QListView()
         self.short_code_color_model = QStringListModel(self.short_code_colors)
         self.short_code_color_list_view.setModel(self.short_code_color_model)
+        self.short_code_color_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -4703,7 +4713,7 @@ class edge_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: transparent;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QListView#short_code_color_list_view::item {
                 background: qlineargradient(
@@ -4950,7 +4960,7 @@ class framealpha_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QLineEdit{
                 background: qlineargradient(
@@ -4962,7 +4972,7 @@ class framealpha_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -5145,7 +5155,7 @@ class shadow_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -5282,7 +5292,7 @@ class fancybox_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -5416,7 +5426,7 @@ class borderpad_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QLineEdit{
                 background: qlineargradient(
@@ -5428,7 +5438,7 @@ class borderpad_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -5616,7 +5626,7 @@ class label_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }            
         """)
 
@@ -5879,7 +5889,7 @@ class label_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }   
         """)
         self.create_named_color_screen()
@@ -5898,7 +5908,7 @@ class label_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }  
         """)
         self.create_hex_code_screen()
@@ -5917,7 +5927,7 @@ class label_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }  
         """)
         self.create_rgba_color_screen()
@@ -5938,7 +5948,7 @@ class label_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }  
         """)
         self.create_grayscale_color_screen()
@@ -5957,7 +5967,7 @@ class label_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }  
         """)
         self.create_short_code_color_screen()
@@ -6004,7 +6014,7 @@ class label_color_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
         self.color_search_bar.setMinimumHeight(60)
@@ -6043,7 +6053,7 @@ class label_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: transparent;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QListView#named_color_list_view::item {
                 background: qlineargradient(
@@ -6115,7 +6125,7 @@ class label_color_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
         self.hex_code_input.setMinimumHeight(60)
@@ -6226,7 +6236,7 @@ class label_color_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -6244,7 +6254,7 @@ class label_color_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -6262,7 +6272,7 @@ class label_color_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -6280,7 +6290,7 @@ class label_color_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -6402,7 +6412,7 @@ class label_color_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
         self.grayscale_input.setMinimumHeight(60)
@@ -6502,6 +6512,7 @@ class label_color_adjustment_section(QWidget):
         self.short_code_color_list_view = QListView()
         self.short_code_color_model = QStringListModel(self.short_code_colors)
         self.short_code_color_list_view.setModel(self.short_code_color_model)
+        self.short_code_color_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -6522,7 +6533,7 @@ class label_color_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: transparent;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QListView#short_code_color_list_view::item {
                 background: qlineargradient(
@@ -6765,7 +6776,7 @@ class alignment_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
         self.create_alignment_adjustment_screen()
@@ -6785,6 +6796,7 @@ class alignment_adjustment_section(QWidget):
 
         self.alignment_list_view.setModel(self.alignment_model)
         self.alignment_list_view.setObjectName("alignment_list_view")
+        self.alignment_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -6804,7 +6816,7 @@ class alignment_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: transparent;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QListView#alignment_list_view::item {
                 background: qlineargradient(
@@ -6894,7 +6906,7 @@ class columnspacing_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QLineEdit{
                 background: qlineargradient(
@@ -6906,7 +6918,7 @@ class columnspacing_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -7087,7 +7099,7 @@ class handletextpad_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QLineEdit{
                 background: qlineargradient(
@@ -7099,7 +7111,7 @@ class handletextpad_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -7280,7 +7292,7 @@ class borderaxespad_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QLineEdit{
                 background: qlineargradient(
@@ -7292,7 +7304,7 @@ class borderaxespad_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -7473,7 +7485,7 @@ class handlelength_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QLineEdit{
                 background: qlineargradient(
@@ -7485,7 +7497,7 @@ class handlelength_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -7666,7 +7678,7 @@ class handleheight_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QLineEdit{
                 background: qlineargradient(
@@ -7678,7 +7690,7 @@ class handleheight_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -7862,7 +7874,7 @@ class markerfirst_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -7995,7 +8007,7 @@ class seaborn_legend_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -8024,6 +8036,7 @@ class seaborn_legend_adjustment_section(QWidget):
 
         self.sns_legend_list_view.setModel(self.sns_legend_parameter_model)
         self.sns_legend_list_view.setObjectName("sns_legend_list_view")
+        self.sns_legend_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -8043,7 +8056,7 @@ class seaborn_legend_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: transparent;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QListView#sns_legend_list_view::item {
                 background: qlineargradient(
@@ -8135,7 +8148,7 @@ class seaborn_legend_off_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
 
@@ -8268,18 +8281,46 @@ class seaborn_hue_adjustment_section(QWidget):
             "operation":"",
             "value":"",
         }
+        self.manual_boolean_expression_format = {
+            "column":"",
+            "operation":"",
+            "value":"",
+        }
         self.nested_boolean_express = []
 
         self.boolean_expression_values = []
 
-        self.categorical_operations = ["==", "!=", "isin", "contains", "startswith", "endswith", "len"]
-        self.numerical_operations = ["==", "!=", ">", "<", ">=", "<=", "between", "isin"]
+        self.categorical_operations = ["==", "!=", "isin", "notin", "contains", 
+                                        "startswith", "endswith", "len","regex",
+                                        "lower","upper"]
+        self.numerical_operations = ["==", "!=", ">", "<", ">=", "<=", 
+                                    "between", "between_exclusive", "isin", "notin"]
 
-        #-----Input Validiity Check For Manual Boolean Expression Widgets-----
-        self.manual_valid_input_widget = QWidget()
-        self.manual_valid_input_widget.setObjectName("manual_valid_input")
-        self.manual_valid_input_widget.setStyleSheet("""
-            QWidget#manual_valid_input{
+        self.boolean_expression_check = {
+            "==":lambda col, val: col == val,
+            "!=":lambda col, val: col != val,
+            ">":lambda col, val: col > val,
+            "<":lambda col, val: col < val,
+            ">=":lambda col, val: col >= val,
+            "<=":lambda col, val: col <= val,
+            "between":lambda col, val: col.between(val[0], val[1]),
+            "between_exclusive":lambda col, val: col.gt(val[0]) & col.lt(val[1]),
+            "isin":lambda col, val: col.isin(val),
+            "notin":lambda col, val: ~col.isin(val),
+            "contains":lambda col, val: col.str.contains(val),
+            "startswith": lambda col, val: col.str.startswith(val),
+            "endswith": lambda col, val: col.str.endswith(val),
+            "len":lambda col, val: col.str.len() == val,
+            "regex":lambda col, val:col.str.match(val),
+            "lower":lambda col, val: col.str.lower() == val,
+            "upper":lambda col, val: col.str.upper() == val,
+        }
+
+        #-----Column Validiity Check For Manual Boolean Expression Widgets-----
+        self.manual_valid_column_widget = QWidget()
+        self.manual_valid_column_widget.setObjectName("manual_valid_column_widget")
+        self.manual_valid_column_widget.setStyleSheet("""
+            QWidget#manual_valid_column_widget{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 rgba(94, 255, 234, 1),   
@@ -8292,12 +8333,12 @@ class seaborn_hue_adjustment_section(QWidget):
             }
         """)
 
-        self.manual_valid_input_label = QLabel("Valid Boolean Expression")
-        self.manual_valid_input_label.setWordWrap(True)
-        self.manual_valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.manual_valid_input_label.setObjectName("manual_valid_input_label")
-        self.manual_valid_input_label.setStyleSheet("""
-            QLabel#manual_valid_input_label{
+        self.manual_valid_column_label = QLabel("Valid Column")
+        self.manual_valid_column_label.setWordWrap(True)
+        self.manual_valid_column_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.manual_valid_column_label.setObjectName("manual_valid_column_label")
+        self.manual_valid_column_label.setStyleSheet("""
+            QLabel#manual_valid_column_label{
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
@@ -8308,15 +8349,15 @@ class seaborn_hue_adjustment_section(QWidget):
             }
         """)
 
-        manual_valid_input_layout = QVBoxLayout(self.manual_valid_input_widget)
-        manual_valid_input_layout.addWidget(self.manual_valid_input_label)
-        manual_valid_input_layout.setSpacing(0)
-        manual_valid_input_layout.setContentsMargins(0,0,0,0)
+        manual_valid_column_layout = QVBoxLayout(self.manual_valid_column_widget)
+        manual_valid_column_layout.addWidget(self.manual_valid_column_label)
+        manual_valid_column_layout.setSpacing(0)
+        manual_valid_column_layout.setContentsMargins(0,0,0,0)
 
-        self.manual_invalid_input_widget = QWidget()
-        self.manual_invalid_input_widget.setObjectName("manual_invalid_input")
-        self.manual_invalid_input_widget.setStyleSheet("""
-            QWidget#manual_invalid_input{
+        self.manual_invalid_column_widget = QWidget()
+        self.manual_invalid_column_widget.setObjectName("manual_invalid_column")
+        self.manual_invalid_column_widget.setStyleSheet("""
+            QWidget#manual_invalid_column{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 rgba(255, 100, 100, 1),   
@@ -8329,12 +8370,12 @@ class seaborn_hue_adjustment_section(QWidget):
             }
         """)
 
-        self.manual_invalid_input_label = QLabel("Invalid Boolean Expression")
-        self.manual_invalid_input_label.setWordWrap(True)
-        self.manual_invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.manual_invalid_input_label.setObjectName("manual_invalid_input_label")
-        self.manual_invalid_input_label.setStyleSheet("""
-            QLabel#manual_invalid_input_label{
+        self.manual_invalid_column_label = QLabel("Invalid Column")
+        self.manual_invalid_column_label.setWordWrap(True)
+        self.manual_invalid_column_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.manual_invalid_column_label.setObjectName("manual_invalid_column_label")
+        self.manual_invalid_column_label.setStyleSheet("""
+            QLabel#manual_invalid_column_label{
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
@@ -8345,16 +8386,178 @@ class seaborn_hue_adjustment_section(QWidget):
             }
         """)
 
-        manual_invalid_input_layout = QVBoxLayout(self.manual_invalid_input_widget)
-        manual_invalid_input_layout.addWidget(self.manual_invalid_input_label)
-        manual_invalid_input_layout.setSpacing(0)
-        manual_invalid_input_layout.setContentsMargins(0,0,0,0)
+        manual_invalid_column_layout = QVBoxLayout(self.manual_invalid_column_widget)
+        manual_invalid_column_layout.addWidget(self.manual_invalid_column_label)
+        manual_invalid_column_layout.setSpacing(0)
+        manual_invalid_column_layout.setContentsMargins(0,0,0,0)
 
-        self.manual_valid_input_widget.setMaximumHeight(70)
-        self.manual_invalid_input_widget.setMaximumHeight(70)
+        self.manual_valid_column_widget.setMaximumHeight(70)
+        self.manual_invalid_column_widget.setMaximumHeight(70)
 
-        self.manual_valid_input_widget.hide()
-        self.manual_invalid_input_widget.hide()
+        self.manual_valid_column_widget.hide()
+        self.manual_invalid_column_widget.hide()
+
+        #-----Operator Validiity Check For Manual Boolean Expression Widgets-----
+        self.manual_valid_operator_widget = QWidget()
+        self.manual_valid_operator_widget.setObjectName("manual_valid_operator")
+        self.manual_valid_operator_widget.setStyleSheet("""
+            QWidget#manual_valid_operator{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.manual_valid_operator_label = QLabel("Valid Operator")
+        self.manual_valid_operator_label.setWordWrap(True)
+        self.manual_valid_operator_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.manual_valid_operator_label.setObjectName("manual_valid_operator_label")
+        self.manual_valid_operator_label.setStyleSheet("""
+            QLabel#manual_valid_operator_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        manual_valid_operator_layout = QVBoxLayout(self.manual_valid_operator_widget)
+        manual_valid_operator_layout.addWidget(self.manual_valid_operator_label)
+        manual_valid_operator_layout.setSpacing(0)
+        manual_valid_operator_layout.setContentsMargins(0,0,0,0)
+
+        self.manual_invalid_operator_widget = QWidget()
+        self.manual_invalid_operator_widget.setObjectName("manual_invalid_operator")
+        self.manual_invalid_operator_widget.setStyleSheet("""
+            QWidget#manual_invalid_operator{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.manual_invalid_operator_label = QLabel("Invalid Operator")
+        self.manual_invalid_operator_label.setWordWrap(True)
+        self.manual_invalid_operator_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.manual_invalid_operator_label.setObjectName("manual_invalid_operator_label")
+        self.manual_invalid_operator_label.setStyleSheet("""
+            QLabel#manual_invalid_operator_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        manual_invalid_operator_layout = QVBoxLayout(self.manual_invalid_operator_widget)
+        manual_invalid_operator_layout.addWidget(self.manual_invalid_operator_label)
+        manual_invalid_operator_layout.setSpacing(0)
+        manual_invalid_operator_layout.setContentsMargins(0,0,0,0)
+
+        self.manual_valid_operator_widget.setMaximumHeight(70)
+        self.manual_invalid_operator_widget.setMaximumHeight(70)
+
+        self.manual_valid_operator_widget.hide()
+        self.manual_invalid_operator_widget.hide()
+
+        #-----Value Validiity Check For Manual Boolean Expression Widgets-----
+        self.manual_valid_value_widget = QWidget()
+        self.manual_valid_value_widget.setObjectName("manual_valid_value")
+        self.manual_valid_value_widget.setStyleSheet("""
+            QWidget#manual_valid_value{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.manual_valid_value_label = QLabel("Valid Value")
+        self.manual_valid_value_label.setWordWrap(True)
+        self.manual_valid_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.manual_valid_value_label.setObjectName("manual_valid_value_label")
+        self.manual_valid_value_label.setStyleSheet("""
+            QLabel#manual_valid_value_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        manual_valid_value_layout = QVBoxLayout(self.manual_valid_value_widget)
+        manual_valid_value_layout.addWidget(self.manual_valid_value_label)
+        manual_valid_value_layout.setSpacing(0)
+        manual_valid_value_layout.setContentsMargins(0,0,0,0)
+
+        self.manual_invalid_value_widget = QWidget()
+        self.manual_invalid_value_widget.setObjectName("manual_invalid_value")
+        self.manual_invalid_value_widget.setStyleSheet("""
+            QWidget#manual_invalid_value{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.manual_invalid_value_label = QLabel("Invalid Valid")
+        self.manual_invalid_value_label.setWordWrap(True)
+        self.manual_invalid_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.manual_invalid_value_label.setObjectName("manual_invalid_value_label")
+        self.manual_invalid_value_label.setStyleSheet("""
+            QLabel#manual_invalid_value_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        manual_invalid_value_layout = QVBoxLayout(self.manual_invalid_value_widget)
+        manual_invalid_value_layout.addWidget(self.manual_invalid_value_label)
+        manual_invalid_value_layout.setSpacing(0)
+        manual_invalid_value_layout.setContentsMargins(0,0,0,0)
+
+        self.manual_valid_value_widget.setMaximumHeight(70)
+        self.manual_invalid_value_widget.setMaximumHeight(70)
+
+        self.manual_valid_value_widget.hide()
+        self.manual_invalid_value_widget.hide()
 
         #-----Input Validiity Check For Premade Boolean Expression Widgets-----
         self.premade_valid_input_widget = QWidget()
@@ -8373,7 +8576,7 @@ class seaborn_hue_adjustment_section(QWidget):
             }
         """)
 
-        self.premade_valid_input_label = QLabel("Valid Input")
+        self.premade_valid_input_label = QLabel("Valid Value Input")
         self.premade_valid_input_label.setWordWrap(True)
         self.premade_valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.premade_valid_input_label.setObjectName("premade_valid_input_label")
@@ -8410,7 +8613,7 @@ class seaborn_hue_adjustment_section(QWidget):
             }
         """)
 
-        self.premade_invalid_input_label = QLabel("Invalid Input")
+        self.premade_invalid_input_label = QLabel("Invalid Value Input")
         self.premade_invalid_input_label.setWordWrap(True)
         self.premade_invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.premade_invalid_input_label.setObjectName("premade_invalid_input_label")
@@ -8437,6 +8640,89 @@ class seaborn_hue_adjustment_section(QWidget):
         self.premade_valid_input_widget.hide()
         self.premade_invalid_input_widget.hide()
 
+        #-----And/Or Logical Button for Premade Boolean Expression-----
+
+        self.premade_and_logical_button = QPushButton("Add and logcial")
+        self.premade_and_logical_button.setObjectName("add_and_logical")
+        self.premade_and_logical_button.setStyleSheet("""
+            QPushButton#add_and_logical{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#add_and_logical:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.premade_and_logical_button.hide()
+
+        self.premade_or_logical_button = QPushButton("Add or logcial")
+        self.premade_or_logical_button.setObjectName("add_or_logical")
+        self.premade_or_logical_button.setStyleSheet("""
+            QPushButton#add_or_logical{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#add_or_logical:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.premade_or_logical_button.hide()
+
+        self.premade_and_logical_button.clicked.connect(self.add_and_logical_to_boolean_expression)
+        self.premade_or_logical_button.clicked.connect(self.add_or_logical_to_boolean_expression)
+
         #-----Home Screen-----
 
         self.sns_hue_adjustment_homescreen = QWidget()
@@ -8450,7 +8736,7 @@ class seaborn_hue_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }            
         """)
 
@@ -8633,7 +8919,7 @@ class seaborn_hue_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }   
         """)
         self.create_categorical_column_screen()
@@ -8652,7 +8938,7 @@ class seaborn_hue_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }  
         """)
         self.create_numerical_column_screen()
@@ -8671,7 +8957,7 @@ class seaborn_hue_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }  
         """)
         self.create_boolean_expression_screen()
@@ -8689,7 +8975,7 @@ class seaborn_hue_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }  
         """)
         self.create_boolean_expression_manual_input_screen()
@@ -8707,7 +8993,7 @@ class seaborn_hue_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }  
         """)
         self.create_boolean_expression_premade_select_column_screen()
@@ -8725,7 +9011,7 @@ class seaborn_hue_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }  
         """)
         self.create_boolean_expression_premade_select_operator_screen()
@@ -8743,7 +9029,7 @@ class seaborn_hue_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }  
         """)
         self.create_boolean_expression_premade_input_value_screen()
@@ -8775,9 +9061,6 @@ class seaborn_hue_adjustment_section(QWidget):
         original_screen_shortcut = QShortcut(QKeySequence("left"),self)
         original_screen_shortcut.activated.connect(self.change_to_previous_screen)
 
-        enter_list_value_shortcut = QShortcut(QKeySequence("Return"),self.boolean_expression_premade_input_value_screen)
-        enter_list_value_shortcut.activated.connect(self.store_current_value)
-
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
     def get_categorical_columns(self):
@@ -8794,8 +9077,29 @@ class seaborn_hue_adjustment_section(QWidget):
             return columns.tolist()
         return []
 
-    def store_current_value(self):
-        pass
+    def premade_add_and_logical_to_boolean_expression(self):
+        self.nested_boolean_express.append(self.hue)
+        self.nested_boolean_express.append("and")
+        self.boolean_expression = ""
+        self.premade_boolean_expression_format = {
+            "column":"",
+            "operation":"",
+            "value":"",
+        }
+        self.boolean_expression_value_input.clear()
+        self.change_to_premade_boolean_expression_screen()
+
+    def premade_add_or_logical_to_boolean_expression(self):
+        self.nested_boolean_express.append(self.hue)
+        self.nested_boolean_express.append("or")
+        self.boolean_expression = ""
+        self.premade_boolean_expression_format = {
+            "column":"",
+            "operation":"",
+            "value":"",
+        }
+        self.boolean_expression_value_input.clear()
+        self.change_to_premade_boolean_expression_screen()
 
     def create_categorical_column_screen(self):
         categorical_column_screen_layout = QVBoxLayout(self.categorical_column_screen)
@@ -8814,7 +9118,7 @@ class seaborn_hue_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
         self.categorical_column_search_bar.setMinimumHeight(60)
@@ -8832,7 +9136,9 @@ class seaborn_hue_adjustment_section(QWidget):
         self.categorical_column_search_bar.textChanged.connect(self.categorical_filter_proxy.setFilterFixedString)
 
         self.categorical_column_list_view.setModel(self.categorical_filter_proxy)
+        self.categorical_column_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.categorical_column_list_view.setObjectName("categorical_column_list_view")
+        self.categorical_column_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
@@ -8853,7 +9159,7 @@ class seaborn_hue_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: transparent;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QListView#categorical_column_list_view::item {
                 background: qlineargradient(
@@ -8925,7 +9231,7 @@ class seaborn_hue_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
         self.numerical_column_search_bar.setMinimumHeight(60)
@@ -8943,6 +9249,7 @@ class seaborn_hue_adjustment_section(QWidget):
         self.numerical_column_search_bar.textChanged.connect(self.numerical_filter_proxy.setFilterFixedString)
 
         self.numerical_column_list_view.setModel(self.numerical_filter_proxy)
+        self.numerical_column_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.numerical_column_list_view.setObjectName("numerical_column_list_view")
 
         class CustomDelegate(QStyledItemDelegate):
@@ -8964,7 +9271,7 @@ class seaborn_hue_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: transparent;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QListView#numerical_column_list_view::item {
                 background: qlineargradient(
@@ -9154,11 +9461,11 @@ class seaborn_hue_adjustment_section(QWidget):
     def create_boolean_expression_manual_input_screen(self):
         manual_boolean_expression_layout= QVBoxLayout(self.boolean_expression_manual_input_screen)
 
-        self.manual_boolean_expression_input = QLineEdit()
-        self.manual_boolean_expression_input.setObjectName("manual_boolean_expression_input")
-        self.manual_boolean_expression_input.setPlaceholderText("Boolean Expression:")
-        self.manual_boolean_expression_input.setStyleSheet("""
-            QLineEdit#manual_boolean_expression_input{
+        self.manual_boolean_expression_column_input = QLineEdit()
+        self.manual_boolean_expression_column_input.setObjectName("manual_boolean_expression_column_input")
+        self.manual_boolean_expression_column_input.setPlaceholderText("Column:")
+        self.manual_boolean_expression_column_input.setStyleSheet("""
+            QLineEdit#manual_boolean_expression_column_input{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -9168,21 +9475,61 @@ class seaborn_hue_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
+        self.manual_boolean_expression_column_input.setMinimumHeight(50)
+        self.manual_boolean_expression_column_input.textChanged.connect(self.change_boolean_expression_manual_column_input)
 
-        self.manual_boolean_expression_input.setMinimumHeight(60)
-    
-        self.manual_boolean_expression_input.textChanged.connect(self.change_boolean_expression_manual_input)
+        self.manual_boolean_expression_oeprator_input = QLineEdit()
+        self.manual_boolean_expression_operator_input.setObjectName("manual_boolean_expression_operator_input")
+        self.manual_boolean_expression_operator_input.setPlaceholderText("Operator:")
+        self.manual_boolean_expression_operator_input.setStyleSheet("""
+            QLineEdit#manual_boolean_expression_operator_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.manual_boolean_expression_operator_input.setMinimumHeight(50)
+        self.manual_boolean_expression_operator_input.textChanged.connect(self.change_boolean_expression_manual_operator_input)
 
-        manual_boolean_expression_layout.addWidget(self.manual_boolean_expression_input)
+        self.manual_boolean_expression_value_input = QLineEdit()
+        self.manual_boolean_expression_value_input.setObjectName("manual_boolean_expression_value_input")
+        self.manual_boolean_expression_value_input.setPlaceholderText("Column:")
+        self.manual_boolean_expression_value_input.setStyleSheet("""
+            QLineEdit#manual_boolean_expression_value_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.manual_boolean_expression_value_input.setMinimumHeight(50)
+        self.manual_boolean_expression_value_input.textChanged.connect(self.change_boolean_expression_manual_value_input)
+
+        manual_boolean_expression_layout.addWidget(self.manual_boolean_expression_column_input)
+        manual_boolean_expression_layout.addWidget(self.manual_boolean_expression_oeprator_input)
+        manual_boolean_expression_layout.addWidget(self.manual_boolean_expression_value_input)
         manual_boolean_expression_layout.addWidget(self.manual_valid_input_widget)
         manual_boolean_expression_layout.addWidget(self.manual_invalid_input_widget)
+        manual_boolean_expression_layout.addStretch()
         
         manual_boolean_expression_layout.setContentsMargins(10,10,10,10)
         manual_boolean_expression_layout.setSpacing(10)
-        manual_boolean_expression_layout.addStretch()
 
     def create_boolean_expression_premade_select_column_screen(self):
         premade_boolean_expression_column_layout = QVBoxLayout(self.boolean_expression_premade_select_column_screen)
@@ -9201,7 +9548,7 @@ class seaborn_hue_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
         self.boolean_expression_column_search_bar.setMinimumHeight(60)
@@ -9222,6 +9569,7 @@ class seaborn_hue_adjustment_section(QWidget):
 
         self.boolean_expression_column_list_view.setModel(self.boolean_expression_column_proxy)
         self.boolean_expression_column_list_view.setObjectName("boolean_expression_column_list_view")
+        self.boolean_expression_column_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
@@ -9242,7 +9590,7 @@ class seaborn_hue_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: transparent;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QListView#boolean_expression_column_list_view::item {
                 background: qlineargradient(
@@ -9305,6 +9653,7 @@ class seaborn_hue_adjustment_section(QWidget):
 
         self.boolean_expression_operations_list_view.setModel(self.boolean_expression_operations_model)
         self.boolean_expression_operations_list_view.setObjectName("boolean_expression_operations_list_view")
+        self.boolean_expression_operations_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
@@ -9325,7 +9674,7 @@ class seaborn_hue_adjustment_section(QWidget):
                     stop:1 #f0f0ff
                 );
                 border: transparent;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QListView#boolean_expression_operations_list_view::item {
                 background: qlineargradient(
@@ -9381,13 +9730,53 @@ class seaborn_hue_adjustment_section(QWidget):
         premade_boolean_expression_operation_layout.setContentsMargins(10, 10, 10, 10)
 
     def create_boolean_expression_premade_input_value_screen(self):
-        self.instruction_widget = QWidget()
+        premade_boolean_expression_value_layout = QVBoxLayout(self.boolean_expression_premade_input_value_screen)
+
+        self.instructions_widget = QWidget()
+        self.instructions_widget.setObjectName("instructions_widget")
+        self.instructions_widget.setStyleSheet("""
+            QWidget#instructions_widget{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+            }
+        """)
+        self.instructions_widget.setMinimumHeight(50)
+
+        self.instructions_label = QLabel("Seperate values by space")
+        self.instructions_label.setWordWrap(True)
+        self.instructions_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.instructions_label.setObjectName("instructions_label")
+        self.instructions_label.setStyleSheet("""
+            QLabel#instructions_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        instructions_widget_layout = QVBoxLayout(self.instructions_widget)
+        instructions_widget_layout.addWidget(self.instructions_label)
+        instructions_widget_layout.setContentsMargins(0,0,0,0)
+        instructions_widget_layout.setSpacing(0)
 
         self.boolean_expression_value_input = QLineEdit()
         self.boolean_expression_value_input.setObjectName("boolean_expression_value_input")
         self.boolean_expression_value_input.setPlaceholderText("Value: ")
         self.boolean_expression_value_input.setStyleSheet("""
-            QLineEdit#boolean_expression_column_search_bar{
+            QLineEdit#boolean_expression_value_input{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -9397,10 +9786,22 @@ class seaborn_hue_adjustment_section(QWidget):
                 color: black;
                 font-size: 24pt;
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
-        self.boolean_expression_column_search_bar.setMinimumHeight(60)
+        self.boolean_expression_value_input.setMinimumHeight(60)
+        self.boolean_expression_value_input.textChanged.connect(self.change_boolean_expression_premade_value)
+
+        premade_boolean_expression_value_layout.addWidget(self.instructions_widget)
+        premade_boolean_expression_value_layout.addSpacing(5)
+        premade_boolean_expression_value_layout.addWidget(self.boolean_expression_value_input)
+        premade_boolean_expression_value_layout.addWidget(self.premade_valid_input_widget)
+        premade_boolean_expression_value_layout.addWidget(self.premade_invalid_input_widget)
+        premade_boolean_expression_value_layout.addStretch()
+        premade_boolean_expression_value_layout.addWidget(self.premade_and_logical_button)
+        premade_boolean_expression_value_layout.addWidget(self.premade_or_logical_button)
+        premade_boolean_expression_value_layout.setContentsMargins(10,10,10,10)
+        premade_boolean_expression_value_layout.setSpacing(5)
 
     def change_to_previous_screen(self):
         if (self.current_screen_idx == 0):
@@ -9418,6 +9819,7 @@ class seaborn_hue_adjustment_section(QWidget):
             if (self.current_screen_idx == 5):
                 self.premade_boolean_expression_format["operation"] = ""
             if (self.current_screen_idx == 6):
+                self.boolean_expression_value_input.clear()
                 self.premade_boolean_expression_format["value"] = ""
 
         self.available_screens[self.current_screen_idx].show() 
@@ -9467,7 +9869,7 @@ class seaborn_hue_adjustment_section(QWidget):
         self.hue = self.numerical_column_model.data(source_index, Qt.ItemDataRole.DisplayRole)
         self.update_hue()
 
-    def change_boolean_expression_manual_input(self):
+    def change_boolean_expression_manual_column_input(self):
         self.manual_boolean_expression_value = self.manual_boolean_expression_input.text().strip()
 
         if (self.manual_boolean_expression_value == ""):
@@ -9489,13 +9891,21 @@ class seaborn_hue_adjustment_section(QWidget):
             self.hue = self.manual_boolean_expression_value
             self.update_hue()
 
+    def change_boolean_expression_manual_operator_input(self):
+        pass
+
+    def change_boolean_expression_manual_value_input(self):
+        pass
+
     def change_boolean_expression_premade_column(self,index):
         source_index = self.boolean_expression_column_proxy.mapToSource(index)
         column_name = self.boolean_expression_column_model.data(source_index, Qt.ItemDataRole.DisplayRole)
         self.premade_boolean_expression_format["column"] = column_name
         if (pd.api.types.is_numeric_dtype(self.dataset[column_name])):
+            self.numeric_column_type = True
             self.boolean_expression_operations_model.setStringList(self.numerical_operations)
         else:
+            self.numeric_column_type = False
             self.boolean_expression_operations_model.setStringList(self.categorical_operations)
 
         self.change_to_operators_boolean_expression_screen()
@@ -9506,7 +9916,75 @@ class seaborn_hue_adjustment_section(QWidget):
         self.change_to_value_boolean_expression_screen()
 
     def change_boolean_expression_premade_value(self):
-        pass
+        boolean_expression_value = self.boolean_expression_value_input.text().strip().split(" ")
+        boolean_expression_value = list[str](filter(lambda x:x != "",boolean_expression_value))
+
+        if (boolean_expression_value == []):
+            self.premade_valid_input_widget.hide()
+            self.premade_invalid_input_widget.hide()
+            self.premade_and_logical_button.hide()
+            self.premade_or_logical_button.hide()
+            self.premade_boolean_expression_format["value"] = ""
+            return 
+
+        try:
+            if (len(boolean_expression_value) == 1 and self.premade_boolean_expression_format["operation"] != "isin"):
+                boolean_expression_value = float(boolean_expression_value[0])
+            else:
+                boolean_expression_value = list(map(float,boolean_expression_value))
+            self.premade_boolean_expression_format["value"] = boolean_expression_value
+        except:
+            self.premade_boolean_expression_format["value"] = boolean_expression_value
+
+        try:
+            column_name = self.premade_boolean_expression_format["column"]
+            column = self.dataset[column_name]
+            operation = self.premade_boolean_expression_format["operation"]
+            value = self.premade_boolean_expression_format["value"]
+
+            if (isinstance(value,list)):
+                if (isinstance(value[0],float) and not self.numeric_column_type):
+                    raise Exception
+                if (isinstance(value[0],str) and self.numeric_column_type):
+                    raise Exception
+            else:
+                if (isinstance(value,float) and not self.numeric_column_type):
+                    raise Exception
+                if (isinstance(value,str) and self.numeric_column_type):
+                    raise Exception
+
+            if (operation == "between" and not (value[0] <= value[1])):
+                raise Exception
+
+            self.boolean_expression_check[operation](column,value)
+            
+            self.premade_valid_input_widget.show()
+            self.premade_invalid_input_widget.hide()
+
+            self.premade_and_logical_button.show()
+            self.premade_or_logical_button.show()
+        except:
+            self.premade_valid_input_widget.hide()
+            self.premade_invalid_input_widget.show()
+
+            self.premade_and_logical_button.hide()
+            self.premade_or_logical_button.hide()
+        else:
+            numerical_operations = ["==","!=",">","<",">=","<="]
+
+            if (operation in numerical_operations):
+                boolean_expression = f"self.dataset['{column_name}'] {operation} {value}"
+            elif (operation == "isin"):
+                boolean_expression = f"self.dataset['{column_name}'].{operation}({value})"
+            elif (operation == "between"):
+                boolean_expression = f"self.dataset['{column_name}'].{operation}({value[0]},{value[1]})"
+            elif (operation == "len"):
+                boolean_expression = f"self.dataset['{column_name}'].str.{operation}() == {value}"
+            else:
+                boolean_expression = f"self.dataset['{column_name}'].str.{operation}({value})"
+                
+            self.hue = " ".join(self.nested_boolean_express + [boolean_expression])
+            self.update_hue()
 
     def change_hue_to_none(self):
         self.hue = None
@@ -9533,6 +10011,8 @@ class seaborn_hue_adjustment_section(QWidget):
             self.manual_boolean_expression_input.clearFocus()
         if not self.boolean_expression_column_search_bar.geometry().contains(event.position().toPoint()):
             self.boolean_expression_column_search_bar.clearFocus()
+        if not self.boolean_expression_value_input.geometry().contains(event.position().toPoint()):
+            self.boolean_expression_value_input.clearFocus()
         super().mousePressEvent(event)
 
     def showEvent(self, event):
@@ -9540,6 +10020,21 @@ class seaborn_hue_adjustment_section(QWidget):
         self.dataset = pd.read_csv("./dataset/user_dataset.csv")
         self.categorical_columns = self.get_categorical_columns()
         self.numerical_columns = self.get_numerical_columns()
+        self.hue = None
+        self.boolean_expression = ""
+        self.premade_boolean_expression_format = {
+            "column":"",
+            "operation":"",
+            "value":"",
+        }
+        self.manual_boolean_expression_format = {
+            "column":"",
+            "operation":"",
+            "value":"",
+        }
+        self.nested_boolean_express = []
+        self.boolean_expression_values = []
+        self.numeric_column_type = False
 
 class legend_button(QDialog):
     def __init__(self,selected_graph, graph_display):
@@ -9598,7 +10093,7 @@ class legend_button(QDialog):
                     stop:1 #f0f0ff
                 );
                 border: 2px solid black;
-                border-radius: 24px;
+                border-radius: 16px;
             }
         """)
         self.create_legend_parameter_buttons()
@@ -9641,6 +10136,7 @@ class legend_button(QDialog):
 
         self.legend_parameter_list_view.setModel(self.legend_parameter_model)
         self.legend_parameter_list_view.setObjectName("legend_parameter_list_view")
+        self.legend_parameter_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         screen_index = self.legend_parameter_model.index(0)  
         self.legend_parameter_list_view.setCurrentIndex(screen_index)
@@ -9664,7 +10160,7 @@ class legend_button(QDialog):
                     stop:1 #f0f0ff
                 );
                 border: transparent;
-                border-radius: 24px;
+                border-radius: 16px;
             }
             QListView#legend_parameter_list_view::item {
                 background: qlineargradient(
