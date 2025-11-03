@@ -8272,10 +8272,10 @@ class seaborn_hue_adjustment_section(QWidget):
         self.dataset = pd.read_csv("./dataset/user_dataset.csv")
         self.categorical_columns = self.get_categorical_columns()
         self.numerical_columns = self.get_numerical_columns()
+        self.columns = self.categorical_columns + self.numerical_columns
 
         self.hue = None
 
-        self.boolean_expression = ""
         self.premade_boolean_expression_format = {
             "column":"",
             "operation":"",
@@ -8286,9 +8286,9 @@ class seaborn_hue_adjustment_section(QWidget):
             "operation":"",
             "value":"",
         }
-        self.nested_boolean_express = []
 
-        self.boolean_expression_values = []
+        self.premade_nested_boolean_expression = []
+        self.manual_nested_boolean_expression = []
 
         self.categorical_operations = ["==", "!=", "isin", "notin", "contains", 
                                         "startswith", "endswith", "len","regex",
@@ -8559,6 +8559,97 @@ class seaborn_hue_adjustment_section(QWidget):
         self.manual_valid_value_widget.hide()
         self.manual_invalid_value_widget.hide()
 
+        #-----Boolean Expression Validiity Check For Manual Boolean Expression Widgets-----
+        self.manual_valid_expression_widget = QWidget()
+        self.manual_valid_expression_widget.setObjectName("manual_valid_expression_widget")
+        self.manual_valid_expression_widget.setStyleSheet("""
+            QWidget#manual_valid_expression_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.manual_valid_expression_label = QLabel("Valid Boolean Expression")
+        self.manual_valid_expression_label.setWordWrap(True)
+        self.manual_valid_expression_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.manual_valid_expression_label.setObjectName("manual_valid_expression_label")
+        self.manual_valid_expression_label.setStyleSheet("""
+            QLabel#manual_valid_expression_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        manual_valid_expression_layout = QVBoxLayout(self.manual_valid_expression_widget)
+        manual_valid_expression_layout.addWidget(self.manual_valid_expression_label)
+        manual_valid_expression_layout.setSpacing(0)
+        manual_valid_expression_layout.setContentsMargins(0,0,0,0)
+
+        self.manual_invalid_expression_widget = QWidget()
+        self.manual_invalid_expression_widget.setObjectName("manual_invalid_expression_widget")
+        self.manual_invalid_expression_widget.setStyleSheet("""
+            QWidget#manual_invalid_expression_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.manual_invalid_expression_label = QLabel("Invalid Boolean Expression")
+        self.manual_invalid_expression_label.setWordWrap(True)
+        self.manual_invalid_expression_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.manual_invalid_expression_label.setObjectName("manual_invalid_expression_label")
+        self.manual_invalid_expression_label.setStyleSheet("""
+            QLabel#manual_invalid_expression_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        manual_invalid_expression_layout = QVBoxLayout(self.manual_invalid_expression_widget)
+        manual_invalid_expression_layout.addWidget(self.manual_invalid_expression_label)
+        manual_invalid_expression_layout.setSpacing(0)
+        manual_invalid_expression_layout.setContentsMargins(0,0,0,0)
+
+        self.manual_valid_expression_widget.setMaximumHeight(70)
+        self.manual_invalid_expression_widget.setMaximumHeight(70)
+
+        self.manual_valid_expression_widget.hide()
+        self.manual_invalid_expression_widget.hide()
+
+        #-----List of manual validity check widgets-----
+        self.manual_validity_check_widgets = [self.manual_valid_column_widget,
+                                              self.manual_valid_operator_widget,
+                                              self.manual_valid_value_widget,
+                                              self.manual_valid_expression_widget,
+                                              self.manual_invalid_column_widget,
+                                              self.manual_invalid_operator_widget,
+                                              self.manual_invalid_value_widget,
+                                              self.manual_invalid_expression_widget]
+
         #-----Input Validiity Check For Premade Boolean Expression Widgets-----
         self.premade_valid_input_widget = QWidget()
         self.premade_valid_input_widget.setObjectName("premade_valid_input")
@@ -8640,12 +8731,94 @@ class seaborn_hue_adjustment_section(QWidget):
         self.premade_valid_input_widget.hide()
         self.premade_invalid_input_widget.hide()
 
+        #-----And/Or Logical Button for Manual Boolean Expression-----
+        self.manual_and_logical_button = QPushButton("Add and logcial")
+        self.manual_and_logical_button.setObjectName("manual_add_and_logical")
+        self.manual_and_logical_button.setStyleSheet("""
+            QPushButton#manual_add_and_logical{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#manual_add_and_logical:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.manual_and_logical_button.hide()
+
+        self.manual_or_logical_button = QPushButton("Add or logcial")
+        self.manual_or_logical_button.setObjectName("manual_add_or_logical")
+        self.manual_or_logical_button.setStyleSheet("""
+            QPushButton#manual_add_or_logical{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#manual_add_or_logical:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.manual_or_logical_button.hide()
+
+        self.manual_and_logical_button.clicked.connect(self.manual_add_and_logical_to_boolean_expression)
+        self.manual_or_logical_button.clicked.connect(self.manual_add_or_logical_to_boolean_expression)
+
         #-----And/Or Logical Button for Premade Boolean Expression-----
 
         self.premade_and_logical_button = QPushButton("Add and logcial")
-        self.premade_and_logical_button.setObjectName("add_and_logical")
+        self.premade_and_logical_button.setObjectName("premade_add_and_logical")
         self.premade_and_logical_button.setStyleSheet("""
-            QPushButton#add_and_logical{
+            QPushButton#premade_add_and_logical{
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -8682,9 +8855,9 @@ class seaborn_hue_adjustment_section(QWidget):
         self.premade_and_logical_button.hide()
 
         self.premade_or_logical_button = QPushButton("Add or logcial")
-        self.premade_or_logical_button.setObjectName("add_or_logical")
+        self.premade_or_logical_button.setObjectName("premade_add_or_logical")
         self.premade_or_logical_button.setStyleSheet("""
-            QPushButton#add_or_logical{
+            QPushButton#premade_add_or_logical{
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -8720,8 +8893,8 @@ class seaborn_hue_adjustment_section(QWidget):
         """)
         self.premade_or_logical_button.hide()
 
-        self.premade_and_logical_button.clicked.connect(self.add_and_logical_to_boolean_expression)
-        self.premade_or_logical_button.clicked.connect(self.add_or_logical_to_boolean_expression)
+        self.premade_and_logical_button.clicked.connect(self.premade_add_and_logical_to_boolean_expression)
+        self.premade_or_logical_button.clicked.connect(self.premade_add_or_logical_to_boolean_expression)
 
         #-----Home Screen-----
 
@@ -9078,28 +9251,72 @@ class seaborn_hue_adjustment_section(QWidget):
         return []
 
     def premade_add_and_logical_to_boolean_expression(self):
-        self.nested_boolean_express.append(self.hue)
-        self.nested_boolean_express.append("and")
-        self.boolean_expression = ""
+        self.premade_nested_boolean_expression.append(self.hue)
+        self.premade_nested_boolean_expression.append("and")
+
         self.premade_boolean_expression_format = {
             "column":"",
             "operation":"",
             "value":"",
         }
         self.boolean_expression_value_input.clear()
+
+        self.premade_and_logical_button.hide()
+        self.premade_or_logical_button.hide()
+
         self.change_to_premade_boolean_expression_screen()
 
     def premade_add_or_logical_to_boolean_expression(self):
-        self.nested_boolean_express.append(self.hue)
-        self.nested_boolean_express.append("or")
-        self.boolean_expression = ""
+        self.premade_nested_boolean_expression.append(self.hue)
+        self.premade_nested_boolean_expression.append("or")
+
         self.premade_boolean_expression_format = {
             "column":"",
             "operation":"",
             "value":"",
         }
         self.boolean_expression_value_input.clear()
+
+        self.premade_and_logical_button.hide()
+        self.premade_or_logical_button.hide()
+
         self.change_to_premade_boolean_expression_screen()
+
+    def manual_add_and_logical_to_boolean_expression(self):
+        self.manual_nested_boolean_expression.append(self.hue)
+        self.manual_nested_boolean_expression.append("and")
+        
+        self.manual_nest_boolean_expression = {
+            "column":"",
+            "operation":"",
+            "value":"",
+        }
+        self.manual_boolean_expression_column_input.clear()
+        self.manual_boolean_expression_operator_input.clear()
+        self.manual_boolean_expression_value_input.clear()
+
+        self.manual_and_logical_button.hide()
+        self.manual_or_logical_button.hide()
+
+        self.change_to_manual_boolean_expression_screen()
+
+    def manual_add_or_logical_to_boolean_expression(self):
+        self.manual_nested_boolean_expression.append(self.hue)
+        self.manual_nested_boolean_expression.append("or")
+        
+        self.manual_nest_boolean_expression = {
+            "column":"",
+            "operation":"",
+            "value":"",
+        }
+        self.manual_boolean_expression_column_input.clear()
+        self.manual_boolean_expression_operator_input.clear()
+        self.manual_boolean_expression_value_input.clear()
+
+        self.manual_and_logical_button.hide()
+        self.manual_or_logical_button.hide()
+
+        self.change_to_manual_boolean_expression_screen()
 
     def create_categorical_column_screen(self):
         categorical_column_screen_layout = QVBoxLayout(self.categorical_column_screen)
@@ -9481,7 +9698,7 @@ class seaborn_hue_adjustment_section(QWidget):
         self.manual_boolean_expression_column_input.setMinimumHeight(50)
         self.manual_boolean_expression_column_input.textChanged.connect(self.change_boolean_expression_manual_column_input)
 
-        self.manual_boolean_expression_oeprator_input = QLineEdit()
+        self.manual_boolean_expression_operator_input = QLineEdit()
         self.manual_boolean_expression_operator_input.setObjectName("manual_boolean_expression_operator_input")
         self.manual_boolean_expression_operator_input.setPlaceholderText("Operator:")
         self.manual_boolean_expression_operator_input.setStyleSheet("""
@@ -9503,7 +9720,7 @@ class seaborn_hue_adjustment_section(QWidget):
 
         self.manual_boolean_expression_value_input = QLineEdit()
         self.manual_boolean_expression_value_input.setObjectName("manual_boolean_expression_value_input")
-        self.manual_boolean_expression_value_input.setPlaceholderText("Column:")
+        self.manual_boolean_expression_value_input.setPlaceholderText("Value:")
         self.manual_boolean_expression_value_input.setStyleSheet("""
             QLineEdit#manual_boolean_expression_value_input{
                 background: qlineargradient(
@@ -9522,11 +9739,13 @@ class seaborn_hue_adjustment_section(QWidget):
         self.manual_boolean_expression_value_input.textChanged.connect(self.change_boolean_expression_manual_value_input)
 
         manual_boolean_expression_layout.addWidget(self.manual_boolean_expression_column_input)
-        manual_boolean_expression_layout.addWidget(self.manual_boolean_expression_oeprator_input)
+        manual_boolean_expression_layout.addWidget(self.manual_boolean_expression_operator_input)
         manual_boolean_expression_layout.addWidget(self.manual_boolean_expression_value_input)
-        manual_boolean_expression_layout.addWidget(self.manual_valid_input_widget)
-        manual_boolean_expression_layout.addWidget(self.manual_invalid_input_widget)
+        for widgets in self.manual_validity_check_widgets:
+            manual_boolean_expression_layout.addWidget(widgets)
         manual_boolean_expression_layout.addStretch()
+        manual_boolean_expression_layout.addWidget(self.manual_and_logical_button)
+        manual_boolean_expression_layout.addWidget(self.manual_or_logical_button)
         
         manual_boolean_expression_layout.setContentsMargins(10,10,10,10)
         manual_boolean_expression_layout.setSpacing(10)
@@ -9870,32 +10089,124 @@ class seaborn_hue_adjustment_section(QWidget):
         self.update_hue()
 
     def change_boolean_expression_manual_column_input(self):
-        self.manual_boolean_expression_value = self.manual_boolean_expression_input.text().strip()
+        self.manual_boolean_expression_column = self.manual_boolean_expression_column_input.text().strip()
 
-        if (self.manual_boolean_expression_value == ""):
-            self.boolean_expression = ""
-            self.hue = None
-            self.manual_valid_input_widget.hide()
-            self.manual_invalid_input_widget.hide()
-            self.update_hue()
-            return
+        list(map(lambda w: w.hide(), self.manual_validity_check_widgets))
 
-        try:
-            self.dataset.eval(self.manual_boolean_expression_value)
-            self.manual_valid_input_widget.show()
-            self.manual_invalid_input_widget.hide()
-        except:
-            self.manual_valid_input_widget.hide()
-            self.manual_invalid_input_widget.show()
+        if (self.manual_boolean_expression_column in self.columns):
+            self.manual_validity_check_widgets[0].show()
+            self.manual_validity_check_widgets[4].hide()
+            self.manual_boolean_expression_format["column"] = self.manual_boolean_expression_column
+        elif (self.manual_boolean_expression_column == ""):
+            self.manual_boolean_expression_format["column"] = ""
+            return 
         else:
-            self.hue = self.manual_boolean_expression_value
-            self.update_hue()
+            self.manual_validity_check_widgets[0].hide()
+            self.manual_validity_check_widgets[4].show()
+
+        self.change_boolean_expression_manual_input()
 
     def change_boolean_expression_manual_operator_input(self):
-        pass
+        self.list_of_operators = self.numerical_operations + self.categorical_operations
+
+        self.manual_boolean_expression_operator = self.manual_boolean_expression_operator_input.text().strip()
+
+        list(map(lambda w: w.hide(), self.manual_validity_check_widgets))
+
+
+        if (self.manual_boolean_expression_operator in self.list_of_operators):
+            self.manual_validity_check_widgets[1].show()
+            self.manual_validity_check_widgets[4].hide()
+            self.manual_boolean_expression_format["operation"] = self.manual_boolean_expression_operator
+        elif (self.manual_boolean_expression_operator == ""):
+            self.manual_boolean_expression_format["operation"] = ""
+            return 
+        else:
+            self.manual_validity_check_widgets[1].hide()
+            self.manual_validity_check_widgets[5].show()
+
+        self.change_boolean_expression_manual_input()
 
     def change_boolean_expression_manual_value_input(self):
-        pass
+        manual_boolean_expression_values = self.manual_boolean_expression_value_input.text().strip().split(" ")
+        manual_boolean_expression_values = list(filter(lambda x:x != "",manual_boolean_expression_values))
+
+        list(map(lambda w: w.hide(), self.manual_validity_check_widgets))
+
+        if (manual_boolean_expression_values != []):
+            try:
+                if (len(manual_boolean_expression_values) == 1 and self.manual_boolean_expression_format["operation"] != "isin"):
+                    manual_boolean_expression_values = float(manual_boolean_expression_values[0])
+                else:
+                    manual_boolean_expression_values = list(map(float,manual_boolean_expression_values))
+                self.manual_boolean_expression_format["value"] = manual_boolean_expression_values
+            except:
+                self.manual_boolean_expression_format["value"] = manual_boolean_expression_values
+            self.manual_validity_check_widgets[2].show()
+            self.manual_validity_check_widgets[6].hide()
+
+            self.change_boolean_expression_manual_input()
+        else:
+            self.manual_boolean_expression_format["value"] = ""
+
+    def change_boolean_expression_manual_input(self):
+        boolean_expression_parts = list(self.manual_boolean_expression_format.values())
+        boolean_expression_parts = list(filter(lambda x:x != "",boolean_expression_parts))
+        if (len(boolean_expression_parts) != 3):
+            return
+
+        list(map(lambda x:x.hide(),self.manual_validity_check_widgets))
+
+        try:
+            column_name = self.manual_boolean_expression_format["column"]
+            column = self.dataset[column_name]
+            column_type = "numerical" if pd.api.types.is_numeric_dtype(column) else "categorical"
+            operation = self.manual_boolean_expression_format["operation"]
+            value = self.manual_boolean_expression_format["value"]
+
+            if (isinstance(value,list)):
+                if (isinstance(value[0],float) and column_type != "numerical"):
+                    raise Exception
+                if (isinstance(value[0],str) and column_type != "categorical"):
+                    raise Exception
+            else:
+                if (isinstance(value,float) and column_type != "numerical"):
+                    raise Exception
+                if (isinstance(value,str) and column_type != "categorical"):
+                    raise Exception
+
+            if ((operation == "between" or operation == "is_between") and not (value[0] <= value[1])):
+                raise Exception
+
+            self.boolean_expression_check[operation](column,value)
+
+            self.manual_valid_expression_widget.show()
+            self.manual_invalid_expression_widget.hide()
+
+            self.manual_and_logical_button.show()
+            self.manual_or_logical_button.show()
+        except:
+            self.manual_valid_expression_widget.hide()
+            self.manual_invalid_expression_widget.show()
+
+            self.manual_and_logical_button.hide()
+            self.manual_or_logical_button.hide()
+        else:
+            numerical_operations = ["==","!=",">","<",">=","<="]
+
+            if (operation in numerical_operations):
+                boolean_expression = f"self.dataset['{column_name}'] {operation} {value}"
+            elif (operation == "isin"):
+                boolean_expression = f"self.dataset['{column_name}'].{operation}({value})"
+            elif (operation == "between"):
+                boolean_expression = f"self.dataset['{column_name}'].{operation}({value[0]},{value[1]})"
+            elif (operation == "len"):
+                boolean_expression = f"self.dataset['{column_name}'].str.{operation}() == {value}"
+            else:
+                boolean_expression = f"self.dataset['{column_name}'].str.{operation}({value})"
+                
+            self.hue = " ".join(self.manual_nested_boolean_expression + [boolean_expression])
+            self.update_hue()
 
     def change_boolean_expression_premade_column(self,index):
         source_index = self.boolean_expression_column_proxy.mapToSource(index)
@@ -9983,7 +10294,7 @@ class seaborn_hue_adjustment_section(QWidget):
             else:
                 boolean_expression = f"self.dataset['{column_name}'].str.{operation}({value})"
                 
-            self.hue = " ".join(self.nested_boolean_express + [boolean_expression])
+            self.hue = " ".join(self.premade_nested_boolean_expression + [boolean_expression])
             self.update_hue()
 
     def change_hue_to_none(self):
@@ -10007,8 +10318,12 @@ class seaborn_hue_adjustment_section(QWidget):
             self.categorical_column_search_bar.clearFocus()
         if not self.numerical_column_search_bar.geometry().contains(event.position().toPoint()):
             self.numerical_column_search_bar.clearFocus()
-        if not self.manual_boolean_expression_input.geometry().contains(event.position().toPoint()):
-            self.manual_boolean_expression_input.clearFocus()
+        if not self.manual_boolean_expression_column_input.geometry().contains(event.position().toPoint()):
+            self.manual_boolean_expression_column_input.clearFocus()
+        if not self.manual_boolean_expression_operator_input.geometry().contains(event.position().toPoint()):
+            self.manual_boolean_expression_operator_input.clearFocus()
+        if not self.manual_boolean_expression_value_input.geometry().contains(event.position().toPoint()):
+            self.manual_boolean_expression_value_input.clearFocus()
         if not self.boolean_expression_column_search_bar.geometry().contains(event.position().toPoint()):
             self.boolean_expression_column_search_bar.clearFocus()
         if not self.boolean_expression_value_input.geometry().contains(event.position().toPoint()):
@@ -10017,11 +10332,11 @@ class seaborn_hue_adjustment_section(QWidget):
 
     def showEvent(self, event):
         super().showEvent(event)
+        
         self.dataset = pd.read_csv("./dataset/user_dataset.csv")
         self.categorical_columns = self.get_categorical_columns()
         self.numerical_columns = self.get_numerical_columns()
         self.hue = None
-        self.boolean_expression = ""
         self.premade_boolean_expression_format = {
             "column":"",
             "operation":"",
@@ -10032,9 +10347,14 @@ class seaborn_hue_adjustment_section(QWidget):
             "operation":"",
             "value":"",
         }
-        self.nested_boolean_express = []
-        self.boolean_expression_values = []
+        self.premade_nested_boolean_expression = []
+        self.manual_nest_boolean_expression = []
         self.numeric_column_type = False
+
+        self.boolean_expression_value_input.clear()
+        self.manual_boolean_expression_column_input.clear()
+        self.manual_boolean_expression_operator_input.clear()
+        self.manual_boolean_expression_value_input.clear()
 
 class legend_button(QDialog):
     def __init__(self,selected_graph, graph_display):
