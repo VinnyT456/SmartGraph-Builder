@@ -1213,12 +1213,19 @@ class bbox_to_anchor_adjustment_section(QWidget):
         #Get the text input of x from the user and remove any excess spaces
         x_input = self.x_input.text().strip()
 
+        if (x_input == ""):
+            self.valid_input_widget.hide()
+            self.invalid_input_widget.hide()
+            return
+
         #Check if the input is valid and only update if it's valid
         try:
             self.x_value = float(x_input)
+            self.valid_input_label.setText("Valid X")
             self.valid_input_widget.show()
             self.invalid_input_widget.hide()
         except:
+            self.invalid_input_label.setText("Invalid X")
             self.valid_input_widget.hide()
             self.invalid_input_widget.show()
         else:
@@ -1228,12 +1235,19 @@ class bbox_to_anchor_adjustment_section(QWidget):
         #Get the text input of y from the user and remove any excess spaces
         y_input = self.y_input.text().strip()
 
+        if (y_input == ""):
+            self.valid_input_widget.hide()
+            self.invalid_input_widget.hide()
+            return
+
         #Check if the input is valid and only update if it's valid
         try:
             self.y_value = float(y_input)
+            self.valid_input_label.setText("Valid Y")
             self.valid_input_widget.show()
             self.invalid_input_widget.hide()
         except:
+            self.invalid_input_label.setText("Invalid Y")
             self.valid_input_widget.hide()
             self.invalid_input_widget.show()
         else:
@@ -1243,12 +1257,19 @@ class bbox_to_anchor_adjustment_section(QWidget):
         #Get the text input of the width from the user and remove any excess spaces
         width_input = self.width_input.text().strip()
 
+        if (width_input == ""):
+            self.valid_input_widget.hide()
+            self.invalid_input_widget.hide()
+            return
+
         #Check if the input is valid and only update if it's valid
         try:
             self.width_value = float(width_input)
+            self.valid_input_label.setText("Valid Width")
             self.valid_input_widget.show()
             self.invalid_input_widget.hide()
         except:
+            self.invalid_input_label.setText("Invalid Width")
             self.valid_input_widget.hide()
             self.invalid_input_widget.show()
         else:
@@ -1257,13 +1278,20 @@ class bbox_to_anchor_adjustment_section(QWidget):
     def update_height(self):
         #Get the text input of the height input from the user and remove any excess spaces
         height_input = self.height_input.text().strip()
+
+        if (height_input == ""):
+            self.valid_input_widget.hide()
+            self.invalid_input_widget.hide()
+            return
         
         #Check if the input is valid and only update if it's valid
         try:
             self.height_value = float(height_input)
+            self.valid_input_label.setText("Valid Height")
             self.valid_input_widget.show()
             self.invalid_input_widget.hide()
         except:
+            self.invalid_input_label.setText("Invalid Height")
             self.valid_input_widget.hide()
             self.invalid_input_widget.show()
         else:
@@ -10178,6 +10206,9 @@ class seaborn_hue_adjustment_section(QWidget):
             if ((operation == "between" or operation == "is_between") and not (value[0] <= value[1])):
                 raise Exception
 
+            if (operation in ["contains","startswith","endswith","regex","len","lower","upper"] and len(value) > 1):
+                raise Exception
+
             self.boolean_expression_check[operation](column,value)
 
             self.manual_valid_expression_widget.show()
@@ -10198,12 +10229,28 @@ class seaborn_hue_adjustment_section(QWidget):
                 boolean_expression = f"self.dataset['{column_name}'] {operation} {value}"
             elif (operation == "isin"):
                 boolean_expression = f"self.dataset['{column_name}'].{operation}({value})"
+            elif (operation == "notin"):
+                boolean_expression = f"~self.dataset['{column_name}'].{operation}({value})"
             elif (operation == "between"):
                 boolean_expression = f"self.dataset['{column_name}'].{operation}({value[0]},{value[1]})"
+            elif operation == "between_exclusive":
+                boolean_expression = f"self.dataset['{column_name}'].gt({value[0]}) & self.dataset['{column_name}'].lt({value[1]})" 
             elif (operation == "len"):
                 boolean_expression = f"self.dataset['{column_name}'].str.{operation}() == {value}"
-            else:
+            elif (operation == "len"):
+                boolean_expression = f"self.dataset['{column_name}'].str.{operation}() == 0"
+            elif (operation == "contains"):
+                boolean_expression = f"self.dataset['{column_name}'].str.{operation}({value},case=False)"
+            elif (operation == "startswith"):
                 boolean_expression = f"self.dataset['{column_name}'].str.{operation}({value})"
+            elif (operation == "endswith"):
+                boolean_expression = f"self.dataset['{column_name}'].str.{operation}({value})"
+            elif (operation == "regex"):
+                boolean_expression = f"self.dataset['{column_name}'].str.match({value})"
+            elif (operation == "lower"):
+                boolean_expression = f"self.dataset['{column_name}'].str.{operation}() == {value}" 
+            elif (operation == "upper"):
+                boolean_expression = f"self.dataset['{column_name}'].str.{operation}() == {value}" 
                 
             self.hue = " ".join(self.manual_nested_boolean_expression + [boolean_expression])
             self.update_hue()
@@ -10264,7 +10311,10 @@ class seaborn_hue_adjustment_section(QWidget):
                 if (isinstance(value,str) and self.numeric_column_type):
                     raise Exception
 
-            if (operation == "between" and not (value[0] <= value[1])):
+            if ((operation == "between" or "between_exclusive") and not (value[0] <= value[1])):
+                raise Exception
+
+            if (operation in ["contains","startswith","endswith","regex","len","lower","upper"] and len(value) > 1):
                 raise Exception
 
             self.boolean_expression_check[operation](column,value)
@@ -10287,13 +10337,29 @@ class seaborn_hue_adjustment_section(QWidget):
                 boolean_expression = f"self.dataset['{column_name}'] {operation} {value}"
             elif (operation == "isin"):
                 boolean_expression = f"self.dataset['{column_name}'].{operation}({value})"
+            elif (operation == "notin"):
+                boolean_expression = f"~self.dataset['{column_name}'].{operation}({value})"
             elif (operation == "between"):
                 boolean_expression = f"self.dataset['{column_name}'].{operation}({value[0]},{value[1]})"
+            elif operation == "between_exclusive":
+                boolean_expression = f"self.dataset['{column_name}'].gt({value[0]}) & self.dataset['{column_name}'].lt({value[1]})" 
             elif (operation == "len"):
                 boolean_expression = f"self.dataset['{column_name}'].str.{operation}() == {value}"
-            else:
+            elif (operation == "len"):
+                boolean_expression = f"self.dataset['{column_name}'].str.{operation}() == 0"
+            elif (operation == "contains"):
+                boolean_expression = f"self.dataset['{column_name}'].str.{operation}({value},case=False)"
+            elif (operation == "startswith"):
                 boolean_expression = f"self.dataset['{column_name}'].str.{operation}({value})"
-                
+            elif (operation == "endswith"):
+                boolean_expression = f"self.dataset['{column_name}'].str.{operation}({value})"
+            elif (operation == "regex"):
+                boolean_expression = f"self.dataset['{column_name}'].str.match({value})"
+            elif (operation == "lower"):
+                boolean_expression = f"self.dataset['{column_name}'].str.{operation}() == {value}" 
+            elif (operation == "upper"):
+                boolean_expression = f"self.dataset['{column_name}'].str.{operation}() == {value}" 
+
             self.hue = " ".join(self.premade_nested_boolean_expression + [boolean_expression])
             self.update_hue()
 
