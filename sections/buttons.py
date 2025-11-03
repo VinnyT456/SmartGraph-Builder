@@ -49,10 +49,6 @@ plot_json = {
             "seaborn_legends":{
                 "legend":"brief",
                 "legend_out":False,
-                "hue":None,
-                "style":None,
-                "size":None,
-                "palette":"deep",
                 "markers":True,
                 "dashes":True,
                 "size_order":None,
@@ -8289,9 +8285,238 @@ class seaborn_legend_off_adjustment_section(QWidget):
             self.plot_manager.insert_plot_parameter(plot_parameters)
         self.graph_display.show_graph()
 
-class seaborn_hue_adjustment_section(QWidget):
+class legend_button(QDialog):
+    def __init__(self,selected_graph, graph_display):
+        super().__init__()
+        self.setWindowTitle("Customize Legend")
+
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+
+        self.legend_parameters = list(plot_json[self.selected_graph]["legend"].keys())[:-1]
+        self.seaborn_specific_legend_parameters = list(plot_json[self.selected_graph]["legend"]["seaborn_legends"].keys())
+
+        self.legend_parameters.extend(self.seaborn_specific_legend_parameters)
+
+        self.current_screen_index = 0
+
+        self.available_screen_names = [loc_adjustment_section,bbox_to_anchor_adjustment_section,
+                                  ncol_adjustment_section,fontsize_adjustment_section,
+                                  legend_title_adjustment_section,legend_title_fontsize_adjustment_section,
+                                  frameon_adjustment_section,face_color_adjustment_section,
+                                  edge_color_adjustment_section,framealpha_adjustment_section,
+                                  shadow_adjustment_section,fancybox_adjustment_section,
+                                  borderpad_adjustment_section,label_color_adjustment_section,
+                                  alignment_adjustment_section,columnspacing_adjustment_section,
+                                  handletextpad_adjustment_section,borderaxespad_adjustment_section,
+                                  handlelength_adjustment_section,handleheight_adjustment_section,
+                                  markerfirst_adjustment_section,seaborn_legend_adjustment_section,
+                                  seaborn_legend_off_adjustment_section]
+
+        self.available_screens = dict()
+
+        self.setStyleSheet("""
+            QDialog{
+               background: qlineargradient(
+                    x1: 0, y1: 1, 
+                    x2: 0, y2: 0,
+                    stop: 0 rgba(25, 191, 188, 1),
+                    stop: 0.28 rgba(27, 154, 166, 1),
+                    stop: 0.65 rgba(78, 160, 242, 1),
+                    stop: 0.89 rgba(33, 218, 255, 1)
+                );
+            }
+        """)
+
+        self.setFixedWidth(600)
+        self.setFixedHeight(500)
+
+        self.legend_parameters_section = QWidget()
+        self.legend_parameters_section.setObjectName("legend_parameter_section")
+        self.legend_parameters_section.setStyleSheet("""
+            QWidget#legend_parameter_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.create_legend_parameter_buttons()
+
+        #Place the buttons and the dataset next to each other side by side
+        self.layout = QHBoxLayout(self)
+        self.layout.addWidget(self.legend_parameters_section,stretch=1)
+        self.layout.addSpacing(10)
+        
+        #Add the parameters screen to the layout
+        for screen_name,screen in zip(self.legend_parameters,self.available_screen_names):
+            parameter_screen = screen(self.selected_graph,self.graph_display)
+            parameter_screen.hide()
+            self.available_screens[screen_name] = parameter_screen
+            self.layout.addWidget(parameter_screen,stretch=1)
+        
+        #Show the first parameter screen
+        self.available_screens.get(self.legend_parameters[self.current_screen_index]).show()
+
+        #Create a shortcut for the user to go to the previous column by press up
+        up_shortcut = QShortcut(QKeySequence("up"), self) 
+        up_shortcut.activated.connect(self.columns_go_up)  
+
+        #Create a shortcut for the user to go to the next column by press down
+        down_shortcut = QShortcut(QKeySequence("down"), self) 
+        down_shortcut.activated.connect(self.columns_go_down)
+
+        #Create a shortcut for the user to close the dialog window
+        close_shortcut = QShortcut(QKeySequence("ESC"), self) 
+        close_shortcut.activated.connect(self.close_application)
+
+        #Make sure this gets drawn.
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        
+    def create_legend_parameter_buttons(self):
+        legend_parameter_button_layout = QVBoxLayout(self.legend_parameters_section)
+    
+        self.legend_parameter_list_view = QListView()
+        self.legend_parameter_model = QStringListModel(self.legend_parameters)
+
+        self.legend_parameter_list_view.setModel(self.legend_parameter_model)
+        self.legend_parameter_list_view.setObjectName("legend_parameter_list_view")
+        self.legend_parameter_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        screen_index = self.legend_parameter_model.index(0)  
+        self.legend_parameter_list_view.setCurrentIndex(screen_index)
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.legend_parameter_list_view.setItemDelegate(CustomDelegate())
+
+        self.legend_parameter_list_view.setStyleSheet("""
+            QListView#legend_parameter_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#legend_parameter_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#legend_parameter_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#legend_parameter_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.legend_parameter_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.legend_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.legend_parameter_list_view.setSpacing(3)
+
+        self.legend_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+
+        legend_parameter_button_layout.addWidget(self.legend_parameter_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        legend_parameter_button_layout.setContentsMargins(10, 10, 10, 10)
+
+    def change_current_parameter_screen(self,index):
+        current_screen_name = self.legend_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
+        self.available_screens.get(self.legend_parameters[self.current_screen_index]).hide()
+        self.available_screens.get(current_screen_name).show()
+        self.current_screen_index = index.row()
+    
+    def columns_go_up(self):
+        self.available_screens.get(self.legend_parameters[self.current_screen_index]).hide()
+        self.current_screen_index -= 1
+        self.current_screen_index %= len(self.legend_parameters)
+        self.available_screens.get(self.legend_parameters[self.current_screen_index]).show()
+        new_screen_index = self.legend_parameter_model.index(self.current_screen_index)
+        self.legend_parameter_list_view.setCurrentIndex(new_screen_index)
+        self.legend_parameter_list_view.scrollTo(new_screen_index,QAbstractItemView.ScrollHint.PositionAtCenter)
+
+    def columns_go_down(self):
+        self.available_screens.get(self.legend_parameters[self.current_screen_index]).hide()
+        self.current_screen_index += 1
+        self.current_screen_index %= len(self.legend_parameters)
+        self.available_screens.get(self.legend_parameters[self.current_screen_index]).show()
+        new_screen_index = self.legend_parameter_model.index(self.current_screen_index)
+        self.legend_parameter_list_view.setCurrentIndex(new_screen_index)
+        self.legend_parameter_list_view.scrollTo(new_screen_index,QAbstractItemView.ScrollHint.PositionAtCenter)
+
+    def close_application(self):
+        self.close()
+
+class grid_button(QPushButton):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
+        self.plot_manager = PlotManager()
+        self.initial_grid_state = False
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.clicked.connect(self.update_grid)
+
+    def update_grid(self):
+        db = self.plot_manager.get_db()
+        print('s')
+        self.initial_grid_state = not self.initial_grid_state
+        if (db != []):
+            self.plot_manager.update_grid(self.initial_grid_state)
+        else:
+            plot_parameter = plot_json[self.selected_graph].copy()
+            plot_parameter["grid"] = self.initial_grid_state
+            self.plot_manager.insert_plot_parameter(plot_parameter) 
+        self.graph_display.show_graph()
+
+class hue_button(QDialog):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+
+        self.setWindowTitle("Customize Legend")
 
         self.selected_graph = selected_graph
         self.graph_display = graph_display 
@@ -8926,10 +9151,10 @@ class seaborn_hue_adjustment_section(QWidget):
 
         #-----Home Screen-----
 
-        self.sns_hue_adjustment_homescreen = QWidget()
-        self.sns_hue_adjustment_homescreen.setObjectName("sns_hue_adjustment")
-        self.sns_hue_adjustment_homescreen.setStyleSheet("""
-            QWidget#sns_hue_adjustment{
+        self.hue_adjustment_homescreen = QWidget()
+        self.hue_adjustment_homescreen.setObjectName("hue_adjustment")
+        self.hue_adjustment_homescreen.setStyleSheet("""
+            QWidget#hue_adjustment{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -9098,7 +9323,7 @@ class seaborn_hue_adjustment_section(QWidget):
         self.boolean_expression_hue_button.clicked.connect(self.change_to_boolean_expression_hue_screen)
         self.none_hue_button.clicked.connect(self.change_hue_to_none)
 
-        button_layout = QVBoxLayout(self.sns_hue_adjustment_homescreen)
+        button_layout = QVBoxLayout(self.hue_adjustment_homescreen)
         button_layout.addWidget(self.categorical_column_hue_button)
         button_layout.addWidget(self.numerical_column_hue_button)
         button_layout.addWidget(self.boolean_expression_hue_button)
@@ -9237,7 +9462,7 @@ class seaborn_hue_adjustment_section(QWidget):
         self.boolean_expression_premade_input_value_screen.hide()
 
         #-----Initialize Screen Value-----
-        self.available_screens = [self.sns_hue_adjustment_homescreen,self.categorical_column_screen,
+        self.available_screens = [self.hue_adjustment_homescreen,self.categorical_column_screen,
                                 self.numerical_column_screen,self.boolean_expression_screen,
                                 self.boolean_expression_manual_input_screen,
                                 self.boolean_expression_premade_select_column_screen,
@@ -9245,9 +9470,26 @@ class seaborn_hue_adjustment_section(QWidget):
                                 self.boolean_expression_premade_input_value_screen]
         self.current_screen_idx = 0
 
+        #-----Initialize the QDialog Screen-----
+        self.setStyleSheet("""
+            QDialog{
+               background: qlineargradient(
+                    x1: 0, y1: 1, 
+                    x2: 0, y2: 0,
+                    stop: 0 rgba(25, 191, 188, 1),
+                    stop: 0.28 rgba(27, 154, 166, 1),
+                    stop: 0.65 rgba(78, 160, 242, 1),
+                    stop: 0.89 rgba(33, 218, 255, 1)
+                );
+            }
+        """)
+
+        self.setFixedWidth(350)
+        self.setFixedHeight(550)
+
         #-----Main Screen-----
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.sns_hue_adjustment_homescreen)
+        main_layout.addWidget(self.hue_adjustment_homescreen)
         main_layout.addWidget(self.categorical_column_screen)
         main_layout.addWidget(self.numerical_column_screen)
         main_layout.addWidget(self.boolean_expression_screen)
@@ -9255,8 +9497,8 @@ class seaborn_hue_adjustment_section(QWidget):
         main_layout.addWidget(self.boolean_expression_premade_select_column_screen)
         main_layout.addWidget(self.boolean_expression_premade_select_operator_screen)
         main_layout.addWidget(self.boolean_expression_premade_input_value_screen)
-        main_layout.setContentsMargins(0,0,0,0)
-        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(15,15,15,15)
+        main_layout.setSpacing(10)
 
         #-----Shortcuts-----
         original_screen_shortcut = QShortcut(QKeySequence("left"),self)
@@ -10421,230 +10663,3 @@ class seaborn_hue_adjustment_section(QWidget):
         self.manual_boolean_expression_column_input.clear()
         self.manual_boolean_expression_operator_input.clear()
         self.manual_boolean_expression_value_input.clear()
-
-class legend_button(QDialog):
-    def __init__(self,selected_graph, graph_display):
-        super().__init__()
-        self.setWindowTitle("Customize Legend")
-
-        self.selected_graph = selected_graph
-        self.graph_display = graph_display
-
-        self.legend_parameters = list(plot_json[self.selected_graph]["legend"].keys())[:-1]
-        self.seaborn_specific_legend_parameters = list(plot_json[self.selected_graph]["legend"]["seaborn_legends"].keys())
-
-        self.legend_parameters.extend(self.seaborn_specific_legend_parameters)
-
-        self.current_screen_index = 0
-
-        self.available_screen_names = [loc_adjustment_section,bbox_to_anchor_adjustment_section,
-                                  ncol_adjustment_section,fontsize_adjustment_section,
-                                  legend_title_adjustment_section,legend_title_fontsize_adjustment_section,
-                                  frameon_adjustment_section,face_color_adjustment_section,
-                                  edge_color_adjustment_section,framealpha_adjustment_section,
-                                  shadow_adjustment_section,fancybox_adjustment_section,
-                                  borderpad_adjustment_section,label_color_adjustment_section,
-                                  alignment_adjustment_section,columnspacing_adjustment_section,
-                                  handletextpad_adjustment_section,borderaxespad_adjustment_section,
-                                  handlelength_adjustment_section,handleheight_adjustment_section,
-                                  markerfirst_adjustment_section,seaborn_legend_adjustment_section,
-                                  seaborn_legend_off_adjustment_section,seaborn_hue_adjustment_section]
-
-        self.available_screens = dict()
-
-        self.setStyleSheet("""
-            QDialog{
-               background: qlineargradient(
-                    x1: 0, y1: 1, 
-                    x2: 0, y2: 0,
-                    stop: 0 rgba(25, 191, 188, 1),
-                    stop: 0.28 rgba(27, 154, 166, 1),
-                    stop: 0.65 rgba(78, 160, 242, 1),
-                    stop: 0.89 rgba(33, 218, 255, 1)
-                );
-            }
-        """)
-
-        self.setFixedWidth(600)
-        self.setFixedHeight(500)
-
-        self.legend_parameters_section = QWidget()
-        self.legend_parameters_section.setObjectName("legend_parameter_section")
-        self.legend_parameters_section.setStyleSheet("""
-            QWidget#legend_parameter_section{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-        self.create_legend_parameter_buttons()
-
-        #Place the buttons and the dataset next to each other side by side
-        self.layout = QHBoxLayout(self)
-        self.layout.addWidget(self.legend_parameters_section,stretch=1)
-        self.layout.addSpacing(10)
-        
-        #Add the parameters screen to the layout
-        for screen_name,screen in zip(self.legend_parameters,self.available_screen_names):
-            parameter_screen = screen(self.selected_graph,self.graph_display)
-            parameter_screen.hide()
-            self.available_screens[screen_name] = parameter_screen
-            self.layout.addWidget(parameter_screen,stretch=1)
-        
-        #Show the first parameter screen
-        self.available_screens.get(self.legend_parameters[self.current_screen_index]).show()
-
-        #Create a shortcut for the user to go to the previous column by press up
-        up_shortcut = QShortcut(QKeySequence("up"), self) 
-        up_shortcut.activated.connect(self.columns_go_up)  
-
-        #Create a shortcut for the user to go to the next column by press down
-        down_shortcut = QShortcut(QKeySequence("down"), self) 
-        down_shortcut.activated.connect(self.columns_go_down)
-
-        #Create a shortcut for the user to close the dialog window
-        close_shortcut = QShortcut(QKeySequence("ESC"), self) 
-        close_shortcut.activated.connect(self.close_application)
-
-        #Make sure this gets drawn.
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        
-    def create_legend_parameter_buttons(self):
-        legend_parameter_button_layout = QVBoxLayout(self.legend_parameters_section)
-    
-        self.legend_parameter_list_view = QListView()
-        self.legend_parameter_model = QStringListModel(self.legend_parameters)
-
-        self.legend_parameter_list_view.setModel(self.legend_parameter_model)
-        self.legend_parameter_list_view.setObjectName("legend_parameter_list_view")
-        self.legend_parameter_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-
-        screen_index = self.legend_parameter_model.index(0)  
-        self.legend_parameter_list_view.setCurrentIndex(screen_index)
-
-        class CustomDelegate(QStyledItemDelegate):
-            def paint(self, painter, option, index):
-                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
-                font = QFont("SF Pro Display", 24)
-                font.setWeight(600)
-                option.font = font
-                super().paint(painter, option, index)
-        
-        self.legend_parameter_list_view.setItemDelegate(CustomDelegate())
-
-        self.legend_parameter_list_view.setStyleSheet("""
-            QListView#legend_parameter_list_view{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: transparent;
-                border-radius: 16px;
-            }
-            QListView#legend_parameter_list_view::item {
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                color: black;
-                min-height: 41px;
-            }
-            QListView#legend_parameter_list_view::item:selected {
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                color: black;
-                min-height: 41px;
-            }
-            QListView#legend_parameter_list_view::item:hover {
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                color: black;
-                min-height: 41px;
-            }
-        """)
-
-        self.legend_parameter_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.legend_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.legend_parameter_list_view.setSpacing(3)
-
-        self.legend_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
-
-        legend_parameter_button_layout.addWidget(self.legend_parameter_list_view)
-
-        # Add margins and spacing to make it look good and push content to the top
-        legend_parameter_button_layout.setContentsMargins(10, 10, 10, 10)
-
-    def change_current_parameter_screen(self,index):
-        current_screen_name = self.legend_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
-        self.available_screens.get(self.legend_parameters[self.current_screen_index]).hide()
-        self.available_screens.get(current_screen_name).show()
-        self.current_screen_index = index.row()
-    
-    def columns_go_up(self):
-        self.available_screens.get(self.legend_parameters[self.current_screen_index]).hide()
-        self.current_screen_index -= 1
-        self.current_screen_index %= len(self.legend_parameters)
-        self.available_screens.get(self.legend_parameters[self.current_screen_index]).show()
-        new_screen_index = self.legend_parameter_model.index(self.current_screen_index)
-        self.legend_parameter_list_view.setCurrentIndex(new_screen_index)
-        self.legend_parameter_list_view.scrollTo(new_screen_index,QAbstractItemView.ScrollHint.PositionAtCenter)
-
-    def columns_go_down(self):
-        self.available_screens.get(self.legend_parameters[self.current_screen_index]).hide()
-        self.current_screen_index += 1
-        self.current_screen_index %= len(self.legend_parameters)
-        self.available_screens.get(self.legend_parameters[self.current_screen_index]).show()
-        new_screen_index = self.legend_parameter_model.index(self.current_screen_index)
-        self.legend_parameter_list_view.setCurrentIndex(new_screen_index)
-        self.legend_parameter_list_view.scrollTo(new_screen_index,QAbstractItemView.ScrollHint.PositionAtCenter)
-
-    def close_application(self):
-        self.close()
-
-class grid_button(QPushButton):
-    def __init__(self,selected_graph,graph_display):
-        super().__init__()
-        self.plot_manager = PlotManager()
-        self.initial_grid_state = False
-        self.selected_graph = selected_graph
-        self.graph_display = graph_display
-        self.clicked.connect(self.update_grid)
-
-    def update_grid(self):
-        db = self.plot_manager.get_db()
-        print('s')
-        self.initial_grid_state = not self.initial_grid_state
-        if (db != []):
-            self.plot_manager.update_grid(self.initial_grid_state)
-        else:
-            plot_parameter = plot_json[self.selected_graph].copy()
-            plot_parameter["grid"] = self.initial_grid_state
-            self.plot_manager.insert_plot_parameter(plot_parameter) 
-        self.graph_display.show_graph()
