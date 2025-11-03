@@ -8644,8 +8644,8 @@ class hue_button(QDialog):
         manual_invalid_column_layout.setSpacing(0)
         manual_invalid_column_layout.setContentsMargins(0,0,0,0)
 
-        self.manual_valid_column_widget.setMaximumHeight(70)
-        self.manual_invalid_column_widget.setMaximumHeight(70)
+        self.manual_valid_column_widget.setMaximumHeight(100)
+        self.manual_invalid_column_widget.setMaximumHeight(100)
 
         self.manual_valid_column_widget.hide()
         self.manual_invalid_column_widget.hide()
@@ -8725,8 +8725,8 @@ class hue_button(QDialog):
         manual_invalid_operator_layout.setSpacing(0)
         manual_invalid_operator_layout.setContentsMargins(0,0,0,0)
 
-        self.manual_valid_operator_widget.setMaximumHeight(70)
-        self.manual_invalid_operator_widget.setMaximumHeight(70)
+        self.manual_valid_operator_widget.setMaximumHeight(100)
+        self.manual_invalid_operator_widget.setMaximumHeight(100)
 
         self.manual_valid_operator_widget.hide()
         self.manual_invalid_operator_widget.hide()
@@ -8806,8 +8806,8 @@ class hue_button(QDialog):
         manual_invalid_value_layout.setSpacing(0)
         manual_invalid_value_layout.setContentsMargins(0,0,0,0)
 
-        self.manual_valid_value_widget.setMaximumHeight(70)
-        self.manual_invalid_value_widget.setMaximumHeight(70)
+        self.manual_valid_value_widget.setMaximumHeight(100)
+        self.manual_invalid_value_widget.setMaximumHeight(100)
 
         self.manual_valid_value_widget.hide()
         self.manual_invalid_value_widget.hide()
@@ -8887,8 +8887,8 @@ class hue_button(QDialog):
         manual_invalid_expression_layout.setSpacing(0)
         manual_invalid_expression_layout.setContentsMargins(0,0,0,0)
 
-        self.manual_valid_expression_widget.setMaximumHeight(70)
-        self.manual_invalid_expression_widget.setMaximumHeight(70)
+        self.manual_valid_expression_widget.setMaximumHeight(100)
+        self.manual_invalid_expression_widget.setMaximumHeight(100)
 
         self.manual_valid_expression_widget.hide()
         self.manual_invalid_expression_widget.hide()
@@ -8978,8 +8978,8 @@ class hue_button(QDialog):
         premade_invalid_input_layout.setSpacing(0)
         premade_invalid_input_layout.setContentsMargins(0,0,0,0)
 
-        self.premade_valid_input_widget.setMaximumHeight(70)
-        self.premade_invalid_input_widget.setMaximumHeight(70)
+        self.premade_valid_input_widget.setMaximumHeight(100)
+        self.premade_invalid_input_widget.setMaximumHeight(100)
 
         self.premade_valid_input_widget.hide()
         self.premade_invalid_input_widget.hide()
@@ -9501,9 +9501,11 @@ class hue_button(QDialog):
         main_layout.setSpacing(10)
 
         #-----Shortcuts-----
-        original_screen_shortcut = QShortcut(QKeySequence("left"),self)
-        original_screen_shortcut.activated.connect(self.change_to_previous_screen)
+        previous_screen_shortcut = QShortcut(QKeySequence("left"),self)
+        previous_screen_shortcut.activated.connect(self.change_to_previous_screen)
 
+        close_screen_shortcut = QShortcut(QKeySequence("Esc"),self)
+        close_screen_shortcut.activated.connect(self.close_dialog)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
     def get_categorical_columns(self):
@@ -9871,7 +9873,7 @@ class hue_button(QDialog):
         """)
         self.manual_boolean_expression_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
-        self.premade_boolean_expression_button = QPushButton("Premade Boolean Expression")
+        self.premade_boolean_expression_button = QPushButton("")
         self.premade_boolean_expression_button.setObjectName("premade_boolean_expression_button")
         self.premade_boolean_expression_button.setStyleSheet("""
             QPushButton#premade_boolean_expression_button{
@@ -9936,13 +9938,15 @@ class hue_button(QDialog):
         premade_boolean_expression_layout.setContentsMargins(0,0,0,0)
         premade_boolean_expression_layout.setSpacing(0)
 
+        self.manual_boolean_expression_button.setMinimumHeight(70)
+        self.premade_boolean_expression_button.setMinimumHeight(70)
         self.manual_boolean_expression_button.clicked.connect(self.change_to_manual_boolean_expression_screen)
         self.premade_boolean_expression_button.clicked.connect(self.change_to_premade_boolean_expression_screen)
 
         boolean_expression_layout.addWidget(self.manual_boolean_expression_button)
         boolean_expression_layout.addWidget(self.premade_boolean_expression_button)
         boolean_expression_layout.setContentsMargins(10,10,10,10)
-        boolean_expression_layout.setSpacing(5)        
+        boolean_expression_layout.setSpacing(10)        
         boolean_expression_layout.addStretch()
 
     def create_boolean_expression_manual_input_screen(self):
@@ -9965,7 +9969,7 @@ class hue_button(QDialog):
                 border-radius: 16px;
             }
         """)
-        self.manual_boolean_expression_column_input.setMinimumHeight(50)
+        self.manual_boolean_expression_column_input.setMinimumHeight(60)
         self.manual_boolean_expression_column_input.textChanged.connect(self.change_boolean_expression_manual_column_input)
 
         self.manual_boolean_expression_operator_input = QLineEdit()
@@ -9985,7 +9989,7 @@ class hue_button(QDialog):
                 border-radius: 16px;
             }
         """)
-        self.manual_boolean_expression_operator_input.setMinimumHeight(50)
+        self.manual_boolean_expression_operator_input.setMinimumHeight(60)
         self.manual_boolean_expression_operator_input.textChanged.connect(self.change_boolean_expression_manual_operator_input)
 
         self.manual_boolean_expression_value_input = QLineEdit()
@@ -10005,7 +10009,7 @@ class hue_button(QDialog):
                 border-radius: 16px;
             }
         """)
-        self.manual_boolean_expression_value_input.setMinimumHeight(50)
+        self.manual_boolean_expression_value_input.setMinimumHeight(60)
         self.manual_boolean_expression_value_input.textChanged.connect(self.change_boolean_expression_manual_value_input)
 
         manual_boolean_expression_layout.addWidget(self.manual_boolean_expression_column_input)
@@ -10313,6 +10317,11 @@ class hue_button(QDialog):
 
         self.available_screens[self.current_screen_idx].show() 
 
+    def change_to_homescreen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 0
+        self.available_screens[self.current_screen_idx].show()
+
     def change_to_categorical_column_hue_screen(self):
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 1
@@ -10553,7 +10562,8 @@ class hue_button(QDialog):
                 if (isinstance(value,str) and self.numeric_column_type):
                     raise Exception
 
-            if ((operation == "between" or "between_exclusive") and not (value[0] <= value[1])):
+
+            if ((operation == "between" or operation == "between_exclusive") and not (value[0] <= value[1])):
                 raise Exception
 
             if (operation in ["contains","startswith","endswith","regex","len","lower","upper"] and len(value) > 1):
@@ -10614,10 +10624,10 @@ class hue_button(QDialog):
         db = self.plot_manager.get_db()
         #Check if the entry is empty or not and update if it's not empty and create one with the state if it's empty
         if (db != []):
-            self.plot_manager.update_seaborn_legend("hue",self.hue)
+            self.plot_manager.update_hue(self.hue)
         else:
             plot_parameters = plot_json[self.selected_graph].copy()
-            plot_parameters["legend"]["seaborn_legends"]["hue"] = self.hue
+            plot_parameters["hue"] = self.hue
             self.plot_manager.insert_plot_parameter(plot_parameters)
         self.graph_display.show_graph()
 
@@ -10638,8 +10648,8 @@ class hue_button(QDialog):
             self.boolean_expression_value_input.clearFocus()
         super().mousePressEvent(event)
 
-    def showEvent(self, event):
-        super().showEvent(event)
+    def closeEvent(self, event):
+        super().closeEvent(event)
         
         self.dataset = pd.read_csv("./dataset/user_dataset.csv")
         self.categorical_columns = self.get_categorical_columns()
@@ -10659,7 +10669,14 @@ class hue_button(QDialog):
         self.manual_nest_boolean_expression = []
         self.numeric_column_type = False
 
+        self.categorical_column_search_bar.clear()
+        self.numerical_column_search_bar.clear()
         self.boolean_expression_value_input.clear()
         self.manual_boolean_expression_column_input.clear()
         self.manual_boolean_expression_operator_input.clear()
         self.manual_boolean_expression_value_input.clear()
+
+        self.change_to_homescreen()
+
+    def close_dialog(self):
+        self.close() 
