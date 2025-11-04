@@ -360,12 +360,14 @@ class x_axis_button(QDialog):
         self.get_dataset()
         self.usable_columns = self.find_usable_columns()
 
-        self.column_button_model.setStringList(self.usable_columns)
-
         if self.usable_columns:
             self.column_name = self.usable_columns[0]
             self.current_column_index = 0
             self.display_dataset()
+
+            self.column_button_model.setStringList(self.usable_columns)
+            column_index = self.column_button_model.index(self.current_column_index)  
+            self.column_button_list_view.setCurrentIndex(column_index)
         
 class y_axis_button(QDialog):
     def __init__(self,plot_parameters,selected_graph,graph_display):
@@ -9151,10 +9153,10 @@ class hue_button(QDialog):
 
         #-----Home Screen-----
 
-        self.hue_adjustment_homescreen = QWidget()
-        self.hue_adjustment_homescreen.setObjectName("hue_adjustment")
-        self.hue_adjustment_homescreen.setStyleSheet("""
-            QWidget#hue_adjustment{
+        self.hue_parameter_section = QWidget()
+        self.hue_parameter_section.setObjectName("hue_parameter")
+        self.hue_parameter_section.setStyleSheet("""
+            QWidget#hue_parameter{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -9280,7 +9282,7 @@ class hue_button(QDialog):
             }
         """)
 
-        self.none_hue_button = QPushButton("None")
+        self.none_hue_button = QPushButton("Set Hue as None")
         self.none_hue_button.setObjectName("none")
         self.none_hue_button.setStyleSheet("""
             QPushButton#none{
@@ -9323,7 +9325,7 @@ class hue_button(QDialog):
         self.boolean_expression_hue_button.clicked.connect(self.change_to_boolean_expression_hue_screen)
         self.none_hue_button.clicked.connect(self.change_hue_to_none)
 
-        button_layout = QVBoxLayout(self.hue_adjustment_homescreen)
+        button_layout = QVBoxLayout(self.hue_parameter_section)
         button_layout.addWidget(self.categorical_column_hue_button)
         button_layout.addWidget(self.numerical_column_hue_button)
         button_layout.addWidget(self.boolean_expression_hue_button)
@@ -9461,14 +9463,41 @@ class hue_button(QDialog):
         self.create_boolean_expression_premade_input_value_screen()
         self.boolean_expression_premade_input_value_screen.hide()
 
+        #-----Hue Adjustment Section-----
+        self.hue_adjustment_section = QWidget()
+        self.hue_adjustment_section.setObjectName("hue_adjustment_section")
+        self.hue_adjustment_section.setStyleSheet(""" 
+            QWidget#hue_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }   
+        """)
+
+        hue_adjustment_section_layout = QVBoxLayout(self.hue_adjustment_section)
+        hue_adjustment_section_layout.addWidget(self.categorical_column_screen)
+        hue_adjustment_section_layout.addWidget(self.numerical_column_screen)
+        hue_adjustment_section_layout.addWidget(self.boolean_expression_screen)
+        hue_adjustment_section_layout.addWidget(self.boolean_expression_manual_input_screen)
+        hue_adjustment_section_layout.addWidget(self.boolean_expression_premade_select_column_screen)
+        hue_adjustment_section_layout.addWidget(self.boolean_expression_premade_select_operator_screen)
+        hue_adjustment_section_layout.addWidget(self.boolean_expression_premade_input_value_screen)
+        hue_adjustment_section_layout.setContentsMargins(0,0,0,0)
+
         #-----Initialize Screen Value-----
-        self.available_screens = [self.hue_adjustment_homescreen,self.categorical_column_screen,
+        self.available_screens = [self.categorical_column_screen,
                                 self.numerical_column_screen,self.boolean_expression_screen,
                                 self.boolean_expression_manual_input_screen,
                                 self.boolean_expression_premade_select_column_screen,
                                 self.boolean_expression_premade_select_operator_screen,
                                 self.boolean_expression_premade_input_value_screen]
         self.current_screen_idx = 0
+        self.available_screens[self.current_screen_idx].show()
 
         #-----Initialize the QDialog Screen-----
         self.setStyleSheet("""
@@ -9484,19 +9513,13 @@ class hue_button(QDialog):
             }
         """)
 
-        self.setFixedWidth(350)
-        self.setFixedHeight(550)
+        self.setFixedWidth(600)
+        self.setFixedHeight(500)
 
         #-----Main Screen-----
-        main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.hue_adjustment_homescreen)
-        main_layout.addWidget(self.categorical_column_screen)
-        main_layout.addWidget(self.numerical_column_screen)
-        main_layout.addWidget(self.boolean_expression_screen)
-        main_layout.addWidget(self.boolean_expression_manual_input_screen)
-        main_layout.addWidget(self.boolean_expression_premade_select_column_screen)
-        main_layout.addWidget(self.boolean_expression_premade_select_operator_screen)
-        main_layout.addWidget(self.boolean_expression_premade_input_value_screen)
+        main_layout = QHBoxLayout(self)
+        main_layout.addWidget(self.hue_parameter_section,stretch=1)
+        main_layout.addWidget(self.hue_adjustment_section,stretch=1)
         main_layout.setContentsMargins(15,15,15,15)
         main_layout.setSpacing(10)
 
@@ -10297,64 +10320,54 @@ class hue_button(QDialog):
         premade_boolean_expression_value_layout.setSpacing(5)
 
     def change_to_previous_screen(self):
-        if (self.current_screen_idx == 0):
-            return
-
-        self.available_screens[self.current_screen_idx].hide()
-
-        if (self.current_screen_idx <= 3): 
-            self.current_screen_idx = 0
-        elif (self.current_screen_idx == 4 or self.current_screen_idx == 5):
-            self.current_screen_idx = 3
+        if (self.current_screen_idx == 3 or self.current_screen_idx == 4):
+            self.available_screens[self.current_screen_idx].hide()
+            self.current_screen_idx = 2
             self.premade_boolean_expression_format["column"] = ""
-        else:
+        elif (self.current_screen_idx >= 5):
+            self.available_screens[self.current_screen_idx].hide()
             self.current_screen_idx -= 1
-            if (self.current_screen_idx == 5):
+            if (self.current_screen_idx == 4):
                 self.premade_boolean_expression_format["operation"] = ""
-            if (self.current_screen_idx == 6):
+            if (self.current_screen_idx == 5):
                 self.boolean_expression_value_input.clear()
                 self.premade_boolean_expression_format["value"] = ""
 
         self.available_screens[self.current_screen_idx].show() 
 
-    def change_to_homescreen(self):
+    def change_to_categorical_column_hue_screen(self):
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 0
         self.available_screens[self.current_screen_idx].show()
 
-    def change_to_categorical_column_hue_screen(self):
+    def change_to_numerical_column_hue_screen(self):
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 1
         self.available_screens[self.current_screen_idx].show()
 
-    def change_to_numerical_column_hue_screen(self):
+    def change_to_boolean_expression_hue_screen(self):
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 2
         self.available_screens[self.current_screen_idx].show()
 
-    def change_to_boolean_expression_hue_screen(self):
+    def change_to_manual_boolean_expression_screen(self):
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 3
         self.available_screens[self.current_screen_idx].show()
 
-    def change_to_manual_boolean_expression_screen(self):
+    def change_to_premade_boolean_expression_screen(self):
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 4
         self.available_screens[self.current_screen_idx].show()
 
-    def change_to_premade_boolean_expression_screen(self):
+    def change_to_operators_boolean_expression_screen(self):
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 5
         self.available_screens[self.current_screen_idx].show()
 
-    def change_to_operators_boolean_expression_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 6
-        self.available_screens[self.current_screen_idx].show()
-
     def change_to_value_boolean_expression_screen(self):
         self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 7
+        self.current_screen_idx = 6
         self.available_screens[self.current_screen_idx].show()
 
     def change_categorical_hue_column(self,index):
