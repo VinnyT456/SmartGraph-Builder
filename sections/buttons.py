@@ -8302,6 +8302,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
         self.markers_dictionary = dict()
         self.markers_dictionary_key = ""
         self.markers_dictionary_value = ""
+        self.initial_markers_argument = True
 
         #-----Seaborn Legend Markers Screen-----
         self.sns_legend_markers_screen = QWidget()
@@ -8318,6 +8319,67 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 border-radius: 16px;
             }       
         """)
+
+        #----Turn Markers on/off Button-----
+        self.turn_markers_on_off_button = QPushButton()
+        self.turn_markers_on_off_button.setObjectName("turn_markers_on_off_button")
+        self.turn_markers_on_off_button.setStyleSheet("""
+            QPushButton#turn_markers_on_off_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#turn_markers_on_off_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.turn_markers_on_off_label = QLabel("Turn Markers Off")
+        self.turn_markers_on_off_label.setObjectName("turn_markers_on_off_label")
+        self.turn_markers_on_off_label.setWordWrap(True)
+        self.turn_markers_on_off_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.turn_markers_on_off_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.turn_markers_on_off_label.setStyleSheet("""
+            QLabel#turn_markers_on_off_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        turn_markers_on_off_layout = QVBoxLayout(self.turn_markers_on_off_button)
+        turn_markers_on_off_layout.addWidget(self.turn_markers_on_off_label)
+        turn_markers_on_off_layout.setContentsMargins(0,0,0,0)
+        turn_markers_on_off_layout.setSpacing(0)
 
         #-----Select Single Marker Button-----
         self.select_single_markers_button = QPushButton()
@@ -8503,17 +8565,20 @@ class seaborn_legend_markers_adjustment_section(QWidget):
         select_dictionary_markers_button_layout.setSpacing(0)
 
         #-----Set the size of each button-----
+        self.turn_markers_on_off_button.setMinimumHeight(70)
         self.select_single_markers_button.setMinimumHeight(70)
         self.select_multiple_markers_button.setMinimumHeight(70)
         self.select_dictionary_markers_button.setMinimumHeight(70)
 
         #-----Connect cach button to it's associated function-----
+        self.turn_markers_on_off_button.clicked.connect(self.turn_markers_on_and_off)
         self.select_single_markers_button.clicked.connect(self.change_to_single_markers_screen)
         self.select_multiple_markers_button.clicked.connect(self.change_to_multiple_markers_screen)
         self.select_dictionary_markers_button.clicked.connect(self.change_to_dictonary_markers_screen)
 
         #-----Seaborn Legend Markers Screen Layout-----
         sns_legend_markers_screen_layout = QVBoxLayout(self.sns_legend_markers_screen)
+        sns_legend_markers_screen_layout.addWidget(self.turn_markers_on_off_button)
         sns_legend_markers_screen_layout.addWidget(self.select_single_markers_button)
         sns_legend_markers_screen_layout.addWidget(self.select_multiple_markers_button)
         sns_legend_markers_screen_layout.addWidget(self.select_dictionary_markers_button)
@@ -8885,6 +8950,15 @@ class seaborn_legend_markers_adjustment_section(QWidget):
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 3
         self.available_screens[self.current_screen_idx].show()
+
+    def turn_markers_on_and_off(self):
+        self.initial_markers_argument = not self.initial_markers_argument
+        if (self.initial_markers_argument):
+            self.turn_markers_on_off_label.setText("Turn Markers Off")
+        else:
+            self.turn_markers_on_off_label.setText("Turn Markers On")
+        self.markers = self.initial_markers_argument
+        self.update_markers()
 
     def change_single_select_marker(self,index):
         self.markers = self.multiple_select_markers_model.data(index, Qt.ItemDataRole.DisplayRole)
