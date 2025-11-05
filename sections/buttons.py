@@ -1,6 +1,7 @@
 from logging import raiseExceptions
 import re
-from PyQt6.QtCore import QSortFilterProxyModel, QStringListModel, Qt
+import select
+from PyQt6.QtCore import QLine, QSortFilterProxyModel, QStringListModel, Qt
 from PyQt6.QtGui import QFont, QKeySequence, QPixmap, QShortcut
 from PyQt6.QtWidgets import (
     QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QPushButton, 
@@ -80,17 +81,15 @@ class x_axis_button(QDialog):
         self.plot_parameters = plot_parameters
         self.selected_graph = selected_graph
         self.graph_display = graph_display
-        
-        #Set the title of the window
-        self.setWindowTitle("Select the x-axis")
 
         #Keep track of the current column and index
         self.column_name = ''
         self.current_column_index = 0
-
-        #Get the dataset and the usable columns
         self.get_dataset()
         self.usable_columns = self.find_usable_columns()
+        
+        #Set the title of the window
+        self.setWindowTitle("Select the x-axis")
         
         #Style the Dialog window for selecting the x-axis
         self.setStyleSheet("""
@@ -126,6 +125,7 @@ class x_axis_button(QDialog):
             }
         """)
         self.create_button_section()
+        self.update_x_axis()
 
         #Create a section to display the dataset and style it
         self.data_section = QWidget()
@@ -173,8 +173,6 @@ class x_axis_button(QDialog):
                 border: 2px solid black;
             }
         """)
-
-        self.display_dataset()
 
         #Place the dataset table on top of the dataset section
         layout = QVBoxLayout(self.data_section)
@@ -359,15 +357,16 @@ class x_axis_button(QDialog):
         super().showEvent(event)
         self.get_dataset()
         self.usable_columns = self.find_usable_columns()
+        self.current_column_index = 0
 
         if self.usable_columns:
-            self.column_name = self.usable_columns[0]
-            self.current_column_index = 0
             self.display_dataset()
 
             self.column_button_model.setStringList(self.usable_columns)
             column_index = self.column_button_model.index(self.current_column_index)  
             self.column_button_list_view.setCurrentIndex(column_index)
+
+        self.update_x_axis()
         
 class y_axis_button(QDialog):
     def __init__(self,plot_parameters,selected_graph,graph_display):
@@ -385,6 +384,8 @@ class y_axis_button(QDialog):
         #Keep track of the current column and index
         self.column_name = ''
         self.current_column_index = 0
+        self.get_dataset()
+        self.usable_columns = self.find_usable_columns()
         
         #Style the Dialog window for selecting the x-axis
         self.setStyleSheet("""
@@ -403,9 +404,6 @@ class y_axis_button(QDialog):
         #Control the size of the dialog window
         self.setFixedWidth(600)
         self.setFixedHeight(500)
-
-        self.get_dataset()
-        self.usable_columns = self.find_usable_columns()
 
         #Create a section to store all the buttons and style it
         self.button_section = QWidget()
@@ -516,7 +514,7 @@ class y_axis_button(QDialog):
 
     def create_button_section(self):  
         column_button_layout = QVBoxLayout(self.button_section)
-    
+
         self.column_button_list_view = QListView()
         self.column_button_model = QStringListModel(self.usable_columns)
 
@@ -658,12 +656,14 @@ class y_axis_button(QDialog):
         self.get_dataset()
         self.usable_columns = self.find_usable_columns()
 
-        self.column_button_model.setStringList(self.usable_columns)
-
         if self.usable_columns:
             self.column_name = self.usable_columns[0]
             self.current_column_index = 0
             self.display_dataset()
+
+            self.column_button_model.setStringList(self.usable_columns)
+            column_index = self.column_button_model.index(self.current_column_index)  
+            self.column_button_list_view.setCurrentIndex(column_index)
 
 class axis_title_button(QDialog):
     def __init__(self,selected_graph,graph_display):
@@ -8287,6 +8287,653 @@ class seaborn_legend_off_adjustment_section(QWidget):
             self.plot_manager.insert_plot_parameter(plot_parameters)
         self.graph_display.show_graph()
 
+class seaborn_legend_markers_adjustment_section(QWidget):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        self.available_markers = [".", ",", "o", "v", "^", "<", ">", "1", "2", "3", "4",
+                                "8", "s", "p", "P", "*", "h", "H", "+", "x", "X",
+                                "D", "d", "|", "_"]
+
+        self.markers = ""
+        self.markers_dictionary = dict()
+        self.markers_dictionary_key = ""
+        self.markers_dictionary_value = ""
+
+        #-----Seaborn Legend Markers Screen-----
+        self.sns_legend_markers_screen = QWidget()
+        self.sns_legend_markers_screen.setObjectName("sns_legend_markers_screen")
+        self.sns_legend_markers_screen.setStyleSheet("""
+            QWidget#sns_legend_markers_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }       
+        """)
+
+        #-----Select Single Marker Button-----
+        self.select_single_markers_button = QPushButton()
+        self.select_single_markers_button.setObjectName("select_single_markers_button")
+        self.select_single_markers_button.setStyleSheet("""
+            QPushButton#select_single_markers_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#select_single_markers_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.select_single_markers_label = QLabel("Select Single Marker")
+        self.select_single_markers_label.setObjectName("select_single_markers_label")
+        self.select_single_markers_label.setWordWrap(True)
+        self.select_single_markers_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.select_single_markers_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.select_single_markers_label.setStyleSheet("""
+            QLabel#select_single_markers_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        select_single_markers_button_layout = QVBoxLayout(self.select_single_markers_button)
+        select_single_markers_button_layout.addWidget(self.select_single_markers_label)
+        select_single_markers_button_layout.setContentsMargins(0,0,0,0)
+        select_single_markers_button_layout.setSpacing(0)
+
+        #-----Select Multiple Marker Button-----
+        self.select_multiple_markers_button = QPushButton()
+        self.select_multiple_markers_button.setObjectName("select_multiple_markers_button")
+        self.select_multiple_markers_button.setStyleSheet("""
+            QPushButton#select_multiple_markers_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#select_multiple_markers_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.select_multiple_markers_label = QLabel("Select Multiple Marker")
+        self.select_multiple_markers_label.setObjectName("select_multiple_markers_label")
+        self.select_multiple_markers_label.setWordWrap(True)
+        self.select_multiple_markers_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.select_multiple_markers_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.select_multiple_markers_label.setStyleSheet("""
+            QLabel#select_multiple_markers_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        select_multiple_markers_button_layout = QVBoxLayout(self.select_multiple_markers_button)
+        select_multiple_markers_button_layout.addWidget(self.select_multiple_markers_label)
+        select_multiple_markers_button_layout.setContentsMargins(0,0,0,0)
+        select_multiple_markers_button_layout.setSpacing(0)
+
+        #-----Select Dictionary Markers Button-----
+        self.select_dictionary_markers_button = QPushButton()
+        self.select_dictionary_markers_button.setObjectName("select_dictionary_markers_button")
+        self.select_dictionary_markers_button.setStyleSheet("""
+            QPushButton#select_dictionary_markers_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#select_dictionary_markers_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.select_dictionary_markers_label = QLabel("Select Dictionay Marker")
+        self.select_dictionary_markers_label.setObjectName("select_dictionary_markers_label")
+        self.select_dictionary_markers_label.setWordWrap(True)
+        self.select_dictionary_markers_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.select_dictionary_markers_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.select_dictionary_markers_label.setStyleSheet("""
+            QLabel#select_dictionary_markers_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        select_dictionary_markers_button_layout = QVBoxLayout(self.select_dictionary_markers_button)
+        select_dictionary_markers_button_layout.addWidget(self.select_dictionary_markers_label)
+        select_dictionary_markers_button_layout.setContentsMargins(0,0,0,0)
+        select_dictionary_markers_button_layout.setSpacing(0)
+
+        #-----Set the size of each button-----
+        self.select_single_markers_button.setMinimumHeight(70)
+        self.select_multiple_markers_button.setMinimumHeight(70)
+        self.select_dictionary_markers_button.setMinimumHeight(70)
+
+        #-----Connect cach button to it's associated function-----
+        self.select_single_markers_button.clicked.connect(self.change_to_single_markers_screen)
+        self.select_multiple_markers_button.clicked.connect(self.change_to_multiple_markers_screen)
+        self.select_dictionary_markers_button.clicked.connect(self.change_to_dictonary_markers_screen)
+
+        #-----Seaborn Legend Markers Screen Layout-----
+        sns_legend_markers_screen_layout = QVBoxLayout(self.sns_legend_markers_screen)
+        sns_legend_markers_screen_layout.addWidget(self.select_single_markers_button)
+        sns_legend_markers_screen_layout.addWidget(self.select_multiple_markers_button)
+        sns_legend_markers_screen_layout.addWidget(self.select_dictionary_markers_button)
+        sns_legend_markers_screen_layout.setContentsMargins(10,10,10,10)
+        sns_legend_markers_screen_layout.setSpacing(10)
+        sns_legend_markers_screen_layout.addStretch()
+
+        #-----Seaborn Legend Select Single Markers Screen-----
+        self.select_single_markers_screen = QWidget()
+        self.select_single_markers_screen.setObjectName("select_single_markers_screen")
+        self.select_single_markers_screen.setStyleSheet(""" 
+            QWidget#select_single_markers_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }     
+        """)
+        self.create_select_single_markers_screen()
+        self.select_single_markers_screen.hide()
+
+        #-----Seaborn Legend Multiple Markers Screen-----
+        self.select_multiple_markers_screen = QWidget()
+        self.select_multiple_markers_screen.setObjectName("select_multiple_markers_screen")
+        self.select_multiple_markers_screen.setStyleSheet("""
+            QWidget#select_multiple_markers_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.create_select_multiple_markers_screen()
+        self.select_multiple_markers_screen.hide()
+
+        #-----Seaborn Legend Dictionary Markers Screen----
+        self.select_dictionary_markers_screen = QWidget()
+        self.select_dictionary_markers_screen.setObjectName("select_dictionary_markers_screen")
+        self.select_dictionary_markers_screen.setStyleSheet("""
+            QWidget#select_dictionary_markers_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.create_select_dictionary_markers_screen()
+        self.select_dictionary_markers_screen.hide()
+
+        #-----All Available Screens-----
+        self.current_screen_idx = 0
+        self.available_screens = [self.sns_legend_markers_screen,self.select_single_markers_screen,
+                                self.select_multiple_markers_screen,self.select_dictionary_markers_screen]
+
+        #-----Add All the Screens to the Main Widget-----
+        main_layout = QVBoxLayout(self)
+        for screen in self.available_screens:
+            main_layout.addWidget(screen)
+
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+        #-----Keyboard Shortcuts-----
+        previous_screen_shortcut = QShortcut(QKeySequence("left"),self)
+        previous_screen_shortcut.activated.connect(self.change_to_home_screen)
+
+    def create_select_single_markers_screen(self):
+        select_single_markers_screen_layout = QVBoxLayout(self.select_single_markers_screen)
+
+        self.single_select_markers_list_view = QListView()
+        self.single_select_markers_model = QStringListModel(self.available_markers)
+
+        self.single_select_markers_list_view.setModel(self.single_select_markers_model)
+        self.single_select_markers_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.single_select_markers_list_view.setObjectName("single_select_markers_list_view")
+        self.single_select_markers_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.single_select_markers_list_view.setItemDelegate(CustomDelegate())
+
+        self.single_select_markers_list_view.setStyleSheet("""
+            QListView#single_select_markers_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#single_select_markers_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#single_select_markers_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#single_select_markers_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.single_select_markers_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.single_select_markers_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.single_select_markers_list_view.setSpacing(3)
+
+        self.single_select_markers_list_view.clicked.connect(self.change_single_select_marker)
+        select_single_markers_screen_layout.addWidget(self.single_select_markers_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        select_single_markers_screen_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_select_multiple_markers_screen(self):
+        select_multiple_markers_screen_layout = QVBoxLayout(self.select_multiple_markers_screen)
+
+        self.multiple_select_markers_list_view = QListView()
+        self.multiple_select_markers_list_view.setSelectionMode(QListView.SelectionMode.MultiSelection)
+        self.multiple_select_markers_model = QStringListModel(self.available_markers)
+
+        self.multiple_select_markers_list_view.setModel(self.multiple_select_markers_model)
+        self.multiple_select_markers_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.multiple_select_markers_list_view.setObjectName("multiple_select_markers_list_view")
+        self.multiple_select_markers_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.multiple_select_markers_list_view.setItemDelegate(CustomDelegate())
+
+        self.multiple_select_markers_list_view.setStyleSheet("""
+            QListView#multiple_select_markers_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#multiple_select_markers_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#multiple_select_markers_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#multiple_select_markers_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.multiple_select_markers_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.multiple_select_markers_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.multiple_select_markers_list_view.setSpacing(3)
+
+        self.multiple_select_markers_list_view.selectionModel().selectionChanged.connect(self.change_multiple_select_marker)
+        select_multiple_markers_screen_layout.addWidget(self.multiple_select_markers_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        select_multiple_markers_screen_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_select_dictionary_markers_screen(self):
+        select_dictionary_markers_screen_layout = QVBoxLayout(self.select_dictionary_markers_screen) 
+
+        self.select_dictionary_markers_key_input = QLineEdit()
+        self.select_dictionary_markers_key_input.setObjectName("select_dictionary_markers_key_input")
+        self.select_dictionary_markers_key_input.setPlaceholderText("Key:")
+        self.select_dictionary_markers_key_input.setStyleSheet("""
+            QLineEdit#select_dictionary_markers_key_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.select_dictionary_markers_key_input.textChanged.connect(self.change_dictionary_key_marker)
+        self.select_dictionary_markers_key_input.setMinimumHeight(50)
+        
+        self.dictionary_select_markers_list_view = QListView()
+        self.dictionary_select_markers_model = QStringListModel(self.available_markers)
+
+        self.dictionary_select_markers_list_view.setModel(self.multiple_select_markers_model)
+        self.dictionary_select_markers_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.dictionary_select_markers_list_view.setObjectName("dictionary_select_markers_list_view")
+        self.dictionary_select_markers_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.dictionary_select_markers_list_view.setItemDelegate(CustomDelegate())
+
+        self.dictionary_select_markers_list_view.setStyleSheet("""
+            QListView#dictionary_select_markers_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#dictionary_select_markers_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#dictionary_select_markers_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#dictionary_select_markers_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.dictionary_select_markers_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.dictionary_select_markers_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.dictionary_select_markers_list_view.setSpacing(3)
+
+        self.dictionary_select_markers_list_view.clicked.connect(self.change_dictionary_value_marker)
+
+        select_dictionary_markers_screen_layout.addWidget(self.select_dictionary_markers_key_input)
+        select_dictionary_markers_screen_layout.addWidget(self.dictionary_select_markers_list_view)
+        select_dictionary_markers_screen_layout.setContentsMargins(10,10,10,10)
+        select_dictionary_markers_screen_layout.setSpacing(10)
+
+    def change_to_home_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 0
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_single_markers_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 1
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_multiple_markers_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 2
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_dictonary_markers_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 3
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_single_select_marker(self,index):
+        self.markers = self.multiple_select_markers_model.data(index, Qt.ItemDataRole.DisplayRole)
+        self.update_markers()
+    
+    def change_multiple_select_marker(self):
+        selected_indexes = self.multiple_select_markers_list_view.selectedIndexes()
+        self.markers = [index.data() for index in selected_indexes]
+        self.update_markers()
+
+    def change_dictionary_key_marker(self):
+        self.markers_dictionary_key = self.select_dictionary_markers_key_input.text().strip()
+        self.change_dictionary_select_marker()
+
+    def change_dictionary_value_marker(self,index):
+        self.markers_dictionary_value = self.dictionary_select_markers_model.data(index,Qt.ItemDataRole.DisplayRole)
+        self.change_dictionary_select_marker()
+        self.select_dictionary_markers_key_input.clear()
+
+    def change_dictionary_select_marker(self):
+        if (self.markers_dictionary_key != "" and self.markers_dictionary_value != ""):
+            dictionary_keys = list(self.markers_dictionary.keys())
+            dictionary_values = list(self.markers_dictionary.values())
+            if (self.markers_dictionary_key not in dictionary_keys and self.markers_dictionary_value not in dictionary_values):
+                self.markers_dictionary[self.markers_dictionary_key] = self.markers_dictionary_value
+                self.markers = self.markers_dictionary
+                self.update_markers()
+
+    def update_markers(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_seaborn_legend("markers",self.markers)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["seaborn_legends"]["markers"] = self.markers
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
+
+    def reset_marker_selection(self):
+        self.markers = []
+        self.markers_dictionary = dict()
+        self.markers_dictionary_key = ""
+        self.markers_dictionary_value = ""
+
+    def showEvent(self,event):
+        super().showEvent(event)
+        self.reset_marker_selection()
+        self.change_to_home_screen()
+
 class legend_button(QDialog):
     def __init__(self,selected_graph, graph_display):
         super().__init__()
@@ -8313,7 +8960,7 @@ class legend_button(QDialog):
                                   handletextpad_adjustment_section,borderaxespad_adjustment_section,
                                   handlelength_adjustment_section,handleheight_adjustment_section,
                                   markerfirst_adjustment_section,seaborn_legend_adjustment_section,
-                                  seaborn_legend_off_adjustment_section]
+                                  seaborn_legend_off_adjustment_section,seaborn_legend_markers_adjustment_section]
 
         self.available_screens = dict()
 
@@ -10688,8 +11335,6 @@ class hue_button(QDialog):
         self.manual_boolean_expression_column_input.clear()
         self.manual_boolean_expression_operator_input.clear()
         self.manual_boolean_expression_value_input.clear()
-
-        self.change_to_homescreen()
 
     def close_dialog(self):
         self.close() 
