@@ -159,6 +159,7 @@ class graph_parameter_table(QWidget):
             "title":title_button,
             "legend":legend_button,
             "grid":grid_button,
+            "hue":hue_button,
         }
 
         #Customize the parameter table
