@@ -49,8 +49,8 @@ class graph_generator(QWidget):
         self.graph_parameters = self.current_graph_parameters.copy()
         self.graph_parameters["data"] = self.dataset
 
-        self.x_axis = self.current_graph_parameters.get("x-axis")
-        self.y_axis = self.current_graph_parameters.get("y-axis")
+        self.x_axis = self.current_graph_parameters.get("x")
+        self.y_axis = self.current_graph_parameters.get("y")
 
     def apply_gradient_background(self, fig, ax):
         colors = ["#f5f5ff", "#f7f5fc", "#f0f0ff"] 
