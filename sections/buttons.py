@@ -58,7 +58,18 @@ plot_json = {
                 "style_order":None,
             }
         },
-        "grid":False,
+        "grid":{
+            "visible":None,
+            "which":"major",
+            "axis":"both",
+            "color":"black",
+            "linestyle":"-",
+            "linewidth":0.8,
+            "alpha":None,
+            "zorder":2,
+            "dashes":(None,None),
+            "snap":None
+        },
         "hue":None,
         "style":None,
         "size":None,
@@ -860,7 +871,7 @@ class title_button(QDialog):
         self.title_created = False
         self.close()
 
-class label_adjustment_section(QWidget):
+class legend_label_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
         
@@ -891,7 +902,7 @@ class label_adjustment_section(QWidget):
         #Create a line edit object for the user to input the ncol
         self.label_input = QLineEdit()
         self.label_input.setObjectName("label_input")
-        self.label_input.setStyleSheet(""")
+        self.label_input.setStyleSheet("""
             QLineEdit#label_input{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
@@ -922,7 +933,7 @@ class label_adjustment_section(QWidget):
         legend_label_section_layout.setSpacing(10)
         legend_label_section_layout.addStretch()
 
-        #Add the ncol adjustment section to the main widget
+        #Add the label adjustment section to the main widget
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.legend_label_adjustment_section)
         
@@ -935,8 +946,9 @@ class label_adjustment_section(QWidget):
     def change_label(self):
         #Extract the ncol input from the user and remove any excess text from it
         self.label_value = self.label_input.text().strip()
+        self.update_label()
 
-    def update_ncol(self):
+    def update_label(self):
         #Get the newest json entries from the plot manager
         db = self.plot_manager.get_db()
 
@@ -955,7 +967,7 @@ class label_adjustment_section(QWidget):
             self.label_input.clearFocus()
         super().mousePressEvent(event)
 
-class loc_adjustment_section(QWidget):
+class legend_loc_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
 
@@ -1318,7 +1330,7 @@ class loc_adjustment_section(QWidget):
             self.ncol_input.clearFocus()
         super().mousePressEvent(event)
 
-class bbox_to_anchor_adjustment_section(QWidget):
+class legend_bbox_to_anchor_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
         
@@ -1619,7 +1631,7 @@ class bbox_to_anchor_adjustment_section(QWidget):
             self.height_input.clearFocus()
         super().mousePressEvent(event)
 
-class ncol_adjustment_section(QWidget):
+class legend_ncol_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
         
@@ -1811,7 +1823,7 @@ class ncol_adjustment_section(QWidget):
             self.ncol_input.clearFocus()
         super().mousePressEvent(event)
 
-class fontsize_adjustment_section(QWidget):
+class legend_fontsize_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
         
@@ -2788,7 +2800,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
             self.custom_title_fontsize_input.clearFocus()
         super().mousePressEvent(event)
 
-class frameon_adjustment_section(QWidget):
+class legend_frameon_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
         
@@ -2924,7 +2936,7 @@ class frameon_adjustment_section(QWidget):
             plot_parameters["legend"]["frameon"] = self.frameon_state
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
-class face_color_adjustment_section(QWidget):
+class legend_face_color_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
 
@@ -4086,7 +4098,7 @@ class face_color_adjustment_section(QWidget):
             self.grayscale_input.clearFocus()
         super().mousePressEvent(event)
 
-class edge_color_adjustment_section(QWidget):
+class legend_edge_color_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
 
@@ -5250,7 +5262,7 @@ class edge_color_adjustment_section(QWidget):
             self.grayscale_input.clearFocus()
         super().mousePressEvent(event)
 
-class framealpha_adjustment_section(QWidget):
+class legend_framealpha_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
         
@@ -5442,7 +5454,7 @@ class framealpha_adjustment_section(QWidget):
             self.framealpha_input.clearFocus()
         super().mousePressEvent(event)
 
-class shadow_adjustment_section(QWidget):
+class legend_shadow_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
 
@@ -5579,7 +5591,7 @@ class shadow_adjustment_section(QWidget):
             plot_parameters["legend"]["shadow"] = self.shadow_state
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
-class fancybox_adjustment_section(QWidget):
+class legend_fancybox_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
 
@@ -5716,7 +5728,7 @@ class fancybox_adjustment_section(QWidget):
             plot_parameters["legend"]["fancybox"] = self.fancybox_state
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
-class borderpad_adjustment_section(QWidget):
+class legend_borderpad_adjustment_section(QWidget):
     def __init__(self, selected_graph,graph_display):
         super().__init__()
 
@@ -5909,7 +5921,7 @@ class borderpad_adjustment_section(QWidget):
             self.borderpad_input.clearFocus()
         super().mousePressEvent(event)
 
-class label_color_adjustment_section(QWidget):
+class legend_label_color_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
 
@@ -7065,7 +7077,7 @@ class label_color_adjustment_section(QWidget):
             self.grayscale_input.clearFocus()
         super().mousePressEvent(event)
 
-class alignment_adjustment_section(QWidget):
+class legend_alignment_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
 
@@ -7196,7 +7208,7 @@ class alignment_adjustment_section(QWidget):
             plot_parameters["legend"]["alignment"] = self.current_alignment
             self.plot_manager.insert_plot_parameter(plot_parameters)
 
-class columnspacing_adjustment_section(QWidget):
+class legend_columnspacing_adjustment_section(QWidget):
     def __init__(self, selected_graph,graph_display):
         super().__init__()
 
@@ -7389,7 +7401,7 @@ class columnspacing_adjustment_section(QWidget):
             self.columnspacing_input.clearFocus()
         super().mousePressEvent(event)
 
-class handletextpad_adjustment_section(QWidget):
+class legend_handletextpad_adjustment_section(QWidget):
     def __init__(self, selected_graph,graph_display):
         super().__init__()
 
@@ -7582,7 +7594,7 @@ class handletextpad_adjustment_section(QWidget):
             self.handletextpad_input.clearFocus()
         super().mousePressEvent(event)
 
-class borderaxespad_adjustment_section(QWidget):
+class legend_borderaxespad_adjustment_section(QWidget):
     def __init__(self, selected_graph,graph_display):
         super().__init__()
 
@@ -7775,7 +7787,7 @@ class borderaxespad_adjustment_section(QWidget):
             self.borderaxespad_input.clearFocus()
         super().mousePressEvent(event)
 
-class handlelength_adjustment_section(QWidget):
+class legend_handlelength_adjustment_section(QWidget):
     def __init__(self, selected_graph, graph_display):
         super().__init__()
 
@@ -7968,7 +7980,7 @@ class handlelength_adjustment_section(QWidget):
             self.handlelength_input.clearFocus()
         super().mousePressEvent(event)
 
-class handleheight_adjustment_section(QWidget):
+class legend_handleheight_adjustment_section(QWidget):
     def __init__(self, selected_graph, graph_display):
         super().__init__()
 
@@ -8161,7 +8173,7 @@ class handleheight_adjustment_section(QWidget):
             self.handleheight_input.clearFocus()
         super().mousePressEvent(event)
 
-class markerfirst_adjustment_section(QWidget):
+class legend_markerfirst_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
 
@@ -11845,17 +11857,17 @@ class legend_button(QDialog):
 
         self.current_screen_index = 0
 
-        self.available_screen_names = [loc_adjustment_section,bbox_to_anchor_adjustment_section,
-                                  ncol_adjustment_section,fontsize_adjustment_section,
+        self.available_screen_names = [legend_label_adjustment_section,legend_loc_adjustment_section,legend_bbox_to_anchor_adjustment_section,
+                                  legend_ncol_adjustment_section,legend_fontsize_adjustment_section,
                                   legend_title_adjustment_section,legend_title_fontsize_adjustment_section,
-                                  frameon_adjustment_section,face_color_adjustment_section,
-                                  edge_color_adjustment_section,framealpha_adjustment_section,
-                                  shadow_adjustment_section,fancybox_adjustment_section,
-                                  borderpad_adjustment_section,label_color_adjustment_section,
-                                  alignment_adjustment_section,columnspacing_adjustment_section,
-                                  handletextpad_adjustment_section,borderaxespad_adjustment_section,
-                                  handlelength_adjustment_section,handleheight_adjustment_section,
-                                  markerfirst_adjustment_section,seaborn_legend_adjustment_section,
+                                  legend_frameon_adjustment_section,legend_face_color_adjustment_section,
+                                  legend_edge_color_adjustment_section,legend_framealpha_adjustment_section,
+                                  legend_shadow_adjustment_section,legend_fancybox_adjustment_section,
+                                  legend_borderpad_adjustment_section,legend_label_color_adjustment_section,
+                                  legend_alignment_adjustment_section,legend_columnspacing_adjustment_section,
+                                  legend_handletextpad_adjustment_section,legend_borderaxespad_adjustment_section,
+                                  legend_handlelength_adjustment_section,legend_handleheight_adjustment_section,
+                                  legend_markerfirst_adjustment_section,seaborn_legend_adjustment_section,
                                   seaborn_legend_off_adjustment_section,seaborn_legend_markers_adjustment_section,
                                   seaborn_legend_dashes_adjustment_section,seaborn_legend_size_order_adjustment_section,
                                   seaborn_legend_hue_order_adjustment_section,seaborn_legend_style_order_adjustment_section]
@@ -12038,26 +12050,300 @@ class legend_button(QDialog):
     def close_application(self):
         self.close()
 
-class grid_button(QPushButton):
+class grid_visible_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
-        self.plot_manager = PlotManager()
-        self.initial_grid_state = False
+
         self.selected_graph = selected_graph
         self.graph_display = graph_display
-        self.clicked.connect(self.update_grid)
+        self.plot_manager = PlotManager()
+        
+        self.initial_grid_visible_state = True
 
-    def update_grid(self):
-        db = self.plot_manager.get_db()
-        print('s')
-        self.initial_grid_state = not self.initial_grid_state
-        if (db != []):
-            self.plot_manager.update_grid(self.initial_grid_state)
-        else:
-            plot_parameter = plot_json[self.selected_graph].copy()
-            plot_parameter["grid"] = self.initial_grid_state
-            self.plot_manager.insert_plot_parameter(plot_parameter) 
-        self.graph_display.show_graph()
+class grid_which_adjustment_section(QWidget):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+        
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        self.grid_which = ""
+
+class grid_axis_adjustment_section(QWidget):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+        
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        self.grid_axis = ""
+
+class grid_color_adjustment_section(QWidget):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+        
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        self.grid_color = ""
+
+class grid_linestyle_adjustment_section(QWidget):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+        
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        self.grid_linestyle = ""
+
+class grid_linewidth_adjustment_section(QWidget):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+        
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        self.grid_linewidth = ""
+
+class grid_alpha_adjustment_section(QWidget):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+        
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        self.grid_alpha = ""
+
+class grid_zorder_adjustment_section(QWidget):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+        
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        self.grid_zorder = ""
+
+class grid_dashes_adjustment_section(QWidget):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+        
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        self.grid_dashes = ""
+
+class grid_snap_adjustment_section(QWidget):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+        
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        self.grid_snap = ""
+
+class grid_button(QDialog):
+    def __init__(self,selected_graph, graph_display):
+        super().__init__()
+        self.setWindowTitle("Customize Grid")
+
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+
+        self.grid_parameters = list(plot_json[self.selected_graph]["grid"].keys())
+
+        self.current_screen_index = 0
+        self.available_screen_names = [grid_visible_adjustment_section,grid_which_adjustment_section,
+                                       grid_axis_adjustment_section,grid_color_adjustment_section,
+                                       grid_linestyle_adjustment_section,grid_linewidth_adjustment_section,
+                                       grid_alpha_adjustment_section,grid_zorder_adjustment_section,
+                                       grid_dashes_adjustment_section,grid_snap_adjustment_section]
+
+        self.available_screens = dict()
+
+        self.setStyleSheet("""
+            QDialog{
+               background: qlineargradient(
+                    x1: 0, y1: 1, 
+                    x2: 0, y2: 0,
+                    stop: 0 rgba(25, 191, 188, 1),
+                    stop: 0.28 rgba(27, 154, 166, 1),
+                    stop: 0.65 rgba(78, 160, 242, 1),
+                    stop: 0.89 rgba(33, 218, 255, 1)
+                );
+            }
+        """)
+
+        self.setFixedWidth(600)
+        self.setFixedHeight(500)
+
+        self.grid_parameters_section = QWidget()
+        self.grid_parameters_section.setObjectName("grid_parameters_section")
+        self.grid_parameters_section.setStyleSheet("""
+            QWidget#grid_parameters_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.create_grid_parameter_buttons()
+
+        #Place the buttons and the dataset next to each other side by side
+        self.layout = QHBoxLayout(self)
+        self.layout.addWidget(self.grid_parameters_section,stretch=1)
+        self.layout.addSpacing(10)
+        
+        #Add the parameters screen to the layout
+        for screen_name,screen in zip(self.grid_parameters,self.available_screen_names):
+            parameter_screen = screen(self.selected_graph,self.graph_display)
+            parameter_screen.hide()
+            self.available_screens[screen_name] = parameter_screen
+            self.layout.addWidget(parameter_screen,stretch=1)
+        
+        #Show the first parameter screen
+        self.available_screens.get(self.grid_parameters[self.current_screen_index]).show()
+
+        #Create a shortcut for the user to go to the previous column by press up
+        up_shortcut = QShortcut(QKeySequence("up"), self) 
+        up_shortcut.activated.connect(self.columns_go_up)  
+
+        #Create a shortcut for the user to go to the next column by press down
+        down_shortcut = QShortcut(QKeySequence("down"), self) 
+        down_shortcut.activated.connect(self.columns_go_down)
+
+        #Create a shortcut for the user to close the dialog window
+        close_shortcut = QShortcut(QKeySequence("ESC"), self) 
+        close_shortcut.activated.connect(self.close_application)
+
+        #Make sure this gets drawn.
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        
+    def create_grid_parameter_buttons(self):
+        grid_parameter_button_layout = QVBoxLayout(self.grid_parameters_section)
+    
+        self.grid_parameter_list_view = QListView()
+        self.grid_parameter_model = QStringListModel(self.grid_parameters)
+
+        self.grid_parameter_list_view.setModel(self.grid_parameter_model)
+        self.grid_parameter_list_view.setObjectName("grid_parameter_list_view")
+        self.grid_parameter_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        screen_index = self.grid_parameter_model.index(0)  
+        self.grid_parameter_list_view.setCurrentIndex(screen_index)
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.grid_parameter_list_view.setItemDelegate(CustomDelegate())
+
+        self.grid_parameter_list_view.setStyleSheet("""
+            QListView#grid_parameter_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#grid_parameter_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#grid_parameter_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#grid_parameter_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.grid_parameter_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.grid_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.grid_parameter_list_view.setSpacing(3)
+
+        self.grid_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+
+        grid_parameter_button_layout.addWidget(self.grid_parameter_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        grid_parameter_button_layout.setContentsMargins(10, 10, 10, 10)
+
+    def change_current_parameter_screen(self,index):
+        current_screen_name = self.grid_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
+        self.available_screens.get(self.grid_parameters[self.current_screen_index]).hide()
+        self.available_screens.get(current_screen_name).show()
+        self.current_screen_index = index.row()
+    
+    def columns_go_up(self):
+        self.available_screens.get(self.grid_parameters[self.current_screen_index]).hide()
+        self.current_screen_index -= 1
+        self.current_screen_index %= len(self.grid_parameters)
+        self.available_screens.get(self.grid_parameters[self.current_screen_index]).show()
+        new_screen_index = self.grid_parameter_model.index(self.current_screen_index)
+        self.grid_parameter_list_view.setCurrentIndex(new_screen_index)
+        self.grid_parameter_list_view.scrollTo(new_screen_index,QAbstractItemView.ScrollHint.PositionAtCenter)
+
+    def columns_go_down(self):
+        self.available_screens.get(self.grid_parameters[self.current_screen_index]).hide()
+        self.current_screen_index += 1
+        self.current_screen_index %= len(self.grid_parameters)
+        self.available_screens.get(self.grid_parameters[self.current_screen_index]).show()
+        new_screen_index = self.grid_parameter_model.index(self.current_screen_index)
+        self.grid_parameter_list_view.setCurrentIndex(new_screen_index)
+        self.grid_parameter_list_view.scrollTo(new_screen_index,QAbstractItemView.ScrollHint.PositionAtCenter)
+
+    def close_application(self):
+        self.close()
 
 class hue_button(QDialog):
     def __init__(self,selected_graph,graph_display):
@@ -12635,7 +12921,7 @@ class hue_button(QDialog):
                 padding: 6px;
                 color: black;
             }
-            QPushButton#add_and_logical:hover{
+            QPushButton#premade_add_and_logical:hover{
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -12674,7 +12960,7 @@ class hue_button(QDialog):
                 padding: 6px;
                 color: black;
             }
-            QPushButton#add_or_logical:hover{
+            QPushButton#premade_add_or_logical:hover{
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
