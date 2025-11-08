@@ -12058,7 +12058,128 @@ class grid_visible_adjustment_section(QWidget):
         self.graph_display = graph_display
         self.plot_manager = PlotManager()
         
-        self.initial_grid_visible_state = True
+        self.grid_visible_state = True
+
+        #Create a widget to display the grid visibility adjustment section and style it for consistency
+        self.grid_visibility_adjustment_section = QWidget()
+        self.grid_visibility_adjustment_section.setObjectName("grid_visibility_adjustment_section")
+        self.grid_visibility_adjustment_section.setStyleSheet("""
+            QWidget#grid_visibility_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        #Create a label to put on top of the QPushButton
+        self.grid_visibility_label = QLabel("Grid Off")
+        self.grid_visibility_label.setWordWrap(True)
+        self.grid_visibility_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.grid_visibility_label.setObjectName("grid_visibility_label")
+        self.grid_visibility_label.setStyleSheet("""
+            QLabel#grid_visibility_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.grid_visibility_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+    
+        #Create a button to allow the user to switch grid visibility
+        self.grid_visibility_button = QPushButton()
+        self.grid_visibility_button.setObjectName("grid_visibility_button")
+        self.grid_visibility_button.setStyleSheet("""
+            QPushButton#grid_visibility_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#grid_visibility_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.grid_visibility_button.setMinimumHeight(50)
+        
+        #Put the label on top of the button we created for control grid visibility
+        grid_visibility_button_layout = QVBoxLayout(self.grid_visibility_button)
+        grid_visibility_button_layout.addWidget(self.grid_visibility_label)
+        grid_visibility_button_layout.setContentsMargins(0,0,0,0)
+        grid_visibility_button_layout.setSpacing(0)
+
+        #Connect the grid visibility button to a function to switch between the two states
+        self.grid_visibility_button.clicked.connect(self.switch_grid_visibility)
+
+        #Create a button layout for the grid visibility adjustment section
+        button_layout = QVBoxLayout(self.grid_visibility_adjustment_section)
+
+        #Add the grid visibility button to the layout
+        button_layout.addWidget(self.grid_visibility_button)
+
+        #Set the spacing, margins, and stretch to make it look good
+        button_layout.setSpacing(0)
+        button_layout.setContentsMargins(10,10,10,10)
+        button_layout.addStretch()
+
+        #Create a layout for the main widget and store the frameon adjustment section in
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.grid_visibility_adjustment_section)
+
+        #Add the spacing and margins to make sure that the section fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+    def switch_grid_visibility(self):
+        self.grid_visible_state = not self.grid_visible_state
+        if (self.grid_visible_state == False):
+            self.grid_visibility_label.setText("Grid On")
+        else:
+            self.grid_visibility_label.setText("Grid Off")
+
+        self.update_grid_visibility()
+
+    def update_grid_visibility(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_grid("visible",self.grid_visible_state)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["grid"]["visible"] = self.grid_visible_state
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
 class grid_which_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
