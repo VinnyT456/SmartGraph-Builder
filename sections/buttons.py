@@ -12320,6 +12320,127 @@ class grid_axis_adjustment_section(QWidget):
         self.plot_manager = PlotManager()
 
         self.grid_axis = ""
+        self.grid_axis_arguments = ["both","x","y"]
+
+        self.grid_axis_adjustment_screen = QWidget()
+        self.grid_axis_adjustment_screen.setObjectName("grid_axis_adjustment_screen")
+        self.grid_axis_adjustment_screen.setStyleSheet("""
+            QWidget#grid_axis_adjustment_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.create_grid_axis_adjustment_screen()
+        
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.grid_axis_adjustment_screen)
+        main_layout.setContentsMargins(0,0,0,0)
+        main_layout.setSpacing(0) 
+
+    def create_grid_axis_adjustment_screen(self):
+        grid_axis_adjustment_screen_layout = QVBoxLayout(self.grid_axis_adjustment_screen)
+
+        self.grid_axis_adjustment_list_view = QListView()
+        self.grid_axis_adjustment_model = QStringListModel(self.grid_axis_arguments)
+
+        self.grid_axis_adjustment_list_view.setModel(self.grid_axis_adjustment_model)
+        self.grid_axis_adjustment_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.grid_axis_adjustment_list_view.setObjectName("grid_axis_adjustment_list_view")
+        self.grid_axis_adjustment_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.grid_axis_adjustment_list_view.setItemDelegate(CustomDelegate())
+
+        self.grid_axis_adjustment_list_view.setStyleSheet("""
+            QListView#grid_axis_adjustment_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#grid_axis_adjustment_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#grid_axis_adjustment_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#grid_axis_adjustment_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.grid_axis_adjustment_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.grid_axis_adjustment_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.grid_axis_adjustment_list_view.setSpacing(3)
+
+        self.grid_axis_adjustment_list_view.clicked.connect(self.change_grid_axis_argument)
+        grid_axis_adjustment_screen_layout.addWidget(self.grid_axis_adjustment_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        grid_axis_adjustment_screen_layout.setContentsMargins(10, 10, 10, 10)
+
+    def change_grid_axis_argument(self,index):
+        self.grid_axis = self.grid_axis_adjustment_model.data(index,Qt.ItemDataRole.DisplayRole)
+        self.update_grid_axis()
+
+    def update_grid_axis(self):
+        db  = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_grid("axis",self.grid_axis)
+        else: 
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["grid"]["axis"] = self.grid_axis
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
+
 
 class grid_color_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
