@@ -11148,7 +11148,7 @@ class seaborn_legend_size_order_adjustment_section(QWidget):
         self.size_value = self.get_size_values()
         self.size_order_adjustment_input.clear()
 
-class seaborn_legend_size_order_adjustment_section(QWidget):
+class seaborn_legend_hue_order_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
         self.selected_graph = selected_graph
@@ -11347,6 +11347,203 @@ class seaborn_legend_size_order_adjustment_section(QWidget):
         self.hue_value = self.get_hue_values()
         self.hue_order_adjustment_input.clear()
 
+class seaborn_legend_style_order_adjustment_section(QWidget):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        self.style_values = self.get_hue_values()
+
+        self.style_order = []
+
+        #-----Valid Size Order Widget-----
+        self.valid_style_order_widget = QWidget()
+        self.valid_style_order_widget.setObjectName("valid_style_order_widget")
+        self.valid_style_order_widget.setStyleSheet("""
+            QWidget#valid_style_order_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_style_order_label = QLabel("Valid Style Order")
+        self.valid_style_order_label.setObjectName("valid_style_order_label")
+        self.valid_style_order_label.setWordWrap(True)
+        self.valid_style_order_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_style_order_label.setStyleSheet("""
+            QLabel#valid_style_order_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        valid_style_order_widget_layout = QVBoxLayout(self.valid_style_order_widget)
+        valid_style_order_widget_layout.addWidget(self.valid_style_order_label)
+        valid_style_order_widget_layout.setContentsMargins(0,0,0,0)
+        valid_style_order_widget_layout.setSpacing(0)
+
+        #-----Invalid Custom Dashes Widget and Label-----
+        self.invalid_style_order_widget = QWidget()
+        self.invalid_style_order_widget.setObjectName("invalid_style_order_widget")
+        self.invalid_style_order_widget.setStyleSheet("""
+            QWidget#invalid_style_order_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_style_order_label = QLabel("Invalid Style Order")
+        self.invalid_style_order_label.setObjectName("invalid_style_order_label")
+        self.invalid_style_order_label.setWordWrap(True)
+        self.invalid_style_order_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_style_order_label.setStyleSheet("""
+            QLabel#invalid_style_order_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        invalid_style_order_widget_layout = QVBoxLayout(self.invalid_style_order_widget)
+        invalid_style_order_widget_layout.addWidget(self.invalid_style_order_label)
+        invalid_style_order_widget_layout.setContentsMargins(0,0,0,0)
+        invalid_style_order_widget_layout.setSpacing(0)
+
+        #-----Set the Height of both widgets and hide them-----
+        self.valid_style_order_widget.setMinimumHeight(50)
+        self.invalid_style_order_widget.setMinimumHeight(50)
+        
+        self.valid_style_order_widget.hide()
+        self.invalid_style_order_widget.hide()
+
+        #-----Size Order Screen-----
+        self.style_order_adjustment_screen = QWidget()
+        self.style_order_adjustment_screen.setObjectName("style_order_adjustment_screen")
+        self.style_order_adjustment_screen.setStyleSheet("""
+            QWidget#style_order_adjustment_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.style_order_adjustment_input = QLineEdit()
+        self.style_order_adjustment_input.setObjectName("style_order_adjustment_input")
+        self.style_order_adjustment_input.setPlaceholderText("Style Order: ")
+        self.style_order_adjustment_input.setStyleSheet("""
+            QLineEdit#style_order_adjustment_input{ 
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.style_order_adjustment_input.textChanged.connect(self.change_style_order)
+
+        self.style_order_adjustment_input.setMinimumHeight(60)
+
+        style_order_adjustment_screen_layout = QVBoxLayout(self.style_order_adjustment_screen)
+        style_order_adjustment_screen_layout.addWidget(self.style_order_adjustment_input)
+        style_order_adjustment_screen_layout.addWidget(self.valid_style_order_widget)
+        style_order_adjustment_screen_layout.addWidget(self.invalid_style_order_widget)
+        style_order_adjustment_screen_layout.setContentsMargins(10,10,10,10)
+        style_order_adjustment_screen_layout.setSpacing(10) 
+        style_order_adjustment_screen_layout.addStretch()
+
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.style_order_adjustment_screen)
+        main_layout.setContentsMargins(0,0,0,0)
+        main_layout.setSpacing(0)
+
+    def change_style_order(self):
+        style_order = self.style_order_adjustment_input.text().strip().split(" ")
+        style_order = list(filter(lambda x: x != "",style_order))
+
+        if (self.style_value != []):
+            if (len(self.style_value) != len(style_order)):
+                self.valid_style_order_widget.hide()
+                self.invalid_style_order_widget.show()
+                return
+            else:
+                for i in style_order:
+                    if (i not in self.style_values): 
+                        self.valid_style_order_widget.hide()
+                        self.invalid_style_order_widget.show()
+                        return
+                self.valid_style_order_widget.show()
+                self.invalid_style_order_widget.hide()
+                self.style_order = style_order
+        else:
+            self.style_order = style_order
+        
+        self.update_style_order()
+
+    def update_style_order(self):
+        db = self.plot_manager.get_db()
+        if (db != []): 
+            self.plot_manager.update_seaborn_legend("style_order",self.style_order)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["seaborn_legends"]["style_order"] = self.style_order
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
+
+    def get_hue_values(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            dataset = pd.read_csv("./dataset/user_dataset.csv")
+            hue_parameter = db["style"]
+            if (hue_parameter == None):
+                return []
+            return dataset[hue_parameter].unique()
+        else:
+            return []
+        
+    def mousePressEvent(self,event):
+        if (not self.style_order_adjustment_input.geometry().contains(event.position().toPoint())):
+            self.hue_order_adjustment_input.clearFocus()
+
+    def showEvent(self,event):
+        super().showEvent(event)
+        self.style_value = self.get_hue_values()
+        self.style_order_adjustment_input.clear()
+
 class legend_button(QDialog):
     def __init__(self,selected_graph, graph_display):
         super().__init__()
@@ -11375,7 +11572,7 @@ class legend_button(QDialog):
                                   markerfirst_adjustment_section,seaborn_legend_adjustment_section,
                                   seaborn_legend_off_adjustment_section,seaborn_legend_markers_adjustment_section,
                                   seaborn_legend_dashes_adjustment_section,seaborn_legend_size_order_adjustment_section,
-                                  seaborn_legend_size_order_adjustment_section]
+                                  seaborn_legend_hue_order_adjustment_section,seaborn_legend_style_order_adjustment_section]
 
         self.available_screens = dict()
 
