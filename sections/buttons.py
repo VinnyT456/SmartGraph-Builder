@@ -1,12 +1,11 @@
-from logging import raiseExceptions
 import re
-import select
 from PyQt6.QtCore import QLine, QSortFilterProxyModel, QStringListModel, Qt
-from PyQt6.QtGui import QFont, QKeySequence, QPixmap, QShortcut
+from PyQt6.QtGui import QFont, QKeySequence, QPixmap, QShortcut, QShowEvent
 from PyQt6.QtWidgets import (
     QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QPushButton, 
     QSizePolicy, QTableView, QWidget, QVBoxLayout, QStyledItemDelegate, QSizePolicy
 )
+from pandas.core.methods.describe import select_describe_func
 from sections.dataset import PrepareDataset
 from sections.plot_manager import PlotManager
 import matplotlib.colors as mcolors
@@ -9008,6 +9007,1949 @@ class seaborn_legend_markers_adjustment_section(QWidget):
         self.reset_marker_selection()
         self.change_to_home_screen()
 
+class seaborn_legend_dashes_adjustment_section(QWidget):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        self.available_dashes = ["solid (-)","dashed (--)","dashdot (-.)","dotted (:)","None (—)"]
+        self.dashes = list(map(lambda x:x[x.index("(")+1:x.index(")")],self.available_dashes))
+
+        self.dashes = ""
+        self.dashes_dictionary = dict()
+        self.dashes_dictionary_key = ""
+        self.dashes_dictionary_value = ""
+        self.initial_dashes_argument = True
+
+        #-----Valid Single Custom Dashes Widget and Label-----
+        self.valid_single_custom_dashes_widget = QWidget()
+        self.valid_single_custom_dashes_widget.setObjectName("valid_single_custom_dashes_widget")
+        self.valid_single_custom_dashes_widget.setStyleSheet("""
+            QWidget#valid_single_custom_dashes_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_single_custom_dashes_label = QLabel("Valid Dashes")
+        self.valid_single_custom_dashes_label.setObjectName("valid_single_custom_dashes_label")
+        self.valid_single_custom_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_single_custom_dashes_label.setStyleSheet("""
+            QLabel#valid_single_custom_dashes_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        valid_single_custom_dashes_widget_layout = QVBoxLayout(self.valid_single_custom_dashes_widget)
+        valid_single_custom_dashes_widget_layout.addWidget(self.valid_single_custom_dashes_label)
+        valid_single_custom_dashes_widget_layout.setContentsMargins(0,0,0,0)
+        valid_single_custom_dashes_widget_layout.setSpacing(0)
+
+        #-----Invalid Custom Dashes Widget and Label-----
+        self.invalid_single_custom_dashes_widget = QWidget()
+        self.invalid_single_custom_dashes_widget.setObjectName("invalid_single_custom_dashes_widget")
+        self.invalid_single_custom_dashes_widget.setStyleSheet("""
+            QWidget#invalid_single_custom_dashes_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_single_custom_dashes_label = QLabel("Invalid Dashes")
+        self.invalid_single_custom_dashes_label.setObjectName("invalid_single_custom_dashes_label")
+        self.invalid_single_custom_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_single_custom_dashes_label.setStyleSheet("""
+            QLabel#invalid_single_custom_dashes_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        invalid_single_custom_dashes_widget_layout = QVBoxLayout(self.invalid_single_custom_dashes_widget)
+        invalid_single_custom_dashes_widget_layout.addWidget(self.invalid_single_custom_dashes_label)
+        invalid_single_custom_dashes_widget_layout.setContentsMargins(0,0,0,0)
+        invalid_single_custom_dashes_widget_layout.setSpacing(0)
+
+        #-----Set the Height of both widgets and hide them-----
+        self.valid_single_custom_dashes_widget.setMinimumHeight(50)
+        self.invalid_single_custom_dashes_widget.setMinimumHeight(50)
+        
+        self.valid_single_custom_dashes_widget.hide()
+        self.invalid_single_custom_dashes_widget.hide()
+
+        #-----Valid Multiple Custom Dashes Widget and Label-----
+        self.valid_multiple_custom_dashes_widget = QWidget()
+        self.valid_multiple_custom_dashes_widget.setObjectName("valid_multiple_custom_dashes_widget")
+        self.valid_multiple_custom_dashes_widget.setStyleSheet("""
+            QWidget#valid_multiple_custom_dashes_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_multiple_custom_dashes_label = QLabel("Valid Dashes")
+        self.valid_multiple_custom_dashes_label.setObjectName("valid_multiple_custom_dashes_label")
+        self.valid_multiple_custom_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_multiple_custom_dashes_label.setStyleSheet("""
+            QLabel#valid_multiple_custom_dashes_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        valid_multiple_custom_dashes_widget_layout = QVBoxLayout(self.valid_multiple_custom_dashes_widget)
+        valid_multiple_custom_dashes_widget_layout.addWidget(self.valid_multiple_custom_dashes_label)
+        valid_multiple_custom_dashes_widget_layout.setContentsMargins(0,0,0,0)
+        valid_multiple_custom_dashes_widget_layout.setSpacing(0)
+
+        #-----Invalid Custom Dashes Widget and Label-----
+        self.invalid_multiple_custom_dashes_widget = QWidget()
+        self.invalid_multiple_custom_dashes_widget.setObjectName("invalid_multiple_custom_dashes_widget")
+        self.invalid_multiple_custom_dashes_widget.setStyleSheet("""
+            QWidget#invalid_multiple_custom_dashes_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_multiple_custom_dashes_label = QLabel("Invalid Dashes")
+        self.invalid_multiple_custom_dashes_label.setObjectName("invalid_multiple_custom_dashes_label")
+        self.invalid_multiple_custom_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_multiple_custom_dashes_label.setStyleSheet("""
+            QLabel#invalid_multiple_custom_dashes_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        invalid_multiple_custom_dashes_widget_layout = QVBoxLayout(self.invalid_multiple_custom_dashes_widget)
+        invalid_multiple_custom_dashes_widget_layout.addWidget(self.invalid_multiple_custom_dashes_label)
+        invalid_multiple_custom_dashes_widget_layout.setContentsMargins(0,0,0,0)
+        invalid_multiple_custom_dashes_widget_layout.setSpacing(0)
+
+        #-----Set the Height of both widgets and hide them-----
+        self.valid_multiple_custom_dashes_widget.setMinimumHeight(50)
+        self.invalid_multiple_custom_dashes_widget.setMinimumHeight(50)
+        
+        self.valid_multiple_custom_dashes_widget.hide()
+        self.invalid_multiple_custom_dashes_widget.hide()
+
+        #-----Valid Dictionary Custom Dashes Widget and Label-----
+        self.valid_dictionary_custom_dashes_widget = QWidget()
+        self.valid_dictionary_custom_dashes_widget.setObjectName("valid_dictionary_custom_dashes_widget")
+        self.valid_dictionary_custom_dashes_widget.setStyleSheet("""
+            QWidget#valid_dictionary_custom_dashes_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_dictionary_custom_dashes_label = QLabel("Valid Dashes")
+        self.valid_dictionary_custom_dashes_label.setObjectName("valid_dictionary_custom_dashes_label")
+        self.valid_dictionary_custom_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_dictionary_custom_dashes_label.setStyleSheet("""
+            QLabel#valid_dictionary_custom_dashes_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        valid_dictionary_custom_dashes_widget_layout = QVBoxLayout(self.valid_dictionary_custom_dashes_widget)
+        valid_dictionary_custom_dashes_widget_layout.addWidget(self.valid_dictionary_custom_dashes_label)
+        valid_dictionary_custom_dashes_widget_layout.setContentsMargins(0,0,0,0)
+        valid_dictionary_custom_dashes_widget_layout.setSpacing(0)
+
+        #-----Invalid Custom Dashes Widget and Label-----
+        self.invalid_dictionary_custom_dashes_widget = QWidget()
+        self.invalid_dictionary_custom_dashes_widget.setObjectName("invalid_dictionary_custom_dashes_widget")
+        self.invalid_dictionary_custom_dashes_widget.setStyleSheet("""
+            QWidget#invalid_dictionary_custom_dashes_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_dictionary_custom_dashes_label = QLabel("Invalid Dashes")
+        self.invalid_dictionary_custom_dashes_label.setObjectName("invalid_dictionary_custom_dashes_label")
+        self.invalid_dictionary_custom_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_dictionary_custom_dashes_label.setStyleSheet("""
+            QLabel#invalid_dictionary_custom_dashes_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        invalid_dictionary_custom_dashes_widget_layout = QVBoxLayout(self.invalid_dictionary_custom_dashes_widget)
+        invalid_dictionary_custom_dashes_widget_layout.addWidget(self.invalid_dictionary_custom_dashes_label)
+        invalid_dictionary_custom_dashes_widget_layout.setContentsMargins(0,0,0,0)
+        invalid_dictionary_custom_dashes_widget_layout.setSpacing(0)
+
+        #-----Set the Height of both widgets and hide them-----
+        self.valid_dictionary_custom_dashes_widget.setMinimumHeight(50)
+        self.invalid_dictionary_custom_dashes_widget.setMinimumHeight(50)
+        
+        self.valid_dictionary_custom_dashes_widget.hide()
+        self.invalid_dictionary_custom_dashes_widget.hide()
+
+        #-----Seaborn Legend Dashes Screen-----
+        self.sns_legend_dashes_screen = QWidget()
+        self.sns_legend_dashes_screen.setObjectName("sns_legend_dashes_screen")
+        self.sns_legend_dashes_screen.setStyleSheet("""
+            QWidget#sns_legend_dashes_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }       
+        """)
+        self.sns_legend_dashes_screen.hide()
+
+        #----Turn Dashes on/off Button-----
+        self.turn_dashes_on_off_button = QPushButton()
+        self.turn_dashes_on_off_button.setObjectName("turn_dashes_on_off_button")
+        self.turn_dashes_on_off_button.setStyleSheet("""
+            QPushButton#turn_dashes_on_off_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#turn_dashes_on_off_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.turn_dashes_on_off_label = QLabel("Turn Dashes Off")
+        self.turn_dashes_on_off_label.setObjectName("turn_dashes_on_off_label")
+        self.turn_dashes_on_off_label.setWordWrap(True)
+        self.turn_dashes_on_off_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.turn_dashes_on_off_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.turn_dashes_on_off_label.setStyleSheet("""
+            QLabel#turn_dashes_on_off_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        turn_dashes_on_off_layout = QVBoxLayout(self.turn_dashes_on_off_button)
+        turn_dashes_on_off_layout.addWidget(self.turn_dashes_on_off_label)
+        turn_dashes_on_off_layout.setContentsMargins(0,0,0,0)
+        turn_dashes_on_off_layout.setSpacing(0)
+
+        #-----Select Single Dashes Button-----
+        self.select_single_dashes_button = QPushButton()
+        self.select_single_dashes_button.setObjectName("select_single_dashes_button")
+        self.select_single_dashes_button.setStyleSheet("""
+            QPushButton#select_single_dashes_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#select_single_dashes_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.select_single_dashes_label = QLabel("Select Single Dashes")
+        self.select_single_dashes_label.setObjectName("select_single_dashes_label")
+        self.select_single_dashes_label.setWordWrap(True)
+        self.select_single_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.select_single_dashes_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.select_single_dashes_label.setStyleSheet("""
+            QLabel#select_single_dashes_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        select_single_dashes_button_layout = QVBoxLayout(self.select_single_dashes_button)
+        select_single_dashes_button_layout.addWidget(self.select_single_dashes_label)
+        select_single_dashes_button_layout.setContentsMargins(0,0,0,0)
+        select_single_dashes_button_layout.setSpacing(0)
+
+        #-----Select Multiple Dashes Button-----
+        self.select_multiple_dashes_button = QPushButton()
+        self.select_multiple_dashes_button.setObjectName("select_multiple_dashes_button")
+        self.select_multiple_dashes_button.setStyleSheet("""
+            QPushButton#select_multiple_dashes_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#select_multiple_dashes_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.select_multiple_dashes_label = QLabel("Select Multiple Dashes")
+        self.select_multiple_dashes_label.setObjectName("select_multiple_dashes_label")
+        self.select_multiple_dashes_label.setWordWrap(True)
+        self.select_multiple_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.select_multiple_dashes_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.select_multiple_dashes_label.setStyleSheet("""
+            QLabel#select_multiple_dashes_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        select_multiple_dashes_button_layout = QVBoxLayout(self.select_multiple_dashes_button)
+        select_multiple_dashes_button_layout.addWidget(self.select_multiple_dashes_label)
+        select_multiple_dashes_button_layout.setContentsMargins(0,0,0,0)
+        select_multiple_dashes_button_layout.setSpacing(0)
+
+        #-----Select Dictionary Dashes Button-----
+        self.select_dictionary_dashes_button = QPushButton()
+        self.select_dictionary_dashes_button.setObjectName("select_dictionary_dashes_button")
+        self.select_dictionary_dashes_button.setStyleSheet("""
+            QPushButton#select_dictionary_dashes_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#select_dictionary_dashes_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.select_dictionary_dashes_label = QLabel("Select Dictionay Dashes")
+        self.select_dictionary_dashes_label.setObjectName("select_dictionary_dashes_label")
+        self.select_dictionary_dashes_label.setWordWrap(True)
+        self.select_dictionary_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.select_dictionary_dashes_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.select_dictionary_dashes_label.setStyleSheet("""
+            QLabel#select_dictionary_dashes_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        select_dictionary_dashes_button_layout = QVBoxLayout(self.select_dictionary_dashes_button)
+        select_dictionary_dashes_button_layout.addWidget(self.select_dictionary_dashes_label)
+        select_dictionary_dashes_button_layout.setContentsMargins(0,0,0,0)
+        select_dictionary_dashes_button_layout.setSpacing(0)
+
+        #-----Set the size of each button-----
+        self.turn_dashes_on_off_button.setMinimumHeight(70)
+        self.select_single_dashes_button.setMinimumHeight(70)
+        self.select_multiple_dashes_button.setMinimumHeight(70)
+        self.select_dictionary_dashes_button.setMinimumHeight(70)
+
+        #-----Connect cach button to it's associated function-----
+        self.turn_dashes_on_off_button.clicked.connect(self.turn_dashes_on_and_off)
+        self.select_single_dashes_button.clicked.connect(self.change_to_single_dashes_screen)
+        self.select_multiple_dashes_button.clicked.connect(self.change_to_multiple_dashes_screen)
+        self.select_dictionary_dashes_button.clicked.connect(self.change_to_dictionary_dashes_screen)
+
+        #-----Seaborn Legend Dashes Screen Layout-----
+        sns_legend_dashes_screen_layout = QVBoxLayout(self.sns_legend_dashes_screen)
+        sns_legend_dashes_screen_layout.addWidget(self.turn_dashes_on_off_button)
+        sns_legend_dashes_screen_layout.addWidget(self.select_single_dashes_button)
+        sns_legend_dashes_screen_layout.addWidget(self.select_multiple_dashes_button)
+        sns_legend_dashes_screen_layout.addWidget(self.select_dictionary_dashes_button)
+        sns_legend_dashes_screen_layout.setContentsMargins(10,10,10,10)
+        sns_legend_dashes_screen_layout.setSpacing(10)
+        sns_legend_dashes_screen_layout.addStretch()
+
+        #-----Seaborn Legend Select Single Dashes Screen-----
+        self.select_single_dashes_screen = QWidget()
+        self.select_single_dashes_screen.setObjectName("select_single_dashes_screen")
+        self.select_single_dashes_screen.setStyleSheet("""
+            QWidget#select_single_dashes_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.select_single_dashes_screen.hide()
+
+        #-----Seaborn Legend Select Single Premade Dashes Button-----
+        self.select_single_premade_dashes_button = QPushButton()
+        self.select_single_premade_dashes_button.setObjectName("select_single_premade_dashes_button")
+        self.select_single_premade_dashes_button.setStyleSheet("""
+            QPushButton#select_single_premade_dashes_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#select_single_premade_dashes_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.select_single_premade_dashes_label = QLabel("Select Premade Dashes")
+        self.select_single_premade_dashes_label.setObjectName("select_single_premade_dashes_label")
+        self.select_single_premade_dashes_label.setWordWrap(True)
+        self.select_single_premade_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.select_single_premade_dashes_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.select_single_premade_dashes_label.setStyleSheet("""
+            QLabel#select_single_premade_dashes_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        select_single_premade_dashes_button_layout = QVBoxLayout(self.select_single_premade_dashes_button)
+        select_single_premade_dashes_button_layout.addWidget(self.select_single_premade_dashes_label)
+        select_single_premade_dashes_button_layout.setContentsMargins(0,0,0,0)
+        select_single_premade_dashes_button_layout.setSpacing(0)
+
+        #-----Seaborn Legend Select Single Premade Dashes Screen-----
+        self.select_single_premade_dashes_screen = QWidget()
+        self.select_single_premade_dashes_screen.setObjectName("select_single_premade_dashes_screen")
+        self.select_single_premade_dashes_screen.setStyleSheet(""" 
+            QWidget#select_single_premade_dashes_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }     
+        """)
+        self.create_select_single_premade_dashes_screen()
+        self.select_single_premade_dashes_screen.hide()
+
+        #-----Seaborn Legend Select Custom Dashes Button-----
+        self.select_single_custom_dashes_button = QPushButton()
+        self.select_single_custom_dashes_button.setObjectName("select_single_custom_dashes_button")
+        self.select_single_custom_dashes_button.setStyleSheet("""
+            QPushButton#select_single_custom_dashes_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#select_single_custom_dashes_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.select_single_custom_dashes_label = QLabel("Enter Custom Dashes")
+        self.select_single_custom_dashes_label.setObjectName("select_single_custom_dashes_label")
+        self.select_single_custom_dashes_label.setWordWrap(True)
+        self.select_single_custom_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.select_single_custom_dashes_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.select_single_custom_dashes_label.setStyleSheet("""
+            QLabel#select_single_custom_dashes_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        select_single_custom_dashes_button_layout = QVBoxLayout(self.select_single_custom_dashes_button)
+        select_single_custom_dashes_button_layout.addWidget(self.select_single_custom_dashes_label)
+        select_single_custom_dashes_button_layout.setContentsMargins(0,0,0,0)
+        select_single_custom_dashes_button_layout.setSpacing(0)
+
+        #-----Seaborn Legend Select Custom Dashes Screen-----
+        self.select_single_custom_dashes_screen = QWidget()
+        self.select_single_custom_dashes_screen.setObjectName("select_single_custom_dashes_screen")
+        self.select_single_custom_dashes_screen.setStyleSheet(""" 
+            QWidget#select_single_custom_dashes_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }     
+        """)
+        self.create_select_single_custom_dashes_screen()
+        self.select_single_custom_dashes_screen.hide()
+
+        #-----Connect the two buttons to its function-----
+        self.select_single_premade_dashes_button.clicked.connect(self.change_to_select_single_premade_dashes_screen)
+        self.select_single_custom_dashes_button.clicked.connect(self.change_to_select_single_custom_dashes_screen)
+
+        #-----Control the size of the buttons -----
+        self.select_single_premade_dashes_button.setMinimumHeight(60)
+        self.select_single_custom_dashes_button.setMinimumHeight(60)
+
+        #-----Seaborn Legend Select Single Dashes Layout-----
+        single_dashes_screen_layout = QVBoxLayout(self.select_single_dashes_screen)
+        single_dashes_screen_layout.addWidget(self.select_single_premade_dashes_button)
+        single_dashes_screen_layout.addWidget(self.select_single_custom_dashes_button)
+        single_dashes_screen_layout.setContentsMargins(10,10,10,10)
+        single_dashes_screen_layout.setSpacing(5)
+        single_dashes_screen_layout.addStretch()
+
+        #-----Seaborn Legend Multiple Dashes Screen-----
+        self.select_multiple_dashes_screen = QWidget()
+        self.select_multiple_dashes_screen.setObjectName("select_multiple_dashes_screen")
+        self.select_multiple_dashes_screen.setStyleSheet("""
+            QWidget#select_multiple_dashes_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.select_multiple_dashes_screen.hide()
+
+        #-----Seaborn Legend Multiple Premade Dashes Button-----
+        self.select_multiple_premade_dashes_button = QPushButton()
+        self.select_multiple_premade_dashes_button.setObjectName("select_multiple_premade_dashes_button")
+        self.select_multiple_premade_dashes_button.setStyleSheet("""
+            QPushButton#select_multiple_premade_dashes_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#select_multiple_premade_dashes_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.select_multiple_premade_dashes_label = QLabel("Select Multiple Premade Dashes")
+        self.select_multiple_premade_dashes_label.setObjectName("select_multiple_premade_dashes_label")
+        self.select_multiple_premade_dashes_label.setWordWrap(True)
+        self.select_multiple_premade_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.select_multiple_premade_dashes_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.select_multiple_premade_dashes_label.setStyleSheet("""
+            QLabel#select_multiple_premade_dashes_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        select_multiple_premade_dashes_button_layout = QVBoxLayout(self.select_multiple_premade_dashes_button)
+        select_multiple_premade_dashes_button_layout.addWidget(self.select_multiple_premade_dashes_label)
+        select_multiple_premade_dashes_button_layout.setContentsMargins(0,0,0,0)
+        select_multiple_premade_dashes_button_layout.setSpacing(0)
+
+        #-----Seaborn Legend Multiple Premade Dashes Screen-----
+        self.select_multiple_premade_dashes_screen = QWidget()
+        self.select_multiple_premade_dashes_screen.setObjectName("select_multiple_premade_dashes_screen")
+        self.select_multiple_premade_dashes_screen.setStyleSheet("""
+            QWidget#select_multiple_premade_dashes_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.create_select_multiple_premade_dashes_screen()
+        self.select_multiple_premade_dashes_screen.hide()
+
+        #-----Seaborn Legend Multiple Custom Dashes Button-----
+        self.select_multiple_custom_dashes_button = QPushButton()
+        self.select_multiple_custom_dashes_button.setObjectName("select_multiple_custom_dashes_button")
+        self.select_multiple_custom_dashes_button.setStyleSheet("""
+            QPushButton#select_multiple_custom_dashes_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#select_multiple_custom_dashes_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.select_multiple_custom_dashes_label = QLabel("Enter Multiple Custom Dashes")
+        self.select_multiple_custom_dashes_label.setObjectName("select_multiple_custom_dashes_label")
+        self.select_multiple_custom_dashes_label.setWordWrap(True)
+        self.select_multiple_custom_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.select_multiple_custom_dashes_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.select_multiple_custom_dashes_label.setStyleSheet("""
+            QLabel#select_multiple_custom_dashes_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        select_multiple_custom_dashes_button_layout = QVBoxLayout(self.select_multiple_custom_dashes_button)
+        select_multiple_custom_dashes_button_layout.addWidget(self.select_multiple_custom_dashes_label)
+        select_multiple_custom_dashes_button_layout.setContentsMargins(0,0,0,0)
+        select_multiple_custom_dashes_button_layout.setSpacing(0)
+
+        #-----Seaborn Legend Multiple Custom Dashes Screen-----
+        self.select_multiple_custom_dashes_screen = QWidget()
+        self.select_multiple_custom_dashes_screen.setObjectName("select_multiple_custom_dashes_screen")
+        self.select_multiple_custom_dashes_screen.setStyleSheet("""
+            QWidget#select_multiple_custom_dashes_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.create_select_multiple_custom_dashes_screen()
+        self.select_multiple_custom_dashes_screen.hide()
+
+        #-----Connect the two buttons to its function-----
+        self.select_multiple_premade_dashes_button.clicked.connect(self.change_to_select_multiple_premade_dashes_screen)
+        self.select_multiple_custom_dashes_button.clicked.connect(self.change_to_select_multiple_custom_dashes_screen)
+
+        #-----Control the size of the buttons -----
+        self.select_multiple_premade_dashes_button.setMinimumHeight(70)
+        self.select_multiple_custom_dashes_button.setMinimumHeight(70)
+
+        #-----Seaborn Legend Select Multiple Dashes Layout-----
+        multiple_dashes_screen_layout = QVBoxLayout(self.select_multiple_dashes_screen)
+        multiple_dashes_screen_layout.addWidget(self.select_multiple_premade_dashes_button)
+        multiple_dashes_screen_layout.addWidget(self.select_multiple_custom_dashes_button)
+        multiple_dashes_screen_layout.setContentsMargins(10,10,10,10)
+        multiple_dashes_screen_layout.setSpacing(5)
+        multiple_dashes_screen_layout.addStretch()
+
+        #-----Seaborn Legend Dictionary Dashes Screen----
+        self.select_dictionary_dashes_screen = QWidget()
+        self.select_dictionary_dashes_screen.setObjectName("select_dictionary_dashes_screen")
+        self.select_dictionary_dashes_screen.setStyleSheet("""
+            QWidget#select_dictionary_dashes_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.select_dictionary_dashes_screen.hide()
+
+        #-----Seaborn Legend Dictionary Premade Dashes Button-----
+        self.select_dictionary_premade_dashes_button = QPushButton()
+        self.select_dictionary_premade_dashes_button.setObjectName("select_dictionary_premade_dashes_button")
+        self.select_dictionary_premade_dashes_button.setStyleSheet("""
+            QPushButton#select_dictionary_premade_dashes_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#select_dictionary_premade_dashes_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.select_dictionary_premade_dashes_label = QLabel("Enter Dictionary Premade Dashes")
+        self.select_dictionary_premade_dashes_label.setObjectName("select_dictionary_premade_dashes_label")
+        self.select_dictionary_premade_dashes_label.setWordWrap(True)
+        self.select_dictionary_premade_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.select_dictionary_premade_dashes_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.select_dictionary_premade_dashes_label.setStyleSheet("""
+            QLabel#select_dictionary_premade_dashes_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        select_dictionary_premade_dashes_button_layout = QVBoxLayout(self.select_dictionary_premade_dashes_button)
+        select_dictionary_premade_dashes_button_layout.addWidget(self.select_dictionary_premade_dashes_label)
+        select_dictionary_premade_dashes_button_layout.setContentsMargins(0,0,0,0)
+        select_dictionary_premade_dashes_button_layout.setSpacing(0)
+
+        #-----Seaborn Legend Dictionary Premade Dashes Screen----
+        self.select_dictionary_premade_dashes_screen = QWidget()
+        self.select_dictionary_premade_dashes_screen.setObjectName("select_dictionary_premade_dashes_screen")
+        self.select_dictionary_premade_dashes_screen.setStyleSheet("""
+            QWidget#select_dictionary_premade_dashes_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.create_select_dictionary_premade_dashes_screen()
+        self.select_dictionary_premade_dashes_screen.hide()
+
+        #-----Seaborn Legend Dictionary Custom Dashes Button-----
+        self.select_dictionary_custom_dashes_button = QPushButton()
+        self.select_dictionary_custom_dashes_button.setObjectName("select_dictionary_custom_dashes_button")
+        self.select_dictionary_custom_dashes_button.setStyleSheet("""
+            QPushButton#select_dictionary_custom_dashes_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#select_dictionary_custom_dashes_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.select_dictionary_custom_dashes_label = QLabel("Enter Dictionary Custom Dashes")
+        self.select_dictionary_custom_dashes_label.setObjectName("select_dictionary_custom_dashes_label")
+        self.select_dictionary_custom_dashes_label.setWordWrap(True)
+        self.select_dictionary_custom_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.select_dictionary_custom_dashes_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.select_dictionary_custom_dashes_label.setStyleSheet("""
+            QLabel#select_dictionary_custom_dashes_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        select_dictionary_custom_dashes_button_layout = QVBoxLayout(self.select_dictionary_custom_dashes_button)
+        select_dictionary_custom_dashes_button_layout.addWidget(self.select_dictionary_custom_dashes_label)
+        select_dictionary_custom_dashes_button_layout.setContentsMargins(0,0,0,0)
+        select_dictionary_custom_dashes_button_layout.setSpacing(0)
+
+        #-----Seaborn Legend Dictionary Custom Dashes Screen----
+        self.select_dictionary_custom_dashes_screen = QWidget()
+        self.select_dictionary_custom_dashes_screen.setObjectName("select_dictionary_custom_dashes_screen")
+        self.select_dictionary_custom_dashes_screen.setStyleSheet("""
+            QWidget#select_dictionary_custom_dashes_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.create_select_dictionary_custom_dashes_screen()
+        self.select_dictionary_custom_dashes_screen.hide()
+
+        #-----Connect the two buttons to its function-----
+        self.select_dictionary_premade_dashes_button.clicked.connect(self.change_to_select_dictionary_premade_dashes_screen)
+        self.select_dictionary_custom_dashes_button.clicked.connect(self.change_to_select_dictionary_custom_dashes_screen)
+
+        #-----Control the size of the buttons -----
+        self.select_dictionary_premade_dashes_button.setMinimumHeight(70)
+        self.select_dictionary_custom_dashes_button.setMinimumHeight(70)
+
+        #-----Seaborn Legend Select Multiple Dashes Layout-----
+        dictionary_dashes_screen_layout = QVBoxLayout(self.select_dictionary_dashes_screen)
+        dictionary_dashes_screen_layout.addWidget(self.select_dictionary_premade_dashes_button)
+        dictionary_dashes_screen_layout.addWidget(self.select_dictionary_custom_dashes_button)
+        dictionary_dashes_screen_layout.setContentsMargins(10,10,10,10)
+        dictionary_dashes_screen_layout.setSpacing(5)
+        dictionary_dashes_screen_layout.addStretch()
+
+        #-----All Available Screens-----
+        self.current_screen_idx = 0
+        self.available_screens = [self.sns_legend_dashes_screen,self.select_single_dashes_screen,
+                                self.select_single_premade_dashes_screen,self.select_single_custom_dashes_screen,
+                                self.select_multiple_dashes_screen,self.select_multiple_premade_dashes_screen,
+                                self.select_multiple_custom_dashes_screen,self.select_dictionary_dashes_screen,
+                                self.select_dictionary_premade_dashes_screen,self.select_dictionary_custom_dashes_screen]
+        self.available_screens[self.current_screen_idx].show()
+
+        #-----Add All the Screens to the Main Widget-----
+        main_layout = QVBoxLayout(self)
+        for screen in self.available_screens:
+            main_layout.addWidget(screen)
+
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+        #-----Keyboard Shortcuts-----
+        previous_screen_shortcut = QShortcut(QKeySequence("left"),self)
+        previous_screen_shortcut.activated.connect(self.change_to_previous_screen)
+
+        enter_custom_dashes_shortcut = QShortcut(QKeySequence("Return"),self)
+        enter_custom_dashes_shortcut.activated.connect(self.add_new_custom_dashes)
+
+    def create_select_single_premade_dashes_screen(self):
+        select_single_premade_dashes_screen_layout = QVBoxLayout(self.select_single_premade_dashes_screen)
+
+        self.single_select_premade_dashes_list_view = QListView()
+        self.single_select_premade_dashes_model = QStringListModel(self.available_dashes)
+
+        self.single_select_premade_dashes_list_view.setModel(self.single_select_premade_dashes_model)
+        self.single_select_premade_dashes_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.single_select_premade_dashes_list_view.setObjectName("single_select_premade_dashes_list_view")
+        self.single_select_premade_dashes_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.single_select_premade_dashes_list_view.setItemDelegate(CustomDelegate())
+
+        self.single_select_premade_dashes_list_view.setStyleSheet("""
+            QListView#single_select_premade_dashes_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#single_select_premade_dashes_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#single_select_premade_dashes_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#single_select_premade_dashes_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.single_select_premade_dashes_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.single_select_premade_dashes_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.single_select_premade_dashes_list_view.setSpacing(3)
+
+        self.single_select_premade_dashes_list_view.clicked.connect(self.change_single_select_premade_dashes)
+        select_single_premade_dashes_screen_layout.addWidget(self.single_select_premade_dashes_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        select_single_premade_dashes_screen_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_select_single_custom_dashes_screen(self):
+        select_single_custom_dashes_screen_layout = QVBoxLayout(self.select_single_custom_dashes_screen)
+
+        single_custom_dashes_instructions_widget = QWidget()
+        single_custom_dashes_instructions_widget.setObjectName("single_custom_dashes_instructions_widget")
+        single_custom_dashes_instructions_widget.setStyleSheet("""
+            QWidget#single_custom_dashes_instructions_widget{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        single_custom_dashes_instructions_label = QLabel("Enter the numbers seperated by space")
+        single_custom_dashes_instructions_label.setObjectName("single_custom_dashes_instructions_label")
+        single_custom_dashes_instructions_label.setWordWrap(True)
+        single_custom_dashes_instructions_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        single_custom_dashes_instructions_label.setStyleSheet("""
+            QLabel#single_custom_dashes_instructions_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        single_custom_dashes_instructions_layout = QVBoxLayout(single_custom_dashes_instructions_widget)
+        single_custom_dashes_instructions_layout.addWidget(single_custom_dashes_instructions_label)
+        single_custom_dashes_instructions_layout.setContentsMargins(0,0,0,0)
+        single_custom_dashes_instructions_layout.setSpacing(0)
+
+        self.select_single_custom_dashes_input = QLineEdit()
+        self.select_single_custom_dashes_input.setObjectName("select_single_custom_dashes_input")
+        self.select_single_custom_dashes_input.setPlaceholderText("Custom Dashes:")
+        self.select_single_custom_dashes_input.setStyleSheet("""
+            QLineEdit#select_single_custom_dashes_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.select_single_custom_dashes_input.textChanged.connect(self.change_single_select_custom_dashes)
+        self.select_single_custom_dashes_input.setMinimumHeight(60)
+
+        select_single_custom_dashes_screen_layout.addWidget(single_custom_dashes_instructions_widget)
+        select_single_custom_dashes_screen_layout.addWidget(self.select_single_custom_dashes_input)
+        select_single_custom_dashes_screen_layout.addWidget(self.valid_single_custom_dashes_widget)
+        select_single_custom_dashes_screen_layout.addWidget(self.invalid_single_custom_dashes_widget)
+        select_single_custom_dashes_screen_layout.setContentsMargins(10,10,10,10)
+        select_single_custom_dashes_screen_layout.setSpacing(10)
+        select_single_custom_dashes_screen_layout.addStretch()
+
+    def create_select_multiple_premade_dashes_screen(self):
+        select_multiple_premade_dashes_screen_layout = QVBoxLayout(self.select_multiple_premade_dashes_screen)
+
+        self.multiple_select_premade_dashes_list_view = QListView()
+        self.multiple_select_premade_dashes_list_view.setSelectionMode(QListView.SelectionMode.MultiSelection)
+        self.multiple_select_premade_dashes_model = QStringListModel(self.available_dashes)
+
+        self.multiple_select_premade_dashes_list_view.setModel(self.multiple_select_premade_dashes_model)
+        self.multiple_select_premade_dashes_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.multiple_select_premade_dashes_list_view.setObjectName("multiple_select_premade_dashes_list_view")
+        self.multiple_select_premade_dashes_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.multiple_select_premade_dashes_list_view.setItemDelegate(CustomDelegate())
+
+        self.multiple_select_premade_dashes_list_view.setStyleSheet("""
+            QListView#multiple_select_premade_dashes_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#multiple_select_premade_dashes_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#multiple_select_premade_dashes_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#multiple_select_premade_dashes_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.multiple_select_premade_dashes_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.multiple_select_premade_dashes_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.multiple_select_premade_dashes_list_view.setSpacing(3)
+
+        self.multiple_select_premade_dashes_list_view.selectionModel().selectionChanged.connect(self.change_multiple_select_premade_dashes)
+        select_multiple_premade_dashes_screen_layout.addWidget(self.multiple_select_premade_dashes_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        select_multiple_premade_dashes_screen_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_select_multiple_custom_dashes_screen(self):
+        select_multiple_custom_dashes_screen_layout = QVBoxLayout(self.select_multiple_custom_dashes_screen)
+
+        multiple_custom_dashes_instructions_widget = QWidget()
+        multiple_custom_dashes_instructions_widget.setObjectName("multiple_custom_dashes_instructions_widget")
+        multiple_custom_dashes_instructions_widget.setStyleSheet("""
+            QWidget#multiple_custom_dashes_instructions_widget{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        multiple_custom_dashes_instructions_label = QLabel("Press Enter to Input More Values")
+        multiple_custom_dashes_instructions_label.setObjectName("multiple_custom_dashes_instructions_label")
+        multiple_custom_dashes_instructions_label.setWordWrap(True)
+        multiple_custom_dashes_instructions_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        multiple_custom_dashes_instructions_label.setStyleSheet("""
+            QLabel#multiple_custom_dashes_instructions_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        multiple_custom_dashes_instructions_layout = QVBoxLayout(multiple_custom_dashes_instructions_widget)
+        multiple_custom_dashes_instructions_layout.addWidget(multiple_custom_dashes_instructions_label)
+        multiple_custom_dashes_instructions_layout.setContentsMargins(0,0,0,0)
+        multiple_custom_dashes_instructions_layout.setSpacing(0)
+
+        self.select_multiple_custom_dashes_input = QLineEdit()
+        self.select_multiple_custom_dashes_input.setObjectName("select_multiple_custom_dashes_input")
+        self.select_multiple_custom_dashes_input.setPlaceholderText("Custom Dashes:")
+        self.select_multiple_custom_dashes_input.setStyleSheet("""
+            QLineEdit#select_multiple_custom_dashes_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.select_multiple_custom_dashes_input.textChanged.connect(self.check_multiple_select_custom_dashes)
+        self.select_multiple_custom_dashes_input.setMinimumHeight(60)
+
+        select_multiple_custom_dashes_screen_layout.addWidget(multiple_custom_dashes_instructions_widget)
+        select_multiple_custom_dashes_screen_layout.addWidget(self.select_multiple_custom_dashes_input)
+        select_multiple_custom_dashes_screen_layout.addWidget(self.valid_multiple_custom_dashes_widget)
+        select_multiple_custom_dashes_screen_layout.addWidget(self.invalid_multiple_custom_dashes_widget)
+        select_multiple_custom_dashes_screen_layout.setContentsMargins(10,10,10,10)
+        select_multiple_custom_dashes_screen_layout.setSpacing(10)
+        select_multiple_custom_dashes_screen_layout.addStretch()
+
+    def create_select_dictionary_premade_dashes_screen(self):
+        select_dictionary_premade_dashes_screen_layout = QVBoxLayout(self.select_dictionary_premade_dashes_screen) 
+
+        self.select_dictionary_premade_dashes_key_input = QLineEdit()
+        self.select_dictionary_premade_dashes_key_input.setObjectName("select_dictionary_premade_dashes_key_input")
+        self.select_dictionary_premade_dashes_key_input.setPlaceholderText("Key:")
+        self.select_dictionary_premade_dashes_key_input.setStyleSheet("""
+            QLineEdit#select_dictionary_premade_dashes_key_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.select_dictionary_premade_dashes_key_input.textChanged.connect(self.change_dictionary_key_dashes)
+        self.select_dictionary_premade_dashes_key_input.setMinimumHeight(50)
+        
+        self.select_dictionary_premade_dashes_list_view = QListView()
+        self.select_dictionary_premade_dashes_model = QStringListModel(self.available_dashes)
+
+        self.select_dictionary_premade_dashes_list_view.setModel(self.select_dictionary_premade_dashes_model)
+        self.select_dictionary_premade_dashes_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.select_dictionary_premade_dashes_list_view.setObjectName("select_dictionary_premade_dashes_list_view")
+        self.select_dictionary_premade_dashes_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.select_dictionary_premade_dashes_list_view.setItemDelegate(CustomDelegate())
+
+        self.select_dictionary_premade_dashes_list_view.setStyleSheet("""
+            QListView#select_dictionary_premade_dashes_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#select_dictionary_premade_dashes_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#select_dictionary_premade_dashes_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#select_dictionary_premade_dashes_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.select_dictionary_premade_dashes_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.select_dictionary_premade_dashes_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.select_dictionary_premade_dashes_list_view.setSpacing(3)
+
+        self.select_dictionary_premade_dashes_list_view.clicked.connect(self.change_dictionary_value_premade_dashes)
+
+        select_dictionary_premade_dashes_screen_layout.addWidget(self.select_dictionary_premade_dashes_key_input)
+        select_dictionary_premade_dashes_screen_layout.addWidget(self.select_dictionary_premade_dashes_list_view)
+        select_dictionary_premade_dashes_screen_layout.setContentsMargins(10,10,10,10)
+        select_dictionary_premade_dashes_screen_layout.setSpacing(10)
+
+    def create_select_dictionary_custom_dashes_screen(self):
+        select_dictionary_custom_dashes_screen_layout = QVBoxLayout(self.select_dictionary_custom_dashes_screen) 
+
+        dictionary_custom_dashes_instructions_widget = QWidget()
+        dictionary_custom_dashes_instructions_widget.setObjectName("dictionary_custom_dashes_instructions_widget")
+        dictionary_custom_dashes_instructions_widget.setStyleSheet("""
+            QWidget#dictionary_custom_dashes_instructions_widget{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        dictionary_custom_dashes_instructions_label = QLabel("Press Enter to Input More Values")
+        dictionary_custom_dashes_instructions_label.setObjectName("dictionary_custom_dashes_instructions_label")
+        dictionary_custom_dashes_instructions_label.setWordWrap(True)
+        dictionary_custom_dashes_instructions_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        dictionary_custom_dashes_instructions_label.setStyleSheet("""
+            QLabel#dictionary_custom_dashes_instructions_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        dictionary_custom_dashes_instructions_layout = QVBoxLayout(dictionary_custom_dashes_instructions_widget)
+        dictionary_custom_dashes_instructions_layout.addWidget(dictionary_custom_dashes_instructions_label)
+        dictionary_custom_dashes_instructions_layout.setContentsMargins(0,0,0,0)
+        dictionary_custom_dashes_instructions_layout.setSpacing(0)
+
+        self.select_dictionary_custom_dashes_key_input = QLineEdit()
+        self.select_dictionary_custom_dashes_key_input.setObjectName("select_dictionary_custom_dashes_key_input")
+        self.select_dictionary_custom_dashes_key_input.setPlaceholderText("Key:")
+        self.select_dictionary_custom_dashes_key_input.setStyleSheet("""
+            QLineEdit#select_dictionary_custom_dashes_key_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.select_dictionary_custom_dashes_key_input.textChanged.connect(self.change_dictionary_key_dashes)
+        self.select_dictionary_custom_dashes_key_input.setMinimumHeight(50)
+
+        self.select_dictionary_custom_dashes_value_input = QLineEdit()
+        self.select_dictionary_custom_dashes_value_input.setObjectName("select_dictionary_custom_dashes_value_input")
+        self.select_dictionary_custom_dashes_value_input.setPlaceholderText("Value:")
+        self.select_dictionary_custom_dashes_value_input.setStyleSheet("""
+            QLineEdit#select_dictionary_custom_dashes_value_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.select_dictionary_custom_dashes_value_input.textChanged.connect(self.change_dictionary_value_custom_dashes)
+        self.select_dictionary_custom_dashes_value_input.setMinimumHeight(50)
+
+        select_dictionary_custom_dashes_screen_layout.addWidget(dictionary_custom_dashes_instructions_widget)
+        select_dictionary_custom_dashes_screen_layout.addWidget(self.select_dictionary_custom_dashes_key_input)
+        select_dictionary_custom_dashes_screen_layout.addWidget(self.select_dictionary_custom_dashes_value_input)
+        select_dictionary_custom_dashes_screen_layout.addWidget(self.valid_dictionary_custom_dashes_widget)
+        select_dictionary_custom_dashes_screen_layout.addWidget(self.invalid_dictionary_custom_dashes_widget)
+        select_dictionary_custom_dashes_screen_layout.setContentsMargins(10,10,10,10)
+        select_dictionary_custom_dashes_screen_layout.setSpacing(10)
+        select_dictionary_custom_dashes_screen_layout.addStretch()
+
+    def change_to_home_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 0
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_previous_screen(self):
+        self.hide_validity_widgets()
+        if (self.current_screen_idx == 0):
+            return
+
+        self.available_screens[self.current_screen_idx].hide()
+
+        if (self.current_screen_idx in [1,4,7]):
+            self.current_screen_idx = 0
+        if (self.current_screen_idx in [2,3]):
+            self.current_screen_idx = 1
+            self.select_single_custom_dashes_input.clear()
+        if (self.current_screen_idx in [5,6]):
+            self.current_screen_idx = 4
+            self.select_multiple_custom_dashes_input.clear()
+        if (self.current_screen_idx in [8,9]):
+            self.current_screen_idx = 7
+            self.select_dictionary_premade_dashes_key_input.clear()
+            self.select_dictionary_custom_dashes_key_input.clear()
+            self.select_dictionary_custom_dashes_value_input.clear()
+
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_single_dashes_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 1
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_select_single_premade_dashes_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 2
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_select_single_custom_dashes_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 3
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_multiple_dashes_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 4
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_select_multiple_premade_dashes_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 5
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_select_multiple_custom_dashes_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 6
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_dictionary_dashes_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 7
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_select_dictionary_premade_dashes_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 8
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_select_dictionary_custom_dashes_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 9
+        self.available_screens[self.current_screen_idx].show()
+
+    def turn_dashes_on_and_off(self):
+        self.initial_dashes_argument = not self.initial_dashes_argument
+        if (self.initial_dashes_argument):
+            self.turn_dashes_on_off_label.setText("Turn Dashes Off")
+        else:
+            self.turn_dashes_on_off_label.setText("Turn Dashes On")
+        self.dashes = self.initial_dashes_argument
+        self.update_dashes()
+
+    def change_single_select_premade_dashes(self,index):
+        self.dashes = self.single_select_premade_dashes_model.data(index, Qt.ItemDataRole.DisplayRole)
+        if ("None" in self.dashes):
+            self.dashes = ""
+        else:
+            self.dashes = self.dashes[self.dashes.index("(")+1:self.dashes.index(")")]
+        self.update_dashes()
+    
+    def change_single_select_custom_dashes(self):
+        custom_dashes = self.select_single_custom_dashes_input.text().strip()
+
+        if (custom_dashes == ""):
+            self.valid_single_custom_dashes_widget.hide()
+            self.invalid_single_custom_dashes_widget.hide()
+            self.dashes = ""
+            self.update_dashes()
+            return
+        
+        # Split by comma or space
+        if "," in custom_dashes:
+            custom_dashes = custom_dashes.split(",")
+        elif " " in custom_dashes:
+            custom_dashes = custom_dashes.split()
+        else:
+            custom_dashes = [custom_dashes]
+        
+        try:
+            custom_dashes = list(map(float, custom_dashes))
+            self.dashes = tuple(custom_dashes)
+
+            if (len(custom_dashes) < 4 or len(custom_dashes) % 2 == 1):
+                raise Exception
+            
+            self.valid_single_custom_dashes_widget.show()
+            self.invalid_single_custom_dashes_widget.hide()
+            
+        except:
+            self.valid_single_custom_dashes_widget.setVisible(False)
+            self.invalid_single_custom_dashes_widget.setVisible(True)
+        
+        self.update_dashes()
+
+    def change_multiple_select_premade_dashes(self):
+        selected_indexes = self.multiple_select_premade_dashes_list_view.selectedIndexes()
+        self.dashes = [index.data() for index in selected_indexes]
+        self.dashes = list(map(lambda x:x[x.index("(")+1:x.index(")")],self.dashes))
+        self.dashes = [dash if (dash != "\u2014") else "" for dash in self.dashes]
+        self.update_dashes()
+
+    def check_multiple_select_custom_dashes(self):
+        custom_dashes = self.select_multiple_custom_dashes_input.text().strip()
+
+        if (custom_dashes == ""):
+            self.valid_multiple_custom_dashes_widget.hide()
+            self.invalid_multiple_custom_dashes_widget.hide()
+            return False
+        
+        # Split by comma or space
+        if "," in custom_dashes:
+            custom_dashes = custom_dashes.split(",")
+        elif " " in custom_dashes:
+            custom_dashes = custom_dashes.split()
+        else:
+            custom_dashes = [custom_dashes]
+        
+        try:
+            custom_dashes = list(map(float, custom_dashes))
+
+            if (len(custom_dashes) < 4 or len(custom_dashes) % 2 == 1):
+                raise Exception
+
+            self.valid_multiple_custom_dashes_widget.show()
+            self.invalid_multiple_custom_dashes_widget.hide()
+
+            return True
+            
+        except:
+            self.valid_multiple_custom_dashes_widget.hide()
+            self.invalid_multiple_custom_dashes_widget.show()
+            return False
+
+    def change_dictionary_key_dashes(self):
+        if (self.select_dictionary_premade_dashes_key_input.text().strip() != ""):
+            self.dashes_dictionary_key = self.select_dictionary_premade_dashes_key_input.text().strip()
+        else:
+            self.dashes_dictionary_key = self.select_dictionary_custom_dashes_key_input.text().strip()
+
+    def change_dictionary_value_premade_dashes(self,index):
+        self.dashes_dictionary_value = self.select_dictionary_premade_dashes_model.data(index,Qt.ItemDataRole.DisplayRole)
+        if ("None" in self.dashes_dictionary_value):
+            self.dashes_dictionary_value = ""
+        else:
+            self.dashes_dictionary_value = self.dashes[self.dashes.index("(")+1:self.dashes.index(")")]
+        self.change_dictionary_select_dashes()
+        self.select_dictionary_premade_dashes_key_input.clear()
+
+    def change_dictionary_value_custom_dashes(self):
+        custom_dashes = self.select_dictionary_custom_dashes_value_input.text().strip()
+
+        if (custom_dashes == ""):
+            self.valid_dictionary_custom_dashes_widget.hide()
+            self.invalid_dictionary_custom_dashes_widget.hide()
+            return False
+        
+        # Split by comma or space
+        if "," in custom_dashes:
+            custom_dashes = custom_dashes.split(",")
+        elif " " in custom_dashes:
+            custom_dashes = custom_dashes.split()
+        else:
+            custom_dashes = [custom_dashes]
+        
+        try:
+            custom_dashes = list(map(float, custom_dashes))
+
+            if (len(custom_dashes) < 4 or len(custom_dashes) % 2 == 1):
+                raise Exception
+
+            self.dashes_dictionary_value = custom_dashes
+
+            self.valid_dictionary_custom_dashes_widget.show()
+            self.invalid_dictionary_custom_dashes_widget.hide()
+
+            return True
+            
+        except:
+            self.valid_dictionary_custom_dashes_widget.hide()
+            self.invalid_dictionary_custom_dashes_widget.show()
+            return False
+
+    def change_dictionary_select_dashes(self):
+        if (self.dashes_dictionary_key != "" and self.dashes_dictionary_value != ""):
+            dictionary_keys = list(self.dashes_dictionary.keys())
+            dictionary_values = list(self.dashes_dictionary.values())
+            if (self.dashes_dictionary_key not in dictionary_keys and self.dashes_dictionary_value not in dictionary_values):
+                self.dashes_dictionary[self.dashes_dictionary_key] = self.dashes_dictionary_value
+                self.dashes = self.dashes_dictionary
+                self.update_dashes()
+
+    def update_dashes(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_seaborn_legend("dashes",self.dashes)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["seaborn_legends"]["dashes"] = self.dashes
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
+
+    def add_new_custom_dashes(self):
+        if (not self.available_screens[6].isHidden()):
+            if (self.check_multiple_select_custom_dashes()):
+                custom_dashes = self.select_multiple_custom_dashes_input.text().strip()
+                if "," in custom_dashes:
+                    custom_dashes = custom_dashes.split(",")
+                elif " " in custom_dashes:
+                    custom_dashes = custom_dashes.split()
+                else:
+                    custom_dashes = [custom_dashes]
+                custom_dashes = list(map(float, custom_dashes))
+                
+                if (isinstance(self.dashes,list)):
+                    self.dashes.append(custom_dashes)
+                else:
+                    self.dashes = [custom_dashes]
+
+                self.select_multiple_custom_dashes_input.clear()
+
+                self.update_dashes()
+
+        if (not self.available_screens[9].isHidden()):
+            if (self.change_dictionary_value_custom_dashes()):
+                self.change_dictionary_select_dashes()
+
+                self.select_dictionary_custom_dashes_key_input.clear()
+                self.select_dictionary_custom_dashes_value_input.clear()
+
+    def reset_dashes_selection(self):
+        self.dashes = []
+        self.dashes_dictionary = dict()
+        self.dashes_dictionary_key = ""
+        self.dashes_dictionary_value = ""
+
+    def hide_validity_widgets(self):
+        self.valid_single_custom_dashes_widget.hide()
+        self.invalid_single_custom_dashes_widget.hide()
+
+    def mousePressEvent(self, event):
+        if (not self.select_single_custom_dashes_input.geometry().contains(event.position().toPoint())):
+            self.select_single_custom_dashes_input.clearFocus()
+        if (not self.select_multiple_custom_dashes_input.geometry().contains(event.position().toPoint())):
+            self.select_multiple_custom_dashes_input.clearFocus()
+        if (not self.select_dictionary_premade_dashes_key_input.geometry().contains(event.position().toPoint())):
+            self.select_dictionary_premade_dashes_key_input.clearFocus()
+        if (not self.select_dictionary_custom_dashes_key_input.geometry().contains(event.position().toPoint())):
+            self.select_dictionary_custom_dashes_key_input.clearFocus()
+        if (not self.select_dictionary_custom_dashes_value_input.geometry().contains(event.position().toPoint())):
+            self.select_dictionary_custom_dashes_value_input.clearFocus()
+        super().mousePressEvent(event)
+
+    def showEvent(self,event):
+        super().showEvent(event)
+        self.reset_dashes_selection()
+        self.change_to_home_screen()
+
 class legend_button(QDialog):
     def __init__(self,selected_graph, graph_display):
         super().__init__()
@@ -9034,7 +10976,8 @@ class legend_button(QDialog):
                                   handletextpad_adjustment_section,borderaxespad_adjustment_section,
                                   handlelength_adjustment_section,handleheight_adjustment_section,
                                   markerfirst_adjustment_section,seaborn_legend_adjustment_section,
-                                  seaborn_legend_off_adjustment_section,seaborn_legend_markers_adjustment_section]
+                                  seaborn_legend_off_adjustment_section,seaborn_legend_markers_adjustment_section,
+                                  seaborn_legend_dashes_adjustment_section]
 
         self.available_screens = dict()
 
@@ -9239,7 +11182,7 @@ class hue_button(QDialog):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
 
-        self.setWindowTitle("Customize Legend")
+        self.setWindowTitle("Customize Hue")
 
         self.selected_graph = selected_graph
         self.graph_display = graph_display 
@@ -9301,7 +11244,7 @@ class hue_button(QDialog):
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 rgba(94, 255, 234, 1),   
                     stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:0.6 rgba(150, 220, 255, 1),
                     stop:1 rgba(180, 200, 255, 1)  
                 );
                 border: 2px solid black;
