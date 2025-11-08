@@ -52,8 +52,8 @@ class PlotManager:
     def update_seaborn_legend(self,parameter,new_value):
         self.db.update(lambda db: db["legend"]["seaborn_legends"].update({parameter:new_value}) or db, Query().version == self.current_version)
 
-    def update_grid(self,grid):
-        self.db.update({"grid":grid},Query().version == self.current_version)
+    def update_grid(self,parameter,new_value):
+        self.db.update(lambda db: db["grid"].update({parameter:new_value}) or db, Query().version == self.current_version)
 
     def update_hue(self,hue):
         self.db.update({"hue":hue},Query().version == self.current_version)
