@@ -11148,6 +11148,205 @@ class seaborn_legend_size_order_adjustment_section(QWidget):
         self.size_value = self.get_size_values()
         self.size_order_adjustment_input.clear()
 
+class seaborn_legend_size_order_adjustment_section(QWidget):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        self.hue_values = self.get_hue_values()
+
+        self.hue_order = []
+
+        #-----Valid Size Order Widget-----
+        self.valid_hue_order_widget = QWidget()
+        self.valid_hue_order_widget.setObjectName("valid_hue_order_widget")
+        self.valid_hue_order_widget.setStyleSheet("""
+            QWidget#valid_hue_order_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_hue_order_label = QLabel("Valid Hue Order")
+        self.valid_hue_order_label.setObjectName("valid_hue_order_label")
+        self.valid_hue_order_label.setWordWrap(True)
+        self.valid_hue_order_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_hue_order_label.setStyleSheet("""
+            QLabel#valid_hue_order_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        valid_hue_order_widget_layout = QVBoxLayout(self.valid_hue_order_widget)
+        valid_hue_order_widget_layout.addWidget(self.valid_hue_order_label)
+        valid_hue_order_widget_layout.setContentsMargins(0,0,0,0)
+        valid_hue_order_widget_layout.setSpacing(0)
+
+        #-----Invalid Custom Dashes Widget and Label-----
+        self.invalid_hue_order_widget = QWidget()
+        self.invalid_hue_order_widget.setObjectName("invalid_hue_order_widget")
+        self.invalid_hue_order_widget.setStyleSheet("""
+            QWidget#invalid_hue_order_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_hue_order_label = QLabel("Invalid Hue Order")
+        self.invalid_hue_order_label.setObjectName("invalid_hue_order_label")
+        self.invalid_hue_order_label.setWordWrap(True)
+        self.invalid_hue_order_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_hue_order_label.setStyleSheet("""
+            QLabel#invalid_hue_order_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        invalid_hue_order_widget_layout = QVBoxLayout(self.invalid_hue_order_widget)
+        invalid_hue_order_widget_layout.addWidget(self.invalid_hue_order_label)
+        invalid_hue_order_widget_layout.setContentsMargins(0,0,0,0)
+        invalid_hue_order_widget_layout.setSpacing(0)
+
+        #-----Set the Height of both widgets and hide them-----
+        self.valid_hue_order_widget.setMinimumHeight(50)
+        self.invalid_hue_order_widget.setMinimumHeight(50)
+        
+        self.valid_hue_order_widget.hide()
+        self.invalid_hue_order_widget.hide()
+
+        #-----Size Order Screen-----
+        self.hue_order_adjustment_screen = QWidget()
+        self.hue_order_adjustment_screen.setObjectName("hue_order_adjustment_screen")
+        self.hue_order_adjustment_screen.setStyleSheet("""
+            QWidget#hue_order_adjustment_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.hue_order_adjustment_input = QLineEdit()
+        self.hue_order_adjustment_input.setObjectName("hue_order_adjustment_input")
+        self.hue_order_adjustment_input.setPlaceholderText("Hue Order: ")
+        self.hue_order_adjustment_input.setStyleSheet("""
+            QLineEdit#hue_order_adjustment_input{ 
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.hue_order_adjustment_input.textChanged.connect(self.change_hue_order)
+
+        self.hue_order_adjustment_input.setMinimumHeight(60)
+
+        hue_order_adjustment_screen_layout = QVBoxLayout(self.hue_order_adjustment_screen)
+        hue_order_adjustment_screen_layout.addWidget(self.hue_order_adjustment_input)
+        hue_order_adjustment_screen_layout.addWidget(self.valid_hue_order_widget)
+        hue_order_adjustment_screen_layout.addWidget(self.invalid_hue_order_widget)
+        hue_order_adjustment_screen_layout.setContentsMargins(10,10,10,10)
+        hue_order_adjustment_screen_layout.setSpacing(10) 
+        hue_order_adjustment_screen_layout.addStretch()
+
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.hue_order_adjustment_screen)
+        main_layout.setContentsMargins(0,0,0,0)
+        main_layout.setSpacing(0)
+
+    def change_hue_order(self):
+        hue_order = self.hue_order_adjustment_input.text().strip().split(" ")
+        hue_order = list(filter(lambda x: x != "",hue_order))
+
+        if (self.hue_value != []):
+            if (len(self.hue_value) != len(hue_order)):
+                self.valid_hue_order_widget.hide()
+                self.invalid_hue_order_widget.show()
+                return
+            else:
+                for i in hue_order:
+                    if (i not in self.hue_value): 
+                        self.valid_hue_order_widget.hide()
+                        self.invalid_hue_order_widget.show()
+                        return
+                self.valid_hue_order_widget.show()
+                self.invalid_hue_order_widget.hide()
+                self.hue_order = hue_order
+        else:
+            self.hue_order = hue_order
+        
+        self.update_hue_order()
+
+    def update_hue_order(self):
+        db = self.plot_manager.get_db()
+        if (db != []): 
+            self.plot_manager.update_seaborn_legend("hue_order",self.hue_order)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["seaborn_legends"]["hue_order"] = self.hue_order
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
+
+    def get_hue_values(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            dataset = pd.read_csv("./dataset/user_dataset.csv")
+            hue_parameter = db["hue"]
+            if (hue_parameter == None):
+                return []
+            if ("self.dataset" in hue_parameter):
+                return []
+            return dataset[hue_parameter].unique()
+        else:
+            return []
+        
+    def mousePressEvent(self,event):
+        if (not self.hue_order_adjustment_input.geometry().contains(event.position().toPoint())):
+            self.hue_order_adjustment_input.clearFocus()
+
+    def showEvent(self,event):
+        super().showEvent(event)
+        self.hue_value = self.get_hue_values()
+        self.hue_order_adjustment_input.clear()
+
 class legend_button(QDialog):
     def __init__(self,selected_graph, graph_display):
         super().__init__()
@@ -11175,7 +11374,8 @@ class legend_button(QDialog):
                                   handlelength_adjustment_section,handleheight_adjustment_section,
                                   markerfirst_adjustment_section,seaborn_legend_adjustment_section,
                                   seaborn_legend_off_adjustment_section,seaborn_legend_markers_adjustment_section,
-                                  seaborn_legend_dashes_adjustment_section,seaborn_legend_size_order_adjustment_section]
+                                  seaborn_legend_dashes_adjustment_section,seaborn_legend_size_order_adjustment_section,
+                                  seaborn_legend_size_order_adjustment_section]
 
         self.available_screens = dict()
 
