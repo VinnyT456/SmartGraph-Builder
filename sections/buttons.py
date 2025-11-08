@@ -1,7 +1,7 @@
 import pstats
 import re
 from PyQt6.QtCore import QLine, QSortFilterProxyModel, QStringListModel, Qt
-from PyQt6.QtGui import QBackingStore, QFont, QKeySequence, QPixmap, QShortcut, QShowEvent
+from PyQt6.QtGui import QBackingStore, QFont, QImageWriter, QKeySequence, QPixmap, QShortcut, QShowEvent
 from PyQt6.QtWidgets import (
     QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QPushButton, 
     QSizePolicy, QTableView, QWidget, QVBoxLayout, QStyledItemDelegate, QSizePolicy
@@ -26,6 +26,7 @@ plot_json = {
         },
         "title":None,
         "legend":{
+            "label":None,
             "loc":"best",
             "bbox_to_anchor":None,
             "ncol":1,
@@ -859,6 +860,101 @@ class title_button(QDialog):
         self.title_created = False
         self.close()
 
+class label_adjustment_section(QWidget):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+        
+        self.plot_manager = PlotManager()
+        
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+
+        #Create a section to display the ncol section and style it
+        self.legend_label_adjustment_section = QWidget()
+        self.legend_label_adjustment_section.setObjectName("legend_label_adjustment_section")
+        self.legend_label_adjustment_section.setStyleSheet("""
+            QWidget#legend_label_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        #Initialize the ncol value to be 0
+        self.label_value = None
+
+        #Create a line edit object for the user to input the ncol
+        self.label_input = QLineEdit()
+        self.label_input.setObjectName("label_input")
+        self.label_input.setStyleSheet(""")
+            QLineEdit#label_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.label_input.setPlaceholderText("Label: ")
+
+        #Set the height of the line edit object to make it look good
+        self.label_input.setFixedHeight(60)
+
+        #Connect any changes with the text to an update function
+        self.label_input.textChanged.connect(self.change_label)
+
+        #Create a layout for the label adjustment section and add the line edit object to it
+        legend_label_section_layout = QVBoxLayout(self.legend_label_adjustment_section)
+        legend_label_section_layout.addWidget(self.label_input)
+    
+        #Add the margins, spacing, and stretch to the layout to make it look good
+        legend_label_section_layout.setContentsMargins(10,10,10,10)
+        legend_label_section_layout.setSpacing(10)
+        legend_label_section_layout.addStretch()
+
+        #Add the ncol adjustment section to the main widget
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.legend_label_adjustment_section)
+        
+        #Set both the spacing and margins for the main widget to make sure it fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+    
+    def change_label(self):
+        #Extract the ncol input from the user and remove any excess text from it
+        self.label_value = self.label_input.text().strip()
+
+    def update_ncol(self):
+        #Get the newest json entries from the plot manager
+        db = self.plot_manager.get_db()
+
+        #Check if db is empty or not. If it is empty then create a new entry with the ncol value
+        #If the db isn't empty then update the db with the new ncol value.
+        if (db != []):
+            self.plot_manager.update_legend("label",self.label_value)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["label"] = self.label_value
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
+
+    def mousePressEvent(self, event):
+        if not self.label_input.geometry().contains(event.position().toPoint()):
+            self.label_input.clearFocus()
+        super().mousePressEvent(event)
+
 class loc_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
@@ -1031,7 +1127,197 @@ class loc_adjustment_section(QWidget):
         if not self.loc_search_bar.geometry().contains(event.position().toPoint()):
             self.loc_search_bar.clearFocus()
         super().mousePressEvent(event)
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
         
+        self.plot_manager = PlotManager()
+        
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+
+        #Create a section to display the ncol section and style it
+        self.ncol_adjustment_section = QWidget()
+        self.ncol_adjustment_section.setObjectName("adjust_ncol_section")
+        self.ncol_adjustment_section.setStyleSheet("""
+            QWidget#adjust_ncol_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+            QLineEdit{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        #Initialize the ncol value to be 0
+        self.ncol_value = 0
+
+        #Create a line edit object for the user to input the ncol
+        self.ncol_input = QLineEdit()
+        self.ncol_input.setPlaceholderText("ncol: ")
+
+        #Set the height of the line edit object to make it look good
+        self.ncol_input.setFixedHeight(60)
+
+        #Connect any changes with the text to an update function
+        self.ncol_input.textChanged.connect(self.change_ncol)
+
+        #Create two widget to display valid and invalid inputs
+        self.valid_input_widget = QWidget()
+        self.valid_input_widget.setObjectName("valid_input")
+        self.valid_input_widget.setStyleSheet("""
+            QWidget#valid_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_input_label = QLabel("Valid Input")
+        self.valid_input_label.setWordWrap(True)
+        self.valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_input_label.setObjectName("valid_input_label")
+        self.valid_input_label.setStyleSheet("""
+            QLabel#valid_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_input_layout = QVBoxLayout(self.valid_input_widget)
+        valid_input_layout.addWidget(self.valid_input_label)
+        valid_input_layout.setSpacing(0)
+        valid_input_layout.setContentsMargins(0,0,0,0)
+
+        self.invalid_input_widget = QWidget()
+        self.invalid_input_widget.setObjectName("invalid_input")
+        self.invalid_input_widget.setStyleSheet("""
+            QWidget#invalid_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_input_label = QLabel("Invalid Input")
+        self.invalid_input_label.setWordWrap(True)
+        self.invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_input_label.setObjectName("invalid_input_label")
+        self.invalid_input_label.setStyleSheet("""
+            QLabel#invalid_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        invalid_input_layout = QVBoxLayout(self.invalid_input_widget)
+        invalid_input_layout.addWidget(self.invalid_input_label)
+        invalid_input_layout.setSpacing(0)
+        invalid_input_layout.setContentsMargins(0,0,0,0)
+
+        self.valid_input_widget.setMaximumHeight(50)
+        self.invalid_input_widget.setMaximumHeight(50)
+
+        self.valid_input_widget.hide()
+        self.invalid_input_widget.hide()
+
+        #Create a layout for the ncol adjustment section and add the line edit object to it
+        ncol_section_layout = QVBoxLayout(self.ncol_adjustment_section)
+        ncol_section_layout.addWidget(self.ncol_input)
+        ncol_section_layout.addWidget(self.valid_input_widget)
+        ncol_section_layout.addWidget(self.invalid_input_widget)
+    
+        #Add the margins, spacing, and stretch to the layout to make it look good
+        ncol_section_layout.setContentsMargins(10,10,10,10)
+        ncol_section_layout.setSpacing(10)
+        ncol_section_layout.addStretch()
+
+        #Add the ncol adjustment section to the main widget
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.ncol_adjustment_section)
+        
+        #Set both the spacing and margins for the main widget to make sure it fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+    
+    def change_ncol(self):
+        #Extract the ncol input from the user and remove any excess text from it
+        ncol_input = self.ncol_input.text().strip()
+
+        if (ncol_input == ""):
+            self.valid_input_widget.hide()
+            self.invalid_input_widget.hide()
+            self.ncol_value = 1
+            self.update_ncol()
+            return 
+
+        #Only update the ncol value in the json file if the input is valid
+        try:
+            self.ncol_value = int(ncol_input)
+            self.valid_input_widget.show()
+            self.invalid_input_widget.hide()
+        except:
+            self.valid_input_widget.hide()
+            self.invalid_input_widget.show()
+        else:
+            self.update_ncol()
+
+    def update_ncol(self):
+        #Get the newest json entries from the plot manager
+        db = self.plot_manager.get_db()
+
+        #Check if db is empty or not. If it is empty then create a new entry with the ncol value
+        #If the db isn't empty then update the db with the new ncol value.
+        if (db != []):
+            self.plot_manager.update_legend("ncol",self.ncol_value)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["ncol"] = self.ncol_value
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+
+    def mousePressEvent(self, event):
+        if not self.ncol_input.geometry().contains(event.position().toPoint()):
+            self.ncol_input.clearFocus()
+        super().mousePressEvent(event)
+
 class bbox_to_anchor_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
