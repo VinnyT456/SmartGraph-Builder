@@ -1,6 +1,7 @@
+import pstats
 import re
 from PyQt6.QtCore import QLine, QSortFilterProxyModel, QStringListModel, Qt
-from PyQt6.QtGui import QFont, QKeySequence, QPixmap, QShortcut, QShowEvent
+from PyQt6.QtGui import QBackingStore, QFont, QKeySequence, QPixmap, QShortcut, QShowEvent
 from PyQt6.QtWidgets import (
     QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QPushButton, 
     QSizePolicy, QTableView, QWidget, QVBoxLayout, QStyledItemDelegate, QSizePolicy
@@ -10950,6 +10951,203 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
         self.reset_dashes_selection()
         self.change_to_home_screen()
 
+class seaborn_legend_size_order_adjustment_section(QWidget):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        self.size_values = self.get_size_values()
+
+        self.size_order = []
+
+        #-----Valid Size Order Widget-----
+        self.valid_size_order_widget = QWidget()
+        self.valid_size_order_widget.setObjectName("valid_size_order_widget")
+        self.valid_size_order_widget.setStyleSheet("""
+            QWidget#valid_size_order_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_size_order_label = QLabel("Valid Size Order")
+        self.valid_size_order_label.setObjectName("valid_size_order_label")
+        self.valid_size_order_label.setWordWrap(True)
+        self.valid_size_order_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_size_order_label.setStyleSheet("""
+            QLabel#valid_size_order_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        valid_size_order_widget_layout = QVBoxLayout(self.valid_size_order_widget)
+        valid_size_order_widget_layout.addWidget(self.valid_size_order_label)
+        valid_size_order_widget_layout.setContentsMargins(0,0,0,0)
+        valid_size_order_widget_layout.setSpacing(0)
+
+        #-----Invalid Custom Dashes Widget and Label-----
+        self.invalid_size_order_widget = QWidget()
+        self.invalid_size_order_widget.setObjectName("invalid_size_order_widget")
+        self.invalid_size_order_widget.setStyleSheet("""
+            QWidget#invalid_size_order_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_size_order_label = QLabel("Invalid Size Order")
+        self.invalid_size_order_label.setObjectName("invalid_size_order_label")
+        self.invalid_size_order_label.setWordWrap(True)
+        self.invalid_size_order_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_size_order_label.setStyleSheet("""
+            QLabel#invalid_size_order_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        invalid_size_order_widget_layout = QVBoxLayout(self.invalid_size_order_widget)
+        invalid_size_order_widget_layout.addWidget(self.invalid_size_order_label)
+        invalid_size_order_widget_layout.setContentsMargins(0,0,0,0)
+        invalid_size_order_widget_layout.setSpacing(0)
+
+        #-----Set the Height of both widgets and hide them-----
+        self.valid_size_order_widget.setMinimumHeight(50)
+        self.invalid_size_order_widget.setMinimumHeight(50)
+        
+        self.valid_size_order_widget.hide()
+        self.invalid_size_order_widget.hide()
+
+        #-----Size Order Screen-----
+        self.size_order_adjustment_screen = QWidget()
+        self.size_order_adjustment_screen.setObjectName("size_order_adjustment_screen")
+        self.size_order_adjustment_screen.setStyleSheet("""
+            QWidget#size_order_adjustment_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.size_order_adjustment_input = QLineEdit()
+        self.size_order_adjustment_input.setObjectName("size_order_adjustment_input")
+        self.size_order_adjustment_input.setPlaceholderText("Size Order: ")
+        self.size_order_adjustment_input.setStyleSheet("""
+            QLineEdit#size_order_adjustment_input{ 
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.size_order_adjustment_input.textChanged.connect(self.change_size_order)
+
+        self.size_order_adjustment_input.setMinimumHeight(60)
+
+        size_order_adjustment_screen_layout = QVBoxLayout(self.size_order_adjustment_screen)
+        size_order_adjustment_screen_layout.addWidget(self.size_order_adjustment_input)
+        size_order_adjustment_screen_layout.addWidget(self.valid_size_order_widget)
+        size_order_adjustment_screen_layout.addWidget(self.invalid_size_order_widget)
+        size_order_adjustment_screen_layout.setContentsMargins(10,10,10,10)
+        size_order_adjustment_screen_layout.setSpacing(10) 
+        size_order_adjustment_screen_layout.addStretch()
+
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.size_order_adjustment_screen)
+        main_layout.setContentsMargins(0,0,0,0)
+        main_layout.setSpacing(0)
+
+    def change_size_order(self):
+        size_order = self.size_order_adjustment_input.text().strip().split(" ")
+        size_order = list(filter(lambda x: x != "",size_order))
+
+        if (self.size_value != []):
+            if (len(self.size_value) != len(size_order)):
+                self.valid_size_order_widget.hide()
+                self.invalid_size_order_widget.show()
+                return
+            else:
+                for i in size_order:
+                    if (i not in self.size_value): 
+                        self.valid_size_order_widget.hide()
+                        self.invalid_size_order_widget.show()
+                        return
+                self.valid_size_order_widget.show()
+                self.invalid_size_order_widget.hide()
+                self.size_order = size_order
+        else:
+            self.size_order = size_order
+        
+        self.update_size_order()
+
+    def update_size_order(self):
+        db = self.plot_manager.get_db()
+        if (db != []): 
+            self.plot_manager.update_seaborn_legend("size_order",self.size_order)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["seaborn_legends"]["size_order"] = self.size_order
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
+
+    def get_size_values(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            dataset = pd.read_csv("./dataset/user_dataset.csv")
+            size_parameter = db["size"]
+            if (size_parameter == None):
+                return []
+            return dataset[size_parameter].unique()
+        else:
+            return []
+        
+    def mousePressEvent(self,event):
+        if (not self.size_order_adjustment_input.geometry().contains(event.position().toPoint())):
+            self.size_order_adjustment_input.clearFocus()
+
+    def showEvent(self,event):
+        super().showEvent(event)
+        self.size_value = self.get_size_values()
+        self.size_order_adjustment_input.clear()
+
 class legend_button(QDialog):
     def __init__(self,selected_graph, graph_display):
         super().__init__()
@@ -10977,7 +11175,7 @@ class legend_button(QDialog):
                                   handlelength_adjustment_section,handleheight_adjustment_section,
                                   markerfirst_adjustment_section,seaborn_legend_adjustment_section,
                                   seaborn_legend_off_adjustment_section,seaborn_legend_markers_adjustment_section,
-                                  seaborn_legend_dashes_adjustment_section]
+                                  seaborn_legend_dashes_adjustment_section,seaborn_legend_size_order_adjustment_section]
 
         self.available_screens = dict()
 
