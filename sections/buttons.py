@@ -1,3 +1,4 @@
+from logging import raiseExceptions
 import pstats
 import re
 from PyQt6.QtCore import QLine, QSortFilterProxyModel, QStringListModel, Qt
@@ -6,6 +7,7 @@ from PyQt6.QtWidgets import (
     QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QPushButton, 
     QSizePolicy, QTableView, QWidget, QVBoxLayout, QStyledItemDelegate, QSizePolicy
 )
+from numba.core.compiler import PassManager
 from pandas.core.methods.describe import select_describe_func
 from sections.dataset import PrepareDataset
 from sections.plot_manager import PlotManager
@@ -13611,7 +13613,677 @@ class grid_linestyle_adjustment_section(QWidget):
         self.graph_display = graph_display
         self.plot_manager = PlotManager()
 
+        self.premade_linestyle_options = ["solid (-)","dashed (--)","dashdot (-.)","dotted (:)","None (—)"]
+        self.linestyle_arguments = list(map(lambda x:x[x.index("(")+1:x.index(")")],self.premade_linestyle_options))
+        self.linestyle_arguments = [linestyle if "None" not in name else "" for name,linestyle in zip(self.premade_linestyle_options,self.linestyle_arguments)]
+
         self.grid_linestyle = ""
+
+        self.grid_offset = ""
+        self.grid_sequence = ""
+
+        #-----Valid Offset Widget-----
+        self.valid_offset_widget = QWidget()
+        self.valid_offset_widget.setObjectName("valid_offset_widget")
+        self.valid_offset_widget.setStyleSheet("""
+            QWidget#valid_offset_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_offset_label = QLabel("Valid Offset")
+        self.valid_offset_label.setObjectName("valid_offset_label")
+        self.valid_offset_label.setWordWrap(True)
+        self.valid_offset_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_offset_label.setStyleSheet("""
+            QLabel#valid_offset_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        valid_offset_widget_layout = QVBoxLayout(self.valid_offset_widget)
+        valid_offset_widget_layout.addWidget(self.valid_offset_label)
+        valid_offset_widget_layout.setContentsMargins(0,0,0,0)
+        valid_offset_widget_layout.setSpacing(0)
+
+        #-----Invalid Offset Widget-----
+        self.invalid_offset_widget = QWidget()
+        self.invalid_offset_widget.setObjectName("invalid_offset_widget")
+        self.invalid_offset_widget.setStyleSheet("""
+            QWidget#invalid_offset_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_offset_label = QLabel("Invalid Offset")
+        self.invalid_offset_label.setObjectName("invalid_offset_label")
+        self.invalid_offset_label.setWordWrap(True)
+        self.invalid_offset_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_offset_label.setStyleSheet("""
+            QLabel#invalid_offset_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        invalid_offset_widget_layout = QVBoxLayout(self.invalid_offset_widget)
+        invalid_offset_widget_layout.addWidget(self.invalid_offset_label)
+        invalid_offset_widget_layout.setContentsMargins(0,0,0,0)
+        invalid_offset_widget_layout.setSpacing(0)
+
+        #-----Valid On Off Sequence Widget-----
+        self.valid_on_off_sequence_widget = QWidget()
+        self.valid_on_off_sequence_widget.setObjectName("valid_on_off_sequence_widget")
+        self.valid_on_off_sequence_widget.setStyleSheet("""
+            QWidget#valid_on_off_sequence_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_on_off_sequence_label = QLabel("Valid Sequence")
+        self.valid_on_off_sequence_label.setObjectName("valid_on_off_sequence_label")
+        self.valid_on_off_sequence_label.setWordWrap(True)
+        self.valid_on_off_sequence_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_on_off_sequence_label.setStyleSheet("""
+            QLabel#valid_on_off_sequence_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        valid_on_off_sequence_widget_layout = QVBoxLayout(self.valid_on_off_sequence_widget)
+        valid_on_off_sequence_widget_layout.addWidget(self.valid_on_off_sequence_label)
+        valid_on_off_sequence_widget_layout.setContentsMargins(0,0,0,0)
+        valid_on_off_sequence_widget_layout.setSpacing(0)
+
+        #-----Invalid On Off Sequence Widget-----
+        self.invalid_on_off_sequence_widget = QWidget()
+        self.invalid_on_off_sequence_widget.setObjectName("invalid_on_off_sequence_widget")
+        self.invalid_on_off_sequence_widget.setStyleSheet("""
+            QWidget#invalid_on_off_sequence_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_on_off_sequence_label = QLabel("Invalid Sequence")
+        self.invalid_on_off_sequence_label.setObjectName("invalid_on_off_sequence_label")
+        self.invalid_on_off_sequence_label.setWordWrap(True)
+        self.invalid_on_off_sequence_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_on_off_sequence_label.setStyleSheet("""
+            QLabel#invalid_on_off_sequence_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        invalid_on_off_sequence_widget_layout = QVBoxLayout(self.invalid_on_off_sequence_widget)
+        invalid_on_off_sequence_widget_layout.addWidget(self.invalid_on_off_sequence_label)
+        invalid_on_off_sequence_widget_layout.setContentsMargins(0,0,0,0)
+        invalid_on_off_sequence_widget_layout.setSpacing(0)
+
+        #-----Control the Widget Size and hide them-----
+        self.valid_offset_widget.setMinimumHeight(50)
+        self.invalid_offset_widget.setMinimumHeight(50)
+        
+        self.valid_on_off_sequence_widget.setMinimumHeight(50)
+        self.invalid_on_off_sequence_widget.setMinimumHeight(50)
+
+        self.valid_offset_widget.hide()
+        self.invalid_offset_widget.hide()
+
+        self.valid_on_off_sequence_widget.hide()
+        self.invalid_on_off_sequence_widget.hide()
+
+        #-----Grid Linestyle Adjustment Screen-----
+        self.grid_linestyle_adjustment_screen = QWidget()
+        self.grid_linestyle_adjustment_screen.setObjectName("grid_linestyle_adjustment_screen")
+        self.grid_linestyle_adjustment_screen.setStyleSheet("""
+            QWidget#grid_linestyle_adjustment_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        #-----Premade Linestyle Button and Label-----
+        self.premade_linestyle_button = QPushButton()
+        self.premade_linestyle_button.setObjectName("premade_linestyle_button")
+        self.premade_linestyle_button.setStyleSheet("""
+            QPushButton#premade_linestyle_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#premade_linestyle_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.premade_linestyle_label = QLabel("Premade Linestyle")
+        self.premade_linestyle_label.setObjectName("premade_linestyle_label")
+        self.premade_linestyle_label.setWordWrap(True)
+        self.premade_linestyle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.premade_linestyle_label.setStyleSheet("""
+            QLabel#premade_linestyle_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.premade_linestyle_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+        premade_linestyle_button_layout = QVBoxLayout(self.premade_linestyle_button)
+        premade_linestyle_button_layout.addWidget(self.premade_linestyle_label)
+        premade_linestyle_button_layout.setContentsMargins(0,0,0,0)
+        premade_linestyle_button_layout.setSpacing(0)
+
+        #-----Custom Linestyle Button and Label-----
+        self.custom_linestyle_button = QPushButton()
+        self.custom_linestyle_button.setObjectName("custom_linestyle_button")
+        self.custom_linestyle_button.setStyleSheet("""
+            QPushButton#custom_linestyle_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#custom_linestyle_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        self.custom_linestyle_label = QLabel("Custom Linestyle")
+        self.custom_linestyle_label.setObjectName("custom_linestyle_label")
+        self.custom_linestyle_label.setWordWrap(True)
+        self.custom_linestyle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.custom_linestyle_label.setStyleSheet("""
+            QLabel#custom_linestyle_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.custom_linestyle_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+        custom_linestyle_button_layout = QVBoxLayout(self.custom_linestyle_button)
+        custom_linestyle_button_layout.addWidget(self.custom_linestyle_label)
+        custom_linestyle_button_layout.setContentsMargins(0,0,0,0)
+        custom_linestyle_button_layout.setSpacing(0)
+
+        #-----Set the size for each button-----
+        self.premade_linestyle_button.setMinimumHeight(45)
+        self.custom_linestyle_button.setMinimumHeight(45)
+
+        #-----Connect Each Button to its associated function-----
+        self.premade_linestyle_button.clicked.connect(self.change_to_premade_linestyle_screen)
+        self.custom_linestyle_button.clicked.connect(self.change_to_custom_linestyle_screen)
+
+        #-----Add Buttons to Grid Linestyle Adjustment Screen-----
+        grid_linestyle_adjustment_screen_layout = QVBoxLayout(self.grid_linestyle_adjustment_screen)
+        grid_linestyle_adjustment_screen_layout.addWidget(self.premade_linestyle_button)
+        grid_linestyle_adjustment_screen_layout.addWidget(self.custom_linestyle_button)
+        grid_linestyle_adjustment_screen_layout.setContentsMargins(10,10,10,10)
+        grid_linestyle_adjustment_screen_layout.setSpacing(5)
+        grid_linestyle_adjustment_screen_layout.addStretch()
+
+        #-----Premade Linestyle Screen-----
+        self.premade_linestyle_screen = QWidget()
+        self.premade_linestyle_screen.setObjectName("premade_linestyle_screen")
+        self.premade_linestyle_screen.setStyleSheet("""
+            QWidget#premade_linestyle_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.create_premade_linestyle_screen()
+        self.premade_linestyle_screen.hide()
+
+        #-----Custom Linestyle Screen-----
+        self.custom_linestyle_screen = QWidget()
+        self.custom_linestyle_screen.setObjectName("custom_linestyle_screen")
+        self.custom_linestyle_screen.setStyleSheet("""
+            QWidget#custom_linestyle_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.create_custom_linestyle_screen()
+        self.custom_linestyle_screen.hide()
+
+        #-----Available Screen and Screen Index-----
+        self.available_screens = [self.grid_linestyle_adjustment_screen,self.premade_linestyle_screen,
+                                self.custom_linestyle_screen]
+        self.current_screen_idx = 0
+
+        #-----Add the Screens to the Main Layout-----
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.grid_linestyle_adjustment_screen)
+        main_layout.addWidget(self.premade_linestyle_screen)
+        main_layout.addWidget(self.custom_linestyle_screen)
+        main_layout.setContentsMargins(0,0,0,0)
+        main_layout.setSpacing(0)
+
+        #-----Keyboard Shortcut-----
+        home_screen_shortcut = QShortcut(QKeySequence("left"),self)
+        home_screen_shortcut.activated.connect(self.change_to_home_screen)
+
+    def create_premade_linestyle_screen(self):
+        premade_linestyle_screen_layout = QVBoxLayout(self.premade_linestyle_screen)
+
+        self.premade_linestyle_list_view = QListView()
+        self.premade_linestyle_model = QStringListModel(self.premade_linestyle_options)
+
+        self.premade_linestyle_list_view.setModel(self.premade_linestyle_model)
+        self.premade_linestyle_list_view.setObjectName("premade_linestyle_list_view")
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.premade_linestyle_list_view.setItemDelegate(CustomDelegate())
+
+        self.premade_linestyle_list_view.setStyleSheet("""
+            QListView#premade_linestyle_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#premade_linestyle_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#premade_linestyle_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#premade_linestyle_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.premade_linestyle_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.premade_linestyle_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.premade_linestyle_list_view.setSpacing(3)
+
+        self.premade_linestyle_list_view.clicked.connect(self.change_premade_linestyle)
+
+        premade_linestyle_screen_layout.addWidget(self.premade_linestyle_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        premade_linestyle_screen_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_custom_linestyle_screen(self):
+        custom_linestyle_screen_layout = QVBoxLayout(self.custom_linestyle_screen)
+
+        instructions_widget = QWidget()
+        instructions_widget.setObjectName("instructions_widget")
+        instructions_widget.setStyleSheet("""
+            QWidget#instructions_widget{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+            }
+        """)
+
+        instructions_label = QLabel("Enter the Sequence Separated By Spaces")
+        instructions_label.setObjectName("instructions_label")
+        instructions_label.setWordWrap(True)
+        instructions_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        instructions_label.setStyleSheet("""
+            font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+        """)
+
+        instructions_layout = QVBoxLayout(instructions_widget)
+        instructions_layout.addWidget(instructions_label)
+        instructions_layout.setContentsMargins(0,0,0,0)
+        instructions_layout.setSpacing(0)
+
+        self.offset_input = QLineEdit()
+        self.offset_input.setObjectName("offset_input")
+        self.offset_input.setPlaceholderText("Offset:")
+        self.offset_input.setStyleSheet("""
+            QLineEdit#offset_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.sequence_input = QLineEdit()
+        self.sequence_input.setObjectName("on_off_sequence")
+        self.sequence_input.setPlaceholderText("Sequence:")
+        self.sequence_input.setStyleSheet("""
+            QLineEdit#on_off_sequence{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.offset_input.setMinimumHeight(60)
+        self.sequence_input.setMinimumHeight(60)
+
+        self.offset_input.textChanged.connect(self.change_grid_linestyle_offset)
+        self.sequence_input.textChanged.connect(self.change_grid_linestyle_sequence)
+
+        custom_linestyle_screen_layout.addWidget(instructions_widget)
+        custom_linestyle_screen_layout.addWidget(self.offset_input)
+        custom_linestyle_screen_layout.addWidget(self.sequence_input)
+        custom_linestyle_screen_layout.addWidget(self.valid_offset_widget)
+        custom_linestyle_screen_layout.addWidget(self.invalid_offset_widget)
+        custom_linestyle_screen_layout.addWidget(self.valid_on_off_sequence_widget)
+        custom_linestyle_screen_layout.addWidget(self.invalid_on_off_sequence_widget)
+        
+        custom_linestyle_screen_layout.setContentsMargins(10,10,10,10)
+        custom_linestyle_screen_layout.setSpacing(10)
+        custom_linestyle_screen_layout.addStretch()
+
+    def change_to_home_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 0
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_premade_linestyle_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 1
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_custom_linestyle_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 2
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_premade_linestyle(self,index):
+        index = self.premade_linestyle_options.index(self.premade_linestyle_model.data(index,Qt.ItemDataRole.DisplayRole))
+        self.grid_linestyle = self.linestyle_arguments[index]
+        self.update_grid_linestyle()
+
+    def change_grid_linestyle_offset(self):
+        grid_linestyle_offset = self.offset_input.text().strip()
+
+        if (grid_linestyle_offset == ""):
+            self.valid_offset_widget.hide()
+            self.invalid_offset_widget.hide()
+            self.valid_on_off_sequence_widget.hide()
+            self.invalid_on_off_sequence_widget.hide()
+            self.grid_offset = ""
+            self.update_grid_linestyle()
+            return
+
+        try:
+            grid_linestyle_offset = float(grid_linestyle_offset)
+            if (grid_linestyle_offset < 0):
+                raise Exception
+            self.valid_offset_widget.show()
+            self.invalid_offset_widget.hide()
+            self.valid_on_off_sequence_widget.hide()
+            self.invalid_on_off_sequence_widget.hide()
+        except:
+            self.valid_offset_widget.hide()
+            self.invalid_offset_widget.show()
+            self.valid_on_off_sequence_widget.hide()
+            self.invalid_on_off_sequence_widget.hide()
+
+        self.grid_offset = grid_linestyle_offset
+        self.change_custom_grid_linestyle()
+        self.update_grid_linestyle()
+
+    def change_grid_linestyle_sequence(self):
+        grid_linestyle_sequence = self.sequence_input.text().strip().split(" ")
+        grid_linestyle_sequence = list(filter(lambda x:x != "",grid_linestyle_sequence))
+
+        if (grid_linestyle_sequence == []):
+            self.valid_on_off_sequence_widget.hide()
+            self.invalid_on_off_sequence_widget.hide()
+            self.valid_offset_widget.hide() 
+            self.invalid_offset_widget.hide()
+            self.grid_sequence = ""
+            self.update_grid_linestyle()
+            return
+
+        try:
+            grid_linestyle_sequence = list(map(float,grid_linestyle_sequence))
+            
+            if (len(list(filter(lambda x:x < 0,grid_linestyle_sequence))) != 0):
+                raise Exception
+
+            if (len(grid_linestyle_sequence) < 4 or len(grid_linestyle_sequence) % 2 != 0):
+                raise Exception
+
+            self.valid_on_off_sequence_widget.show()
+            self.invalid_on_off_sequence_widget.hide()
+            self.valid_offset_widget.hide() 
+            self.invalid_offset_widget.hide()
+        except:
+            self.valid_on_off_sequence_widget.hide()
+            self.invalid_on_off_sequence_widget.show()
+            self.valid_offset_widget.hide() 
+            self.invalid_offset_widget.hide()
+
+        self.grid_sequence = grid_linestyle_sequence
+        
+        self.change_custom_grid_linestyle()
+        self.update_grid_linestyle()
+
+    def change_custom_grid_linestyle(self):
+        if (self.grid_offset != "" and self.grid_sequence != ""): 
+            self.grid_linestyle = [self.grid_offset,self.grid_sequence]
+            self.update_grid_linestyle()
+
+    def update_grid_linestyle(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_grid("linestyle",self.grid_linestyle)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["grid"]["linestyle"] = self.grid_linestyle
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
+
+    def showEvent(self,event):
+        super().showEvent(event)
+        self.change_to_home_screen()
+        self.grid_linestyle = ""
+    
+    def mousePressEvent(self, event):
+        if not self.offset_input.geometry().contains(event.position().toPoint()):
+            self.offset_input.clearFocus()
+        if not self.sequence_input.geometry().contains(event.position().toPoint()):
+            self.sequence_input.clearFocus()
+        super().mousePressEvent(event)
 
 class grid_linewidth_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
