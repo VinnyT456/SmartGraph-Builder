@@ -1,14 +1,9 @@
-from logging import raiseExceptions
-import pstats
-import re
-from PyQt6.QtCore import QLine, QSortFilterProxyModel, QStringListModel, Qt
-from PyQt6.QtGui import QBackingStore, QFont, QImageWriter, QKeySequence, QPixmap, QShortcut, QShowEvent
+from PyQt6.QtCore import QSortFilterProxyModel, QStringListModel, Qt
+from PyQt6.QtGui import QFont, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QPushButton, 
     QSizePolicy, QTableView, QWidget, QVBoxLayout, QStyledItemDelegate, QSizePolicy
 )
-from numba.core.compiler import PassManager
-from pandas.core.methods.describe import select_describe_func
 from sections.dataset import PrepareDataset
 from sections.plot_manager import PlotManager
 import matplotlib.colors as mcolors
@@ -14103,13 +14098,15 @@ class grid_linestyle_adjustment_section(QWidget):
         instructions_label.setWordWrap(True)
         instructions_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         instructions_label.setStyleSheet("""
-            font-family: "SF Pro Display";
+            QLabel#instructions_label{
+                font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
                 padding: 6px;
                 color: black;
                 border: none;
                 background: transparent;
+            }
         """)
 
         instructions_layout = QVBoxLayout(instructions_widget)
@@ -14294,6 +14291,184 @@ class grid_linewidth_adjustment_section(QWidget):
         self.plot_manager = PlotManager()
 
         self.grid_linewidth = ""
+
+        #-----Valid Offset Widget-----
+        self.valid_linewidth_widget = QWidget()
+        self.valid_linewidth_widget.setObjectName("valid_linewidth_widget")
+        self.valid_linewidth_widget.setStyleSheet("""
+            QWidget#valid_linewidth_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_linewidth_label = QLabel("Valid Linewidth")
+        self.valid_linewidth_label.setObjectName("valid_linewidth_label")
+        self.valid_linewidth_label.setWordWrap(True)
+        self.valid_linewidth_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_linewidth_label.setStyleSheet("""
+            QLabel#valid_linewidth_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        valid_linewidth_widget_layout = QVBoxLayout(self.valid_linewidth_widget)
+        valid_linewidth_widget_layout.addWidget(self.valid_linewidth_label)
+        valid_linewidth_widget_layout.setContentsMargins(0,0,0,0)
+        valid_linewidth_widget_layout.setSpacing(0)
+
+        #-----Invalid Offset Widget-----
+        self.invalid_linewidth_widget = QWidget()
+        self.invalid_linewidth_widget.setObjectName("invalid_linewidth_widget")
+        self.invalid_linewidth_widget.setStyleSheet("""
+            QWidget#invalid_linewidth_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_linewidth_label = QLabel("Invalid Linewidth")
+        self.invalid_linewidth_label.setObjectName("invalid_linewidth_label")
+        self.invalid_linewidth_label.setWordWrap(True)
+        self.invalid_linewidth_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_linewidth_label.setStyleSheet("""
+            QLabel#invalid_linewidth_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        invalid_linewidth_widget_layout = QVBoxLayout(self.invalid_linewidth_widget)
+        invalid_linewidth_widget_layout.addWidget(self.invalid_linewidth_label)
+        invalid_linewidth_widget_layout.setContentsMargins(0,0,0,0)
+        invalid_linewidth_widget_layout.setSpacing(0)
+
+        #-----Hide Both Validity Check Widgets-----
+        self.valid_linewidth_widget.hide()
+        self.invalid_linewidth_widget.hide()
+
+        #-----Set the size for both Validitiy Check Widgets-----
+        self.valid_linewidth_widget.setMinimumHeight(50)
+        self.invalid_linewidth_widget.setMinimumHeight(50)
+
+        #-----Grid Linewidth Adjustment Screen-----
+        self.grid_linewidth_adjustment_screen = QWidget()
+        self.grid_linewidth_adjustment_screen.setObjectName("grid_linewidth_adjustment")
+        self.grid_linewidth_adjustment_screen.setStyleSheet(""" 
+            QWidget#grid_linewidth_adjustment{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        
+        #-----Grid Linewidth Input-----
+        self.grid_linewidth_input = QLineEdit()
+        self.grid_linewidth_input.setObjectName("grid_linewidth_input")
+        self.grid_linewidth_input.setPlaceholderText("Linewidth: ")
+        self.grid_linewidth_input.setStyleSheet("""
+            QLineEdit#grid_linewidth_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.grid_linewidth_input.textChanged.connect(self.change_grid_linewidth)
+        self.grid_linewidth_input.setMinimumHeight(50)
+
+        #-----Grid Linewidth Adjustment Screen Layout-----
+        grid_linewidth_adjustment_screen_layout = QVBoxLayout(self.grid_linewidth_adjustment_screen)
+        grid_linewidth_adjustment_screen_layout.addWidget(self.grid_linewidth_input)
+        grid_linewidth_adjustment_screen_layout.addWidget(self.valid_linewidth_widget)
+        grid_linewidth_adjustment_screen_layout.addWidget(self.invalid_linewidth_widget)
+        grid_linewidth_adjustment_screen_layout.setContentsMargins(10,10,10,10)
+        grid_linewidth_adjustment_screen_layout.setSpacing(10)
+        grid_linewidth_adjustment_screen_layout.addStretch()
+
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.grid_linewidth_adjustment_screen)
+        main_layout.setContentsMargins(0,0,0,0)
+        main_layout.setSpacing(0)
+
+    def change_grid_linewidth(self): 
+        linewidth = self.grid_linewidth_input.text().strip()
+        if (linewidth == ""):
+            self.valid_linewidth_widget.hide()
+            self.invalid_linewidth_widget.hide()
+            self.grid_linewidth = 0.8
+            self.update_grid_linewidth()
+            return
+
+        try:
+            linewidth = float(linewidth)
+            if (linewidth < 0): 
+                raise Exception
+            self.valid_linewidth_widget.show()
+            self.invalid_linewidth_widget.hide()
+        except:
+            self.valid_linewidth_widget.hide()
+            self.invalid_linewidth_widget.show()
+
+        self.grid_linewidth = linewidth
+        self.update_grid_linewidth()
+
+    def update_grid_linewidth(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_grid("linewidth",self.grid_linewidth)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["grid"]["linewidth"] = self.grid_linewidth
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
+
+    def showEvent(self,event):
+        super().showEvent(event)
+        self.grid_linewidth_input.clear()
+        self.grid_linewidth = ""
+
+    def mousePressEvent(self,event):
+        if not self.grid_linewidth_input.geometry().contains(event.position().toPoint()):
+            self.grid_linewidth_input.clearFocus()
+        super().mousePressEvent(event)
 
 class grid_alpha_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
