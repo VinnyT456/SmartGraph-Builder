@@ -1,10 +1,11 @@
-from ctypes import alignment
+import copy
 from io import BytesIO
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QImage, QPainter, QPainterPath, QPixmap
 from PyQt6.QtWidgets import (
     QHBoxLayout, QLabel, QPushButton, QSizePolicy, QStackedLayout, QWidget, QVBoxLayout
 )
+from numpy.strings import startswith
 from sections.plot_manager import PlotManager
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -24,7 +25,7 @@ class graph_generator(QWidget):
         self.gradient = gradient
 
     def prepare_plotting(self):
-        self.current_graph_parameters = self.plot_manager.get_db()
+        self.current_graph_parameters = copy.deepcopy(self.plot_manager.get_db())
         self.default_config_plot_manager = PlotManager("./default_plot_config.json")
 
         self.dataset = pd.read_csv(self.current_graph_parameters.get("data"))
@@ -39,9 +40,11 @@ class graph_generator(QWidget):
         self.y_axis_title = self.graph_axis_titles["y-axis-title"]
 
         self.graph_title = self.current_graph_parameters.get("title")
-        self.graph_grid = self.current_graph_parameters.get("grid")
+        self.graph_grid_parameter = self.current_graph_parameters.get("grid")
 
         self.graph_legend_parameters = self.current_graph_parameters.get("legend")
+        self.graph_seaborn_legend_parameters = self.graph_legend_parameters["seaborn_legends"]
+        self.graph_legend_parameters.pop("seaborn_legends",None)
 
         for key in ["legend","version","type","grid","axis-title","title"]:
             self.current_graph_parameters.pop(key,None)
@@ -103,7 +106,25 @@ class graph_generator(QWidget):
             graph.set_ylabel(self.y_axis_title)
         if (self.graph_title != ""):
             graph.set_title(self.graph_title)
-        graph.grid(self.graph_grid)
+        if (self.graph_grid_parameter["visible"] is not None):
+            if (self.graph_grid_parameter["visible"]):
+                graph.grid(**{k: v for k, v in self.graph_grid_parameter.items() if v is not None and v != [None,None]})
+            else:
+                graph.grid(False)
+        
+        graph_label = self.graph_legend_parameters.pop("label")
+        legend_visibility = self.graph_legend_parameters.pop("visible")
+        if (legend_visibility and not graph_label.startswith("_")):
+            for artist in graph.get_children():
+                try:
+                    artist.set_label(graph_label)
+                except:
+                    pass
+            legend = graph.legend(**self.graph_legend_parameters)
+            legend.set_visible(legend_visibility)
+        else:
+            legend = None
+        
 
         fig = graph.get_figure()
         buf = BytesIO()
@@ -538,8 +559,8 @@ class Graph_Display(QWidget):
             if (graph_widget != None):
                 self.graph_display_layout.addWidget(graph_widget)
                 self.graph_display_layout.setCurrentWidget(graph_widget)
-        except:
-            pass
+        except Exception as error:
+            print(error)
 
 class Graph_Section(QWidget):
     def __init__(self):
