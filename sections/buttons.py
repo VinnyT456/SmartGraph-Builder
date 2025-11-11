@@ -1,7 +1,7 @@
 from PyQt6.QtCore import QSortFilterProxyModel, QStringListModel, Qt
 from PyQt6.QtGui import QFont, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
-    QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QPushButton, 
+    QWIDGETSIZE_MAX, QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QPushButton, 
     QSizePolicy, QTableView, QWidget, QVBoxLayout, QStyledItemDelegate, QSizePolicy
 )
 from sections.dataset import PrepareDataset
@@ -23,7 +23,8 @@ plot_json = {
         },
         "title":None,
         "legend":{
-            "label":None,
+            "visible":False,
+            "label":"__nolegend__",
             "loc":"best",
             "bbox_to_anchor":None,
             "ncol":1,
@@ -64,7 +65,7 @@ plot_json = {
             "linewidth":0.8,
             "alpha":None,
             "zorder":2,
-            "dashes":(None,None),
+            "dashes":[None,None],
             "snap":None
         },
         "hue":None,
@@ -868,6 +869,138 @@ class title_button(QDialog):
         self.title_created = False
         self.close()
 
+class legend_visible_adjustment_section(QWidget):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+        
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        self.legend_visible_state = False
+
+        #Create a widget to display the grid visibility adjustment section and style it for consistency
+        self.legend_visibility_adjustment_section = QWidget()
+        self.legend_visibility_adjustment_section.setObjectName("legend_visibility_adjustment_section")
+        self.legend_visibility_adjustment_section.setStyleSheet("""
+            QWidget#legend_visibility_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        #Create a label to put on top of the QPushButton
+        self.legend_visibility_label = QLabel("Legend On")
+        self.legend_visibility_label.setWordWrap(True)
+        self.legend_visibility_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.legend_visibility_label.setObjectName("legend_visibility_label")
+        self.legend_visibility_label.setStyleSheet("""
+            QLabel#legend_visibility_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.legend_visibility_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+    
+        #Create a button to allow the user to switch grid visibility
+        self.legend_visibility_button = QPushButton()
+        self.legend_visibility_button.setObjectName("legend_visibility_button")
+        self.legend_visibility_button.setStyleSheet("""
+            QPushButton#legend_visibility_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#legend_visibility_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.legend_visibility_button.setMinimumHeight(50)
+        
+        #Put the label on top of the button we created for control grid visibility
+        legend_visibility_button_layout = QVBoxLayout(self.legend_visibility_button)
+        legend_visibility_button_layout.addWidget(self.legend_visibility_label)
+        legend_visibility_button_layout.setContentsMargins(0,0,0,0)
+        legend_visibility_button_layout.setSpacing(0)
+
+        #Connect the grid visibility button to a function to switch between the two states
+        self.legend_visibility_button.clicked.connect(self.switch_legend_visibility)
+
+        #Create a button layout for the grid visibility adjustment section
+        button_layout = QVBoxLayout(self.legend_visibility_adjustment_section)
+
+        #Add the grid visibility button to the layout
+        button_layout.addWidget(self.legend_visibility_button)
+
+        #Set the spacing, margins, and stretch to make it look good
+        button_layout.setContentsMargins(10,10,10,10)
+        button_layout.addStretch()
+
+        #Create a layout for the main widget and store the frameon adjustment section in
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.legend_visibility_adjustment_section)
+
+        #Add the spacing and margins to make sure that the section fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+    def switch_legend_visibility(self):
+        self.legend_visible_state = not self.legend_visible_state
+        if (self.legend_visible_state == False):
+            self.legend_visibility_label.setText("Legend On")
+        else:
+            self.legend_visibility_label.setText("Legend Off")
+
+        self.update_legend_visibility()
+
+    def update_legend_visibility(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_legend("visible",self.legend_visible_state)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["visible"] = self.legend_visible_state
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
+
 class legend_label_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
@@ -894,7 +1027,7 @@ class legend_label_adjustment_section(QWidget):
         """)
 
         #Initialize the ncol value to be 0
-        self.label_value = None
+        self.label_value = "__nolegend__"
 
         #Create a line edit object for the user to input the ncol
         self.label_input = QLineEdit()
@@ -943,6 +1076,8 @@ class legend_label_adjustment_section(QWidget):
     def change_label(self):
         #Extract the ncol input from the user and remove any excess text from it
         self.label_value = self.label_input.text().strip()
+        if (self.label_value == ""):
+            self.label_value = "__nolegend__"
         self.update_label()
 
     def update_label(self):
@@ -1044,6 +1179,7 @@ class legend_loc_adjustment_section(QWidget):
 
         self.loc_list_view.setModel(self.filter_proxy)
         self.loc_list_view.setObjectName("loc_list_view")
+        self.loc_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
@@ -1131,200 +1267,11 @@ class legend_loc_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["loc"] = self.loc_argument_name
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
         if not self.loc_search_bar.geometry().contains(event.position().toPoint()):
             self.loc_search_bar.clearFocus()
-        super().mousePressEvent(event)
-    def __init__(self,selected_graph,graph_display):
-        super().__init__()
-        
-        self.plot_manager = PlotManager()
-        
-        self.selected_graph = selected_graph
-        self.graph_display = graph_display
-
-        #Create a section to display the ncol section and style it
-        self.ncol_adjustment_section = QWidget()
-        self.ncol_adjustment_section.setObjectName("adjust_ncol_section")
-        self.ncol_adjustment_section.setStyleSheet("""
-            QWidget#adjust_ncol_section{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-            QLineEdit{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                color: black;
-                font-size: 24pt;
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        #Initialize the ncol value to be 0
-        self.ncol_value = 0
-
-        #Create a line edit object for the user to input the ncol
-        self.ncol_input = QLineEdit()
-        self.ncol_input.setPlaceholderText("ncol: ")
-
-        #Set the height of the line edit object to make it look good
-        self.ncol_input.setFixedHeight(60)
-
-        #Connect any changes with the text to an update function
-        self.ncol_input.textChanged.connect(self.change_ncol)
-
-        #Create two widget to display valid and invalid inputs
-        self.valid_input_widget = QWidget()
-        self.valid_input_widget.setObjectName("valid_input")
-        self.valid_input_widget.setStyleSheet("""
-            QWidget#valid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),   
-                    stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1)
-                    stop:1 rgba(180, 200, 255, 1)  
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.valid_input_label = QLabel("Valid Input")
-        self.valid_input_label.setWordWrap(True)
-        self.valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.valid_input_label.setObjectName("valid_input_label")
-        self.valid_input_label.setStyleSheet("""
-            QLabel#valid_input_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        valid_input_layout = QVBoxLayout(self.valid_input_widget)
-        valid_input_layout.addWidget(self.valid_input_label)
-        valid_input_layout.setSpacing(0)
-        valid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.invalid_input_widget = QWidget()
-        self.invalid_input_widget.setObjectName("invalid_input")
-        self.invalid_input_widget.setStyleSheet("""
-            QWidget#invalid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 100, 100, 1),   
-                    stop:0.4 rgba(255, 130, 120, 1), 
-                    stop:0.7 rgba(200, 90, 150, 1), 
-                    stop:1 rgba(180, 60, 140, 1)     
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.invalid_input_label = QLabel("Invalid Input")
-        self.invalid_input_label.setWordWrap(True)
-        self.invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.invalid_input_label.setObjectName("invalid_input_label")
-        self.invalid_input_label.setStyleSheet("""
-            QLabel#invalid_input_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        invalid_input_layout = QVBoxLayout(self.invalid_input_widget)
-        invalid_input_layout.addWidget(self.invalid_input_label)
-        invalid_input_layout.setSpacing(0)
-        invalid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.valid_input_widget.setMaximumHeight(50)
-        self.invalid_input_widget.setMaximumHeight(50)
-
-        self.valid_input_widget.hide()
-        self.invalid_input_widget.hide()
-
-        #Create a layout for the ncol adjustment section and add the line edit object to it
-        ncol_section_layout = QVBoxLayout(self.ncol_adjustment_section)
-        ncol_section_layout.addWidget(self.ncol_input)
-        ncol_section_layout.addWidget(self.valid_input_widget)
-        ncol_section_layout.addWidget(self.invalid_input_widget)
-    
-        #Add the margins, spacing, and stretch to the layout to make it look good
-        ncol_section_layout.setContentsMargins(10,10,10,10)
-        ncol_section_layout.setSpacing(10)
-        ncol_section_layout.addStretch()
-
-        #Add the ncol adjustment section to the main widget
-        main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.ncol_adjustment_section)
-        
-        #Set both the spacing and margins for the main widget to make sure it fits nicely
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0,0,0,0)
-
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-    
-    def change_ncol(self):
-        #Extract the ncol input from the user and remove any excess text from it
-        ncol_input = self.ncol_input.text().strip()
-
-        if (ncol_input == ""):
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.hide()
-            self.ncol_value = 1
-            self.update_ncol()
-            return 
-
-        #Only update the ncol value in the json file if the input is valid
-        try:
-            self.ncol_value = int(ncol_input)
-            self.valid_input_widget.show()
-            self.invalid_input_widget.hide()
-        except:
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.show()
-        else:
-            self.update_ncol()
-
-    def update_ncol(self):
-        #Get the newest json entries from the plot manager
-        db = self.plot_manager.get_db()
-
-        #Check if db is empty or not. If it is empty then create a new entry with the ncol value
-        #If the db isn't empty then update the db with the new ncol value.
-        if (db != []):
-            self.plot_manager.update_legend("ncol",self.ncol_value)
-        else:
-            plot_parameters = plot_json[self.selected_graph].copy()
-            plot_parameters["legend"]["ncol"] = self.ncol_value
-            self.plot_manager.insert_plot_parameter(plot_parameters)
-
-    def mousePressEvent(self, event):
-        if not self.ncol_input.geometry().contains(event.position().toPoint()):
-            self.ncol_input.clearFocus()
         super().mousePressEvent(event)
 
 class legend_bbox_to_anchor_adjustment_section(QWidget):
@@ -1616,6 +1563,7 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["bbox_to_anchor"] = new_bbox_anchor
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
         if not self.x_input.geometry().contains(event.position().toPoint()):
@@ -1627,7 +1575,6 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
         if not self.height_input.geometry().contains(event.position().toPoint()):
             self.height_input.clearFocus()
         super().mousePressEvent(event)
-
 class legend_ncol_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
@@ -1814,6 +1761,7 @@ class legend_ncol_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["ncol"] = self.ncol_value
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
         if not self.ncol_input.geometry().contains(event.position().toPoint()):
@@ -2255,6 +2203,7 @@ class legend_fontsize_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["fontsize"] = self.current_fontsize
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
         if not self.custom_fontsize_input.geometry().contains(event.position().toPoint()):
@@ -2353,6 +2302,7 @@ class legend_title_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["title"] = self.title_value
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
 class legend_title_fontsize_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
@@ -2791,6 +2741,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["title_fontsize"] = self.current_title_fontsize
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
         if not self.custom_title_fontsize_input.geometry().contains(event.position().toPoint()):
@@ -2932,6 +2883,7 @@ class legend_frameon_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["frameon"] = self.frameon_state
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
 class legend_face_color_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
@@ -4077,6 +4029,7 @@ class legend_face_color_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["facecolor"] = self.current_facecolor
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
         if not self.color_search_bar.geometry().contains(event.position().toPoint()):
@@ -5241,6 +5194,7 @@ class legend_edge_color_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["edgecolor"] = self.current_edge_color
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
         if not self.color_search_bar.geometry().contains(event.position().toPoint()):
@@ -5445,6 +5399,7 @@ class legend_framealpha_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["framealpha"] = self.framealpha_value
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
         if not self.framealpha_input.geometry().contains(event.position().toPoint()):
@@ -5587,6 +5542,7 @@ class legend_shadow_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["shadow"] = self.shadow_state
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
 class legend_fancybox_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
@@ -5724,6 +5680,7 @@ class legend_fancybox_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["fancybox"] = self.fancybox_state
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
 class legend_borderpad_adjustment_section(QWidget):
     def __init__(self, selected_graph,graph_display):
@@ -5912,6 +5869,7 @@ class legend_borderpad_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["borderpad"] = self.borderpad_value
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
         if not self.borderpad_input.geometry().contains(event.position().toPoint()):
@@ -7056,6 +7014,7 @@ class legend_label_color_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["labelcolor"] = self.current_label_color
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
         if not self.color_search_bar.geometry().contains(event.position().toPoint()):
@@ -7204,6 +7163,7 @@ class legend_alignment_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["alignment"] = self.current_alignment
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
 class legend_columnspacing_adjustment_section(QWidget):
     def __init__(self, selected_graph,graph_display):
@@ -7392,6 +7352,7 @@ class legend_columnspacing_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["columnspacing"] = self.columnspacing_value
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
         if not self.columnspacing_input.geometry().contains(event.position().toPoint()):
@@ -7585,6 +7546,7 @@ class legend_handletextpad_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["handletextpad"] = self.handletextpad_value
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
         if not self.handletextpad_input.geometry().contains(event.position().toPoint()):
@@ -7778,6 +7740,7 @@ class legend_borderaxespad_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["borderaxespad"] = self.borderaxespad_value
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
         if not self.borderaxespad_input.geometry().contains(event.position().toPoint()):
@@ -7971,6 +7934,7 @@ class legend_handlelength_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["handlelength"] = self.handlelength_value
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
         if not self.handlelength_input.geometry().contains(event.position().toPoint()):
@@ -8164,6 +8128,7 @@ class legend_handleheight_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["handleheight"] = self.handleheight_value
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
         if not self.handleheight_input.geometry().contains(event.position().toPoint()):
@@ -8306,6 +8271,7 @@ class legend_markerfirst_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["markerfirst"] = self.markerfirst_state
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
 class seaborn_legend_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display): 
@@ -11854,7 +11820,8 @@ class legend_button(QDialog):
 
         self.current_screen_index = 0
 
-        self.available_screen_names = [legend_label_adjustment_section,legend_loc_adjustment_section,legend_bbox_to_anchor_adjustment_section,
+        self.available_screen_names = [legend_visible_adjustment_section,legend_label_adjustment_section,
+                                  legend_loc_adjustment_section,legend_bbox_to_anchor_adjustment_section,
                                   legend_ncol_adjustment_section,legend_fontsize_adjustment_section,
                                   legend_title_adjustment_section,legend_title_fontsize_adjustment_section,
                                   legend_frameon_adjustment_section,legend_face_color_adjustment_section,
@@ -12055,7 +12022,7 @@ class grid_visible_adjustment_section(QWidget):
         self.graph_display = graph_display
         self.plot_manager = PlotManager()
         
-        self.grid_visible_state = True
+        self.grid_visible_state = False
 
         #Create a widget to display the grid visibility adjustment section and style it for consistency
         self.grid_visibility_adjustment_section = QWidget()
@@ -12074,7 +12041,7 @@ class grid_visible_adjustment_section(QWidget):
         """)
 
         #Create a label to put on top of the QPushButton
-        self.grid_visibility_label = QLabel("Grid Off")
+        self.grid_visibility_label = QLabel("Grid On")
         self.grid_visibility_label.setWordWrap(True)
         self.grid_visibility_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.grid_visibility_label.setObjectName("grid_visibility_label")
