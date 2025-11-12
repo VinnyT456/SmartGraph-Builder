@@ -1,10 +1,12 @@
 import copy
+import inspect
 from io import BytesIO
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QImage, QPainter, QPainterPath, QPixmap
 from PyQt6.QtWidgets import (
     QHBoxLayout, QLabel, QPushButton, QSizePolicy, QStackedLayout, QWidget, QVBoxLayout
 )
+from fsspec.registry import default
 from numpy.strings import startswith
 from sections.plot_manager import PlotManager
 import seaborn as sns
@@ -12,6 +14,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 import pandas as pd
 import numpy as np
+import json
 
 class graph_generator(QWidget):
     def __init__(self):
@@ -23,6 +26,9 @@ class graph_generator(QWidget):
         gradient = np.linspace(0, 1, 1024).reshape(1, -1)
         gradient = np.repeat(gradient, 1024, axis=0)
         self.gradient = gradient
+
+        with open('default_plot_config.json', 'r') as file:
+            self.default_graph_parameters = json.load(file)
 
     def prepare_plotting(self):
         self.current_graph_parameters = copy.deepcopy(self.plot_manager.get_db())
@@ -45,6 +51,11 @@ class graph_generator(QWidget):
         self.graph_legend_parameters = self.current_graph_parameters.get("legend")
         self.graph_seaborn_legend_parameters = self.graph_legend_parameters["seaborn_legends"]
         self.graph_legend_parameters.pop("seaborn_legends",None)
+
+        self.default_graph_legend_parameters = self.default_graph_parameters[self.graph_type].get("legend")
+        self.default_graph_legend_parameters.pop("seaborn_legends",None)
+        self.default_graph_legend_parameters.pop("visible",None)
+        self.default_graph_legend_parameters.pop("label",None)
 
         for key in ["legend","version","type","grid","axis-title","title"]:
             self.current_graph_parameters.pop(key,None)
@@ -81,17 +92,80 @@ class graph_generator(QWidget):
         ax.set_facecolor((0, 0, 0, 0))
         ax.set_zorder(1)
 
+    def get_usable_graph_params(self):
+        graph_func = self.available_graphs.get(self.graph_type)
+        if graph_func is None:
+            return {}
+
+        sig = inspect.signature(graph_func)
+        valid_params = set(sig.parameters.keys())
+
+        graph_params = {
+            k: v for k, v in {**self.graph_parameters, **self.graph_seaborn_legend_parameters}.items()
+            if k in valid_params
+        }
+
+        return graph_params
+
+    def set_legend(self,graph,legend_visibility,graph_label):
+        if (legend_visibility and not graph_label.startswith("_")):
+            if graph.legend_:
+                graph.legend_.remove()
+            for artist in graph.get_children():
+                try:
+                    artist.set_label(graph_label)
+                except:
+                    pass
+            legend = graph.legend(**self.graph_legend_parameters)
+            legend.set_visible(legend_visibility)
+        else:
+            legend = None
+
+    def set_hue_legend(self,legend):
+        legend_parameters = {
+            "loc": lambda val: legend.set_loc(val),
+            "bbox_to_anchor": lambda val: legend.set_bbox_to_anchor(val),
+            "ncol": lambda val: setattr(legend, "_ncol", val),  # internal, but works
+            "fontsize": lambda val: [text.set_fontsize(val) for text in legend.get_texts()],
+            "title": lambda val: legend.set_title(val),
+            "title_fontsize": lambda val: legend.get_title().set_fontsize(val),
+            "frameon": lambda val: legend.set_frame_on(val),
+            "facecolor": lambda val: legend.get_frame().set_facecolor(val),
+            "edgecolor": lambda val: legend.get_frame().set_edgecolor(val),
+            "framealpha": lambda val: legend.get_frame().set_alpha(val),
+            "shadow": lambda val: legend.set_shadow(val),
+            "fancybox": lambda val: legend.get_frame().set_boxstyle("round" if val else "square"),
+            "borderpad": lambda val: legend.get_frame().set_boxstyle(f"round,pad={val}"),
+            "labelcolor": lambda val: [text.set_color(val) for text in legend.get_texts()],
+            "alignment": lambda val: setattr(legend._legend_box, "align", val),
+            "columnspacing": lambda val: setattr(legend._legend_box, "sep", val),
+            "handletextpad": lambda val: setattr(legend._legend_handle_box, "sep", val),
+            "borderaxespad": lambda val: legend.get_frame().set_pad(val),
+            "handlelength": lambda val: [handle.set_markersize(val) for handle in legend.legendHandles],
+            "handleheight": lambda val: None,
+            "markerfirst": lambda val: setattr(legend._legend_handle_box, "markerfirst", val)
+        }
+
+        for (parameter,value),default_value in zip(self.graph_legend_parameters.items(),self.default_graph_legend_parameters.values()):
+            try:
+                if (value != default_value):
+                    legend_parameters[parameter](value)
+            except:
+                continue
+
     def create_graph(self):
         self.prepare_plotting()
 
         if (self.x_axis == None or self.y_axis == None):
             return None
 
+        usable_graph_parameters = self.get_usable_graph_params()
+
         widget = QWidget()
         widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         # make the matplotlib figure
-        graph = self.available_graphs.get(self.graph_type)(**self.graph_parameters)
+        graph = self.available_graphs.get(self.graph_type)(**usable_graph_parameters)
 
         fig = graph.get_figure()
         self.apply_gradient_background(fig, graph)
@@ -114,16 +188,11 @@ class graph_generator(QWidget):
         
         graph_label = self.graph_legend_parameters.pop("label")
         legend_visibility = self.graph_legend_parameters.pop("visible")
-        if (legend_visibility and not graph_label.startswith("_")):
-            for artist in graph.get_children():
-                try:
-                    artist.set_label(graph_label)
-                except:
-                    pass
-            legend = graph.legend(**self.graph_legend_parameters)
-            legend.set_visible(legend_visibility)
-        else:
-            legend = None
+        if (legend_visibility == True and not graph_label.startswith("_")):
+            print(graph.legend_)
+            self.set_legend(graph,legend_visibility,graph_label)
+        elif (self.graph_parameters["hue"] != None):
+            self.set_hue_legend(graph.legend_)
         
 
         fig = graph.get_figure()
