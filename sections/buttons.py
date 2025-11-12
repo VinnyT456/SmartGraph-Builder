@@ -1,7 +1,7 @@
 from PyQt6.QtCore import QSortFilterProxyModel, QStringListModel, Qt
 from PyQt6.QtGui import QFont, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
-    QWIDGETSIZE_MAX, QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QPushButton, 
+    QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QPushButton, 
     QSizePolicy, QTableView, QWidget, QVBoxLayout, QStyledItemDelegate, QSizePolicy
 )
 from sections.dataset import PrepareDataset
@@ -38,7 +38,7 @@ plot_json = {
             "shadow":False,
             "fancybox":True,
             "borderpad":0.4,
-            "labelcolor":"none",
+            "labelcolor":"k",
             "alignment":"center",
             "columnspacing":2.0,
             "handletextpad":0.8,
@@ -1456,6 +1456,8 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
         if (x_input == ""):
             self.valid_input_widget.hide()
             self.invalid_input_widget.hide()
+            self.x_value = ""
+            self.update_bbox_anchor()
             return
 
         #Check if the input is valid and only update if it's valid
@@ -1478,6 +1480,8 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
         if (y_input == ""):
             self.valid_input_widget.hide()
             self.invalid_input_widget.hide()
+            self.y_value = ""
+            self.update_bbox_anchor()
             return
 
         #Check if the input is valid and only update if it's valid
@@ -1500,6 +1504,8 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
         if (width_input == ""):
             self.valid_input_widget.hide()
             self.invalid_input_widget.hide()
+            self.width_value = ""
+            self.update_bbox_anchor()
             return
 
         #Check if the input is valid and only update if it's valid
@@ -1522,6 +1528,8 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
         if (height_input == ""):
             self.valid_input_widget.hide()
             self.invalid_input_widget.hide()
+            self.height_value = ""
+            self.update_bbox_anchor()
             return
         
         #Check if the input is valid and only update if it's valid
@@ -1542,7 +1550,7 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
         db = self.plot_manager.get_db()
 
         #Reset the values that are empty to be the default again
-        if (self.x_value or self.y_value or self.width_value or self.height):
+        if (self.x_value or self.y_value or self.width_value or self.height_value):
             if (self.x_value == ""):
                 self.x_value = 0
             if (self.y_value == ""):
@@ -1555,7 +1563,7 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
             new_bbox_anchor = (self.x_value,self.y_value,self.width_value,self.height_value)
         else:
             new_bbox_anchor = None
-        
+
         #If the json file is not empty then update it and if it is empty then create one with the new bbox anchor with it.
         if (db != []):
             self.plot_manager.update_legend("bbox_to_anchor",new_bbox_anchor)
@@ -1575,6 +1583,7 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
         if not self.height_input.geometry().contains(event.position().toPoint()):
             self.height_input.clearFocus()
         super().mousePressEvent(event)
+
 class legend_ncol_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
@@ -1613,7 +1622,7 @@ class legend_ncol_adjustment_section(QWidget):
         """)
 
         #Initialize the ncol value to be 0
-        self.ncol_value = 0
+        self.ncol_value = 1
 
         #Create a line edit object for the user to input the ncol
         self.ncol_input = QLineEdit()
@@ -2248,7 +2257,7 @@ class legend_title_adjustment_section(QWidget):
         """)
 
         #Initialize the value for the title
-        self.title_value = ""
+        self.title_value = None
 
         #Create a QLineEdit to allow the user to input the title and add a placeholder text to it
         self.title_input = QLineEdit()
@@ -2747,6 +2756,10 @@ class legend_title_fontsize_adjustment_section(QWidget):
         if not self.custom_title_fontsize_input.geometry().contains(event.position().toPoint()):
             self.custom_title_fontsize_input.clearFocus()
         super().mousePressEvent(event)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.change_to_original_screen()
 
 class legend_frameon_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
@@ -5720,8 +5733,8 @@ class legend_borderpad_adjustment_section(QWidget):
             }
         """)
 
-        #Initialize the bordpad value to be 0
-        self.borderpad_value = 0
+        #Initialize the bordpad value to be 0.4
+        self.borderpad_value = 0.4
 
         #Create a line edit object for the user to input the borderpad
         self.borderpad_input = QLineEdit()
@@ -5842,7 +5855,7 @@ class legend_borderpad_adjustment_section(QWidget):
         if (borderpad_input == ""):
             self.valid_input_widget.hide()
             self.invalid_input_widget.hide()
-            self.borderpad_value = 0
+            self.borderpad_value = 0.4
             self.update_borderpad()
             return 
 
@@ -6911,7 +6924,7 @@ class legend_label_color_adjustment_section(QWidget):
         if (hex_code == ""):
             self.hex_valid_input_widget.hide()
             self.hex_invalid_input_widget.hide()
-            self.current_label_color = None
+            self.current_label_color = "k"
             self.update_color()
             return
 
@@ -6948,7 +6961,7 @@ class legend_label_color_adjustment_section(QWidget):
         if (not(r_value or g_value or b_value or a_value)):
             self.rgba_valid_input_widget.hide()
             self.rgba_invalid_input_widget.hide()
-            self.current_label_color = None
+            self.current_label_color = "k"
             self.update_color()
             return 
 
@@ -6985,7 +6998,7 @@ class legend_label_color_adjustment_section(QWidget):
         if (grayscale_value == ""): 
             self.grayscale_valid_input_widget.hide() 
             self.grayscale_invalid_input_widget.hide()
-            self.current_label_color = None
+            self.current_label_color = "k"
             self.update_color()
             return
 
@@ -7325,7 +7338,7 @@ class legend_columnspacing_adjustment_section(QWidget):
         if (columnspacing_input == ""):
             self.valid_input_widget.hide()
             self.invalid_input_widget.hide()
-            self.columnspacing_value = 0
+            self.columnspacing_value = 2.0
             self.update_columnspacing()
             return 
 
@@ -7519,7 +7532,7 @@ class legend_handletextpad_adjustment_section(QWidget):
         if (handletextpad_input == ""):
             self.valid_input_widget.hide()
             self.invalid_input_widget.hide()
-            self.handletextpad_value = 0
+            self.handletextpad_value = 0.8
             self.update_handletextpad()
             return 
 
@@ -7713,7 +7726,7 @@ class legend_borderaxespad_adjustment_section(QWidget):
         if (borderaxespad_input == ""):
             self.valid_input_widget.hide()
             self.invalid_input_widget.hide()
-            self.borderaxespad_value = 0
+            self.borderaxespad_value = 0.5
             self.update_borderaxespad()
             return 
 
@@ -7785,8 +7798,8 @@ class legend_handlelength_adjustment_section(QWidget):
             }
         """)
 
-        #Initialize the ncol value to be 0
-        self.handlelength_value = 0
+        #Initialize the handlelength value to be 2.0
+        self.handlelength_value = 2.0
 
         #Create a line edit object for the user to input the ncol
         self.handlelength_input = QLineEdit()
@@ -7907,7 +7920,7 @@ class legend_handlelength_adjustment_section(QWidget):
         if (handlelength_input == ""):
             self.valid_input_widget.hide()
             self.invalid_input_widget.hide()
-            self.handlelength_value = 0
+            self.handlelength_value = 2.0
             self.update_handlelength()
             return 
 
@@ -8101,7 +8114,7 @@ class legend_handleheight_adjustment_section(QWidget):
         if (handleheight_input == ""):
             self.valid_input_widget.hide()
             self.invalid_input_widget.hide()
-            self.handleheight_value = 0
+            self.handleheight_value = 0.7
             self.update_handleheight()
             return 
 
@@ -13549,6 +13562,7 @@ class grid_color_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["grid"]["color"] = self.current_grid_color
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
         if not self.color_search_bar.geometry().contains(event.position().toPoint()):
