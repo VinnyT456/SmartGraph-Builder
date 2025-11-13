@@ -6,12 +6,11 @@ from PyQt6.QtGui import QImage, QPainter, QPainterPath, QPixmap
 from PyQt6.QtWidgets import (
     QHBoxLayout, QLabel, QPushButton, QSizePolicy, QStackedLayout, QWidget, QVBoxLayout
 )
-from fsspec.registry import default
-from numpy.strings import startswith
 from sections.plot_manager import PlotManager
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
+import matplotlib.colors as mcolors
 import pandas as pd
 import numpy as np
 import json
@@ -29,6 +28,12 @@ class graph_generator(QWidget):
 
         with open('default_plot_config.json', 'r') as file:
             self.default_graph_parameters = json.load(file)
+
+        self.xkcd_colors = list(mcolors.XKCD_COLORS.keys())
+        self.tab_colors = list(mcolors.TABLEAU_COLORS.keys())
+
+        self.xkcd_colors = [c.replace("xkcd:","") for c in self.xkcd_colors]
+        self.tab_colors = [c.replace("tab:","") for c in self.tab_colors]
 
     def prepare_plotting(self):
         self.current_graph_parameters = copy.deepcopy(self.plot_manager.get_db())
@@ -107,6 +112,44 @@ class graph_generator(QWidget):
 
         return graph_params
 
+    def convert_hue(self):
+        hue_argument = self.graph_parameters["hue"]
+        if (hue_argument is not None and "self.dataset" in hue_argument):
+            hue_argument = hue_argument.replace("self.dataset['","").replace("']","")
+            hue_argument = self.dataset.eval(hue_argument)
+        self.graph_parameters["hue"] = hue_argument
+
+    def convert_color(self):
+        facecolor_argument = self.graph_legend_parameters["facecolor"]
+        edgecolor_argument = self.graph_legend_parameters["edgecolor"]
+        labelcolor_argument = self.graph_legend_parameters["labelcolor"]
+        grid_color_argument = self.graph_grid_parameter["color"]
+
+        if (facecolor_argument in self.xkcd_colors):
+            facecolor_argument = "xkcd:" + facecolor_argument
+        elif (facecolor_argument in self.tab_colors):
+            facecolor_argument = "tab:" + facecolor_argument
+
+        if (edgecolor_argument in self.xkcd_colors):
+            edgecolor_argument = "xkcd:" + edgecolor_argument
+        elif (edgecolor_argument in self.tab_colors):
+            edgecolor_argument = "tab:" + edgecolor_argument
+
+        if (labelcolor_argument in self.xkcd_colors):
+            labelcolor_argument = "xkcd:" + labelcolor_argument
+        elif (labelcolor_argument in self.tab_colors):
+            labelcolor_argument = "tab:" + labelcolor_argument
+
+        if (grid_color_argument in self.xkcd_colors):
+            grid_color_argument = "xkcd:" + grid_color_argument
+        elif (grid_color_argument in self.tab_colors):
+            grid_color_argument = "tab:" + grid_color_argument
+
+        self.graph_legend_parameters["facecolor"] = facecolor_argument
+        self.graph_legend_parameters["edgecolor"] = edgecolor_argument
+        self.graph_legend_parameters["labelcolor"] = labelcolor_argument
+        self.graph_grid_parameter["color"] = grid_color_argument
+
     def set_legend(self,graph,legend_visibility,graph_label):
         if (legend_visibility and not graph_label.startswith("_")):
             if graph.legend_:
@@ -161,6 +204,9 @@ class graph_generator(QWidget):
 
         usable_graph_parameters = self.get_usable_graph_params()
 
+        self.convert_hue()
+        self.convert_color()
+
         widget = QWidget()
         widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
@@ -188,12 +234,11 @@ class graph_generator(QWidget):
         
         graph_label = self.graph_legend_parameters.pop("label")
         legend_visibility = self.graph_legend_parameters.pop("visible")
-        if (legend_visibility == True and not graph_label.startswith("_")):
-            print(graph.legend_)
+        if (legend_visibility == True and not graph_label.startswith("_") and self.graph_parameters["hue"] == None):
             self.set_legend(graph,legend_visibility,graph_label)
         elif (self.graph_parameters["hue"] != None):
+
             self.set_hue_legend(graph.legend_)
-        
 
         fig = graph.get_figure()
         buf = BytesIO()
