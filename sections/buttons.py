@@ -14400,7 +14400,7 @@ class grid_linewidth_adjustment_section(QWidget):
         """)
 
         self.grid_linewidth_input.textChanged.connect(self.change_grid_linewidth)
-        self.grid_linewidth_input.setMinimumHeight(50)
+        self.grid_linewidth_input.setMinimumHeight(60)
 
         #-----Grid Linewidth Adjustment Screen Layout-----
         grid_linewidth_adjustment_screen_layout = QVBoxLayout(self.grid_linewidth_adjustment_screen)
@@ -14467,6 +14467,183 @@ class grid_alpha_adjustment_section(QWidget):
         self.plot_manager = PlotManager()
 
         self.grid_alpha = ""
+
+        #-----Valid Alpha Widget-----
+        self.valid_alpha_widget = QWidget()
+        self.valid_alpha_widget.setObjectName("valid_alpha_widget")
+        self.valid_alpha_widget.setStyleSheet("""
+            QWidget#valid_alpha_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_alpha_label = QLabel("Valid Alpha")
+        self.valid_alpha_label.setObjectName("valid_alpha_label")
+        self.valid_alpha_label.setWordWrap(True)
+        self.valid_alpha_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_alpha_label.setStyleSheet("""
+            QLabel#valid_alpha_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        valid_alpha_widget_layout = QVBoxLayout(self.valid_alpha_widget)
+        valid_alpha_widget_layout.addWidget(self.valid_alpha_label)
+        valid_alpha_widget_layout.setContentsMargins(0,0,0,0)
+        valid_alpha_widget_layout.setSpacing(0)
+
+        #-----Invalid Alpha Widget-----
+        self.invalid_alpha_widget = QWidget()
+        self.invalid_alpha_widget.setObjectName("invalid_alpha_widget")
+        self.invalid_alpha_widget.setStyleSheet("""
+            QWidget#invalid_alpha_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_alpha_label = QLabel("Invalid Alpha")
+        self.invalid_alpha_label.setObjectName("invalid_alpha_label")
+        self.invalid_alpha_label.setWordWrap(True)
+        self.invalid_alpha_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_alpha_label.setStyleSheet("""
+            QLabel#invalid_alpha_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        invalid_alpha_widget_layout = QVBoxLayout(self.invalid_alpha_widget)
+        invalid_alpha_widget_layout.addWidget(self.invalid_alpha_label)
+        invalid_alpha_widget_layout.setContentsMargins(0,0,0,0)
+        invalid_alpha_widget_layout.setSpacing(0)
+
+        #-----Hide Both Validity Check Widgets-----
+        self.valid_alpha_widget.hide()
+        self.invalid_alpha_widget.hide()
+
+        #-----Set the size for both Validitiy Check Widgets-----
+        self.valid_alpha_widget.setMinimumHeight(50)
+        self.invalid_alpha_widget.setMinimumHeight(50)
+
+        #-----Grid Linewidth Adjustment Screen-----
+        self.grid_alpha_adjustment_screen = QWidget()
+        self.grid_alpha_adjustment_screen.setObjectName("grid_alpha_adjustment_screen")
+        self.grid_alpha_adjustment_screen.setStyleSheet(""" 
+            QWidget#grid_alpha_adjustment_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        
+        #-----Grid Linewidth Input-----
+        self.grid_alpha_input = QLineEdit()
+        self.grid_alpha_input.setObjectName("grid_alpha_input")
+        self.grid_alpha_input.setPlaceholderText("Alpha: ")
+        self.grid_alpha_input.setStyleSheet("""
+            QLineEdit#grid_alpha_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.grid_alpha_input.textChanged.connect(self.change_grid_alpha)
+        self.grid_alpha_input.setMinimumHeight(60)
+
+        #-----Grid Linewidth Adjustment Screen Layout-----
+        grid_alpha_adjustment_screen_layout = QVBoxLayout(self.grid_alpha_adjustment_screen)
+        grid_alpha_adjustment_screen_layout.addWidget(self.grid_alpha_input)
+        grid_alpha_adjustment_screen_layout.addWidget(self.valid_alpha_widget)
+        grid_alpha_adjustment_screen_layout.addWidget(self.invalid_alpha_widget)
+        grid_alpha_adjustment_screen_layout.setContentsMargins(10,10,10,10)
+        grid_alpha_adjustment_screen_layout.setSpacing(10)
+        grid_alpha_adjustment_screen_layout.addStretch()
+
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.grid_alpha_adjustment_screen)
+        main_layout.setContentsMargins(0,0,0,0)
+        main_layout.setSpacing(0)
+
+    def change_grid_alpha(self): 
+        alpha = self.grid_alpha_input.text().strip()
+        if (alpha == ""):
+            self.valid_alpha_widget.hide()
+            self.invalid_alpha_widget.hide()
+            self.grid_alpha = 0.8
+            self.update_grid_alpha()
+            return
+
+        try:
+            alpha = float(alpha)
+            if (alpha < 0 or alpha > 1): 
+                raise Exception
+            self.valid_alpha_widget.show()
+            self.invalid_alpha_widget.hide()
+            self.grid_alpha = alpha
+            self.update_grid_alpha()
+        except:
+            self.valid_alpha_widget.hide()
+            self.invalid_alpha_widget.show()
+
+    def update_grid_alpha(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_grid("alpha",self.grid_alpha)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["grid"]["alpha"] = self.grid_alpha
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
+
+    def showEvent(self,event):
+        super().showEvent(event)
+        self.grid_alpha_input.clear()
+        self.grid_alpha = 0.8
+
+    def mousePressEvent(self,event):
+        if not self.grid_alpha_input.geometry().contains(event.position().toPoint()):
+            self.grid_alpha_input.clearFocus()
+        super().mousePressEvent(event)
 
 class grid_zorder_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
