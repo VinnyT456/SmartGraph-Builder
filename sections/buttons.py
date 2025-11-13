@@ -6325,6 +6325,7 @@ class legend_label_color_adjustment_section(QWidget):
 
         self.named_color_list_view.setModel(self.filter_proxy)
         self.named_color_list_view.setObjectName("named_color_list_view")
+        self.named_color_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
@@ -8413,6 +8414,12 @@ class seaborn_legend_adjustment_section(QWidget):
 
     def change_sns_legend_parameter(self,index):
         self.sns_legend_argument_name = self.sns_legend_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
+        
+        if (self.sns_legend_argument_name == "True"):
+            self.sns_legend_argument_name = True
+        if (self.sns_legend_argument_name == "False"):
+            self.sns_legend_argument_name = False
+
         self.update_legend_argument()
 
     def update_legend_argument(self):
@@ -8491,7 +8498,7 @@ class seaborn_legend_off_adjustment_section(QWidget):
                 padding: 6px;
                 color: black;
             }
-            QPushButton#frameon_button:hover{
+            QPushButton#sns_legend_off_button:hover{
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -15498,10 +15505,10 @@ class hue_button(QDialog):
         self.none_hue_button.clicked.connect(self.change_hue_to_none)
 
         button_layout = QVBoxLayout(self.hue_parameter_section)
+        button_layout.addWidget(self.none_hue_button)
         button_layout.addWidget(self.categorical_column_hue_button)
         button_layout.addWidget(self.numerical_column_hue_button)
         button_layout.addWidget(self.boolean_expression_hue_button)
-        button_layout.addWidget(self.none_hue_button)
         button_layout.setContentsMargins(10,10,10,10)
         button_layout.setSpacing(5)
         button_layout.addStretch()
