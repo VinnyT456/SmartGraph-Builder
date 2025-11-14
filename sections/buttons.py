@@ -14653,7 +14653,182 @@ class grid_zorder_adjustment_section(QWidget):
         self.graph_display = graph_display
         self.plot_manager = PlotManager()
 
-        self.grid_zorder = ""
+        self.grid_zorder = 2
+
+        #-----Valid Alpha Widget-----
+        self.valid_zorder_widget = QWidget()
+        self.valid_zorder_widget.setObjectName("valid_zorder_widget")
+        self.valid_zorder_widget.setStyleSheet("""
+            QWidget#valid_zorder_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_zorder_label = QLabel("Valid Zorder")
+        self.valid_zorder_label.setObjectName("valid_zorder_label")
+        self.valid_zorder_label.setWordWrap(True)
+        self.valid_zorder_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_zorder_label.setStyleSheet("""
+            QLabel#valid_zorder_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        valid_zorder_widget_layout = QVBoxLayout(self.valid_zorder_widget)
+        valid_zorder_widget_layout.addWidget(self.valid_zorder_label)
+        valid_zorder_widget_layout.setContentsMargins(0,0,0,0)
+        valid_zorder_widget_layout.setSpacing(0)
+
+        #-----Invalid Alpha Widget-----
+        self.invalid_zorder_widget = QWidget()
+        self.invalid_zorder_widget.setObjectName("invalid_zorder_widget")
+        self.invalid_zorder_widget.setStyleSheet("""
+            QWidget#invalid_zorder_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_zorder_label = QLabel("Invalid Zorder")
+        self.invalid_zorder_label.setObjectName("invalid_zorder_label")
+        self.invalid_zorder_label.setWordWrap(True)
+        self.invalid_zorder_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_zorder_label.setStyleSheet("""
+            QLabel#invalid_zorder_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        invalid_zorder_widget_layout = QVBoxLayout(self.invalid_zorder_widget)
+        invalid_zorder_widget_layout.addWidget(self.invalid_zorder_label)
+        invalid_zorder_widget_layout.setContentsMargins(0,0,0,0)
+        invalid_zorder_widget_layout.setSpacing(0)
+
+        #-----Hide Both Validity Check Widgets-----
+        self.valid_zorder_widget.hide()
+        self.invalid_zorder_widget.hide()
+
+        #-----Set the size for both Validitiy Check Widgets-----
+        self.valid_zorder_widget.setMinimumHeight(50)
+        self.invalid_zorder_widget.setMinimumHeight(50)
+
+        #-----Grid Zorder Adjustment Screen-----
+        self.grid_zorder_adjustment_screen = QWidget()
+        self.grid_zorder_adjustment_screen.setObjectName("grid_zorder_adjustment_screen")
+        self.grid_zorder_adjustment_screen.setStyleSheet(""" 
+            QWidget#grid_zorder_adjustment_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        
+        #-----Grid Zorder Input-----
+        self.grid_zorder_input = QLineEdit()
+        self.grid_zorder_input.setObjectName("grid_zorder_input")
+        self.grid_zorder_input.setPlaceholderText("zorder: ")
+        self.grid_zorder_input.setStyleSheet("""
+            QLineEdit#grid_zorder_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.grid_zorder_input.textChanged.connect(self.change_grzorder)
+        self.grid_zorder_input.setMinimumHeight(60)
+
+        #-----Grid Zorder Adjustment Screen Layout-----
+        gzorder_zorder_adjustment_screen_layout = QVBoxLayout(self.grid_zorder_adjustment_screen)
+        gzorder_zorder_adjustment_screen_layout.addWidget(self.grid_zorder_input)
+        gzorder_zorder_adjustment_screen_layout.addWidget(self.valid_zorder_widget)
+        gzorder_zorder_adjustment_screen_layout.addWidget(self.invalid_zorder_widget)
+        gzorder_zorder_adjustment_screen_layout.setContentsMargins(10,10,10,10)
+        gzorder_zorder_adjustment_screen_layout.setSpacing(10)
+        gzorder_zorder_adjustment_screen_layout.addStretch()
+
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.grid_zorder_adjustment_screen)
+        main_layout.setContentsMargins(0,0,0,0)
+        main_layout.setSpacing(0)
+
+    def change_grid_zorder(self): 
+        zorder = self.grid_zorder_input.text().strip()
+        if (zorder == ""):
+            self.valid_zorder_widget.hide()
+            self.invalid_zorder_widget.hide()
+            self.grid_zorder = 2
+            self.update_grid_zorder()
+            return
+
+        try:
+            zorder = float(zorder)
+            self.valid_zorder_widget.show()
+            self.invalid_zorder_widget.hide()
+            self.grid_zorder = zorder
+            self.update_grid_alpha()
+        except:
+            self.valid_zorder_widget.hide()
+            self.invalid_zorder_widget.show()
+
+    def update_grid_zorder(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_grid("zorder",self.grid_zorder)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["grid"]["zorder"] = self.grid_zorder
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
+
+    def showEvent(self,event):
+        super().showEvent(event)
+        self.grid_zorder_input.clear()
+        self.grid_zorder = 2
+
+    def mousePressEvent(self,event):
+        if not self.grid_zorder_input.geometry().contains(event.position().toPoint()):
+            self.grid_zorder_input.clearFocus()
+        super().mousePressEvent(event)
 
 class grid_dashes_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
