@@ -14059,6 +14059,7 @@ class grid_linestyle_adjustment_section(QWidget):
 
         # Add margins and spacing to make it look good and push content to the top
         premade_linestyle_screen_layout.setContentsMargins(10, 10, 10, 10)
+        premade_linestyle_screen_layout.addStretch()
 
     def create_custom_linestyle_screen(self):
         custom_linestyle_screen_layout = QVBoxLayout(self.custom_linestyle_screen)
@@ -14848,7 +14849,136 @@ class grid_snap_adjustment_section(QWidget):
         self.graph_display = graph_display
         self.plot_manager = PlotManager()
 
+        self.grid_snap_options = ["True","False","None"]
+
         self.grid_snap = ""
+
+        #-----Grid Snap Adjustment Section-----
+        self.grid_snap_adjustment_section = QWidget()
+        self.grid_snap_adjustment_section.setObjectName("grid_snap_adjustment_section")
+        self.grid_snap_adjustment_section.setStyleSheet("""
+            QWidget#grid_snap_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.create_grid_snap_adjustment_section()
+
+        #-----Put it on the main widget-----
+        main_layout = QVBoxLayout(self) 
+        main_layout.addWidget(self.grid_snap_adjustment_section)
+        main_layout.setContentsMargins(0,0,0,0)
+        main_layout.setSpacing(0)
+
+    def create_grid_snap_adjustment_section(self): 
+        grid_snap_adjustment_section_layout = QVBoxLayout(self.grid_snap_adjustment_section)
+
+        self.grid_snap_list_view = QListView()
+        self.grid_snap_model = QStringListModel(self.grid_snap_options)
+
+        self.grid_snap_list_view.setModel(self.grid_snap_model)
+        self.grid_snap_list_view.setObjectName("grid_snap_list_view")
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.grid_snap_list_view.setItemDelegate(CustomDelegate())
+
+        self.grid_snap_list_view.setStyleSheet("""
+            QListView#grid_snap_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#grid_snap_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#grid_snap_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#grid_snap_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.grid_snap_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.grid_snap_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.grid_snap_list_view.setSpacing(3)
+
+        self.grid_snap_list_view.clicked.connect(self.change_grid_snap)
+
+        grid_snap_adjustment_section_layout.addWidget(self.grid_snap_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        grid_snap_adjustment_section_layout.setContentsMargins(10, 10, 10, 10)
+        grid_snap_adjustment_section_layout.addStretch()
+
+    def change_grid_snap(self,index):
+        grid_snap = self.grid_snap_model.data(index,Qt.ItemDataRole.DisplayRole)
+        if (grid_snap == "True"):
+            self.grid_snap = True
+        if (grid_snap == "False"):
+            self.grid_snap = False
+        if (grid_snap == "None"):
+            self.grid_snap = None
+        self.update_grid_snap()
+
+    def update_grid_snap(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_grid("snap",self.grid_snap)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["grid"]["snap"] = self.grid_snap
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
 
 class grid_button(QDialog):
     def __init__(self,selected_graph, graph_display):
