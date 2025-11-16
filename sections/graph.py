@@ -114,10 +114,11 @@ class graph_generator(QWidget):
 
     def convert_hue(self):
         hue_argument = self.graph_parameters["hue"]
-        if (hue_argument is not None and "self.dataset" in hue_argument):
+        if (isinstance(hue_argument,str) and "self.dataset" in hue_argument):
             hue_argument = hue_argument.replace("self.dataset['","").replace("']","")
+            hue_argument = hue_argument.replace('self.dataset["',"").replace('"]',"")
             hue_argument = self.dataset.eval(hue_argument)
-        self.graph_parameters["hue"] = hue_argument
+            self.graph_parameters["hue"] = hue_argument
 
     def convert_color(self):
         facecolor_argument = self.graph_legend_parameters["facecolor"]
@@ -202,10 +203,10 @@ class graph_generator(QWidget):
         if (self.x_axis == None or self.y_axis == None):
             return None
 
-        usable_graph_parameters = self.get_usable_graph_params()
-
         self.convert_hue()
         self.convert_color()
+
+        usable_graph_parameters = self.get_usable_graph_params()
 
         widget = QWidget()
         widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -236,8 +237,7 @@ class graph_generator(QWidget):
         legend_visibility = self.graph_legend_parameters.pop("visible")
         if (legend_visibility == True and not graph_label.startswith("_") and self.graph_parameters["hue"] == None):
             self.set_legend(graph,legend_visibility,graph_label)
-        elif (self.graph_parameters["hue"] != None):
-
+        elif (self.graph_parameters["hue"] is not None):
             self.set_hue_legend(graph.legend_)
 
         fig = graph.get_figure()
