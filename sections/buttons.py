@@ -1,3 +1,4 @@
+from math import log
 from PyQt6.QtCore import QSortFilterProxyModel, QStringListModel, Qt
 from PyQt6.QtGui import QFont, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
@@ -8601,7 +8602,45 @@ class seaborn_legend_markers_adjustment_section(QWidget):
             }       
         """)
 
-        #----Turn Markers on/off Button-----
+        #-----Markers Instruction Widget-----
+        self.markers_instruction_widget = QWidget()
+        self.markers_instruction_widget.setObjectName("markers_instruction_widget")
+        self.markers_instruction_widget.setStyleSheet("""
+            QWidget#markers_instruction_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.markers_instruction_label = QLabel("Select the hue or style first")
+        self.markers_instruction_label.setObjectName("markers_instruction_label")
+        self.markers_instruction_label.setWordWrap(True)
+        self.markers_instruction_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.markers_instruction_label.setStyleSheet("""
+            QLabel#markers_instruction_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent; 
+            }
+        """)
+
+        markers_instruction_widget_layout = QVBoxLayout(self.markers_instruction_widget)
+        markers_instruction_widget_layout.addWidget(self.markers_instruction_label)
+        markers_instruction_widget_layout.setContentsMargins(0,0,0,0)
+        markers_instruction_widget_layout.setSpacing(0)
+
+        #-----Turn Markers on/off Button-----
         self.turn_markers_on_off_button = QPushButton()
         self.turn_markers_on_off_button.setObjectName("turn_markers_on_off_button")
         self.turn_markers_on_off_button.setStyleSheet("""
@@ -11424,11 +11463,6 @@ class seaborn_legend_size_order_adjustment_section(QWidget):
         if (not self.size_order_adjustment_input.geometry().contains(event.position().toPoint())):
             self.size_order_adjustment_input.clearFocus()
 
-    def showEvent(self,event):
-        super().showEvent(event)
-        self.size_value = self.get_size_values()
-        self.size_order_adjustment_input.clear()
-
 class seaborn_legend_hue_order_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
@@ -11626,7 +11660,6 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
     def showEvent(self,event):
         super().showEvent(event)
         self.hue_value = self.get_hue_values()
-        self.hue_order_adjustment_input.clear()
 
 class seaborn_legend_style_order_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
@@ -11635,7 +11668,7 @@ class seaborn_legend_style_order_adjustment_section(QWidget):
         self.graph_display = graph_display
         self.plot_manager = PlotManager()
 
-        self.style_values = self.get_hue_values()
+        self.style_values = self.get_style_values()
 
         self.style_order = []
 
@@ -11805,7 +11838,7 @@ class seaborn_legend_style_order_adjustment_section(QWidget):
             self.plot_manager.insert_plot_parameter(plot_parameters)
         self.graph_display.show_graph()
 
-    def get_hue_values(self):
+    def get_style_values(self):
         db = self.plot_manager.get_db()
         if (db != []):
             dataset = pd.read_csv("./dataset/user_dataset.csv")
@@ -11822,8 +11855,7 @@ class seaborn_legend_style_order_adjustment_section(QWidget):
 
     def showEvent(self,event):
         super().showEvent(event)
-        self.style_value = self.get_hue_values()
-        self.style_order_adjustment_input.clear()
+        self.style_value = self.get_style_values()
 
 class legend_button(QDialog):
     def __init__(self,selected_graph, graph_display):
@@ -14059,7 +14091,6 @@ class grid_linestyle_adjustment_section(QWidget):
 
         # Add margins and spacing to make it look good and push content to the top
         premade_linestyle_screen_layout.setContentsMargins(10, 10, 10, 10)
-        premade_linestyle_screen_layout.addStretch()
 
     def create_custom_linestyle_screen(self):
         custom_linestyle_screen_layout = QVBoxLayout(self.custom_linestyle_screen)
@@ -14258,11 +14289,6 @@ class grid_linestyle_adjustment_section(QWidget):
             plot_parameters["grid"]["linestyle"] = self.grid_linestyle
             self.plot_manager.insert_plot_parameter(plot_parameters)
         self.graph_display.show_graph()
-
-    def showEvent(self,event):
-        super().showEvent(event)
-        self.change_to_home_screen()
-        self.grid_linestyle = ""
     
     def mousePressEvent(self, event):
         if not self.offset_input.geometry().contains(event.position().toPoint()):
@@ -14433,6 +14459,7 @@ class grid_linewidth_adjustment_section(QWidget):
             self.valid_linewidth_widget.show()
             self.invalid_linewidth_widget.hide()
         except:
+            linewidth = 0.8
             self.valid_linewidth_widget.hide()
             self.invalid_linewidth_widget.show()
 
@@ -14448,11 +14475,6 @@ class grid_linewidth_adjustment_section(QWidget):
             plot_parameters["grid"]["linewidth"] = self.grid_linewidth
             self.plot_manager.insert_plot_parameter(plot_parameters)
         self.graph_display.show_graph()
-
-    def showEvent(self,event):
-        super().showEvent(event)
-        self.grid_linewidth_input.clear()
-        self.grid_linewidth = ""
 
     def mousePressEvent(self,event):
         if not self.grid_linewidth_input.geometry().contains(event.position().toPoint()):
@@ -14636,11 +14658,6 @@ class grid_alpha_adjustment_section(QWidget):
             self.plot_manager.insert_plot_parameter(plot_parameters)
         self.graph_display.show_graph()
 
-    def showEvent(self,event):
-        super().showEvent(event)
-        self.grid_alpha_input.clear()
-        self.grid_alpha = 0.8
-
     def mousePressEvent(self,event):
         if not self.grid_alpha_input.geometry().contains(event.position().toPoint()):
             self.grid_alpha_input.clearFocus()
@@ -14775,7 +14792,7 @@ class grid_zorder_adjustment_section(QWidget):
             }
         """)
 
-        self.grid_zorder_input.textChanged.connect(self.change_grzorder)
+        self.grid_zorder_input.textChanged.connect(self.change_grid_zorder)
         self.grid_zorder_input.setMinimumHeight(60)
 
         #-----Grid Zorder Adjustment Screen Layout-----
@@ -14820,11 +14837,6 @@ class grid_zorder_adjustment_section(QWidget):
             plot_parameters["grid"]["zorder"] = self.grid_zorder
             self.plot_manager.insert_plot_parameter(plot_parameters)
         self.graph_display.show_graph()
-
-    def showEvent(self,event):
-        super().showEvent(event)
-        self.grid_zorder_input.clear()
-        self.grid_zorder = 2
 
     def mousePressEvent(self,event):
         if not self.grid_zorder_input.geometry().contains(event.position().toPoint()):
@@ -14958,7 +14970,6 @@ class grid_snap_adjustment_section(QWidget):
 
         # Add margins and spacing to make it look good and push content to the top
         grid_snap_adjustment_section_layout.setContentsMargins(10, 10, 10, 10)
-        grid_snap_adjustment_section_layout.addStretch()
 
     def change_grid_snap(self,index):
         grid_snap = self.grid_snap_model.data(index,Qt.ItemDataRole.DisplayRole)
@@ -15812,8 +15823,11 @@ class hue_button(QDialog):
         self.premade_and_logical_button.clicked.connect(self.premade_add_and_logical_to_boolean_expression)
         self.premade_or_logical_button.clicked.connect(self.premade_add_or_logical_to_boolean_expression)
 
-        #-----Home Screen-----
+        #-----Logical Operator Buttons-----
+        self.available_logical_operators = [self.premade_and_logical_button,self.premade_or_logical_button,
+                                            self.manual_and_logical_button,self.manual_or_logical_button]
 
+        #-----Home Screen-----
         self.hue_parameter_section = QWidget()
         self.hue_parameter_section.setObjectName("hue_parameter")
         self.hue_parameter_section.setStyleSheet("""
@@ -15987,10 +16001,10 @@ class hue_button(QDialog):
         self.none_hue_button.clicked.connect(self.change_hue_to_none)
 
         button_layout = QVBoxLayout(self.hue_parameter_section)
-        button_layout.addWidget(self.none_hue_button)
         button_layout.addWidget(self.categorical_column_hue_button)
         button_layout.addWidget(self.numerical_column_hue_button)
         button_layout.addWidget(self.boolean_expression_hue_button)
+        button_layout.addWidget(self.none_hue_button)
         button_layout.setContentsMargins(10,10,10,10)
         button_layout.setSpacing(5)
         button_layout.addStretch()
@@ -16124,6 +16138,24 @@ class hue_button(QDialog):
         self.create_boolean_expression_premade_input_value_screen()
         self.boolean_expression_premade_input_value_screen.hide()
 
+        #-----Logical Operator Screen-----
+        self.logical_operator_screen = QWidget()
+        self.logical_operator_screen.setObjectName("logical_operator_screen")
+        self.logical_operator_screen.setStyleSheet("""
+            QWidget#logical_operator_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.create_logical_operator_screen()
+        self.logical_operator_screen.hide()
+
         #-----Hue Adjustment Section-----
         self.hue_adjustment_section = QWidget()
         self.hue_adjustment_section.setObjectName("hue_adjustment_section")
@@ -16148,6 +16180,7 @@ class hue_button(QDialog):
         hue_adjustment_section_layout.addWidget(self.boolean_expression_premade_select_column_screen)
         hue_adjustment_section_layout.addWidget(self.boolean_expression_premade_select_operator_screen)
         hue_adjustment_section_layout.addWidget(self.boolean_expression_premade_input_value_screen)
+        hue_adjustment_section_layout.addWidget(self.logical_operator_screen)
         hue_adjustment_section_layout.setContentsMargins(0,0,0,0)
 
         #-----Initialize Screen Value-----
@@ -16156,7 +16189,8 @@ class hue_button(QDialog):
                                 self.boolean_expression_manual_input_screen,
                                 self.boolean_expression_premade_select_column_screen,
                                 self.boolean_expression_premade_select_operator_screen,
-                                self.boolean_expression_premade_input_value_screen]
+                                self.boolean_expression_premade_input_value_screen,
+                                self.logical_operator_screen]
         self.current_screen_idx = 0
         self.available_screens[self.current_screen_idx].show()
 
@@ -16949,6 +16983,45 @@ class hue_button(QDialog):
         instructions_widget_layout.setContentsMargins(0,0,0,0)
         instructions_widget_layout.setSpacing(0)
 
+        premade_logical_operator_button = QPushButton("Add Logical Operator")
+        premade_logical_operator_button.setObjectName("premade_logical_operator_button")
+        premade_logical_operator_button.setStyleSheet("""
+            QPushButton#premade_logical_operator_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#premade_logical_operator_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        premade_logical_operator_button.clicked.connect(self.change_to_logical_operator_screen)
+
         self.boolean_expression_value_input = QLineEdit()
         self.boolean_expression_value_input.setObjectName("boolean_expression_value_input")
         self.boolean_expression_value_input.setPlaceholderText("Value: ")
@@ -16975,10 +17048,18 @@ class hue_button(QDialog):
         premade_boolean_expression_value_layout.addWidget(self.premade_valid_input_widget)
         premade_boolean_expression_value_layout.addWidget(self.premade_invalid_input_widget)
         premade_boolean_expression_value_layout.addStretch()
-        premade_boolean_expression_value_layout.addWidget(self.premade_and_logical_button)
-        premade_boolean_expression_value_layout.addWidget(self.premade_or_logical_button)
+        premade_boolean_expression_value_layout.addWidget(premade_logical_operator_button)
         premade_boolean_expression_value_layout.setContentsMargins(10,10,10,10)
         premade_boolean_expression_value_layout.setSpacing(5)
+
+    def create_logical_operator_screen(self):
+        logical_operator_screen_layout = QVBoxLayout(self.logical_operator_screen)
+        for button in self.available_logical_operators:
+            button.hide()
+            logical_operator_screen_layout.addWidget(button)
+        logical_operator_screen_layout.setContentsMargins(10,10,10,10)
+        logical_operator_screen_layout.setSpacing(10)
+        logical_operator_screen_layout.addStretch()
 
     def change_to_previous_screen(self):
         if (self.current_screen_idx == 3 or self.current_screen_idx == 4):
@@ -17029,6 +17110,20 @@ class hue_button(QDialog):
     def change_to_value_boolean_expression_screen(self):
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 6
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_logical_operator_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+
+        [button.hide() for button in self.available_logical_operators]
+        if (self.current_screen_idx == 3): 
+            self.available_logical_operators[2].show()
+            self.available_logical_operators[3].show()
+        if (self.current_screen_idx == 6):
+            self.available_logical_operators[0].show()
+            self.available_logical_operators[1].show()
+
+        self.current_screen_idx = 7
         self.available_screens[self.current_screen_idx].show()
 
     def change_categorical_hue_column(self,index):
@@ -17322,13 +17417,12 @@ class hue_button(QDialog):
             self.boolean_expression_value_input.clearFocus()
         super().mousePressEvent(event)
 
-    def closeEvent(self, event):
-        super().closeEvent(event)
+    def showEvent(self, event):
+        super().showEvent(event)
         
         self.dataset = pd.read_csv("./dataset/user_dataset.csv")
         self.categorical_columns = self.get_categorical_columns()
         self.numerical_columns = self.get_numerical_columns()
-        self.hue = None
         self.premade_boolean_expression_format = {
             "column":"",
             "operation":"",
@@ -17349,6 +17443,10 @@ class hue_button(QDialog):
         self.manual_boolean_expression_column_input.clear()
         self.manual_boolean_expression_operator_input.clear()
         self.manual_boolean_expression_value_input.clear()
+
+        self.update_hue()
+
+        self.hue = None
 
     def close_dialog(self):
         self.close() 
