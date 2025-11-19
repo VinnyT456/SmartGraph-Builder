@@ -37,7 +37,6 @@ class graph_generator(QWidget):
 
     def prepare_plotting(self):
         self.current_graph_parameters = copy.deepcopy(self.plot_manager.get_db())
-        self.default_config_plot_manager = PlotManager("./default_plot_config.json")
 
         self.dataset = pd.read_csv(self.current_graph_parameters.get("data"))
 
@@ -61,6 +60,17 @@ class graph_generator(QWidget):
         self.default_graph_legend_parameters.pop("seaborn_legends",None)
         self.default_graph_legend_parameters.pop("visible",None)
         self.default_graph_legend_parameters.pop("label",None)
+
+        self.hue_mapping = self.current_graph_parameters["hue"][1]
+        true_mapping = self.hue_mapping['true']
+        false_mapping = self.hue_mapping['false']
+
+        self.hue_mapping = {
+            True:true_mapping,
+            False:false_mapping,
+        }
+
+        self.current_graph_parameters["hue"] = self.current_graph_parameters["hue"][0]
 
         for key in ["legend","version","type","grid","axis-title","title"]:
             self.current_graph_parameters.pop(key,None)
@@ -117,7 +127,7 @@ class graph_generator(QWidget):
         if (isinstance(hue_argument,str) and "self.dataset" in hue_argument):
             hue_argument = hue_argument.replace("self.dataset['","").replace("']","")
             hue_argument = hue_argument.replace('self.dataset["',"").replace('"]',"")
-            hue_argument = self.dataset.eval(hue_argument)
+            hue_argument = self.dataset.eval(hue_argument).map(self.hue_mapping)
             self.graph_parameters["hue"] = hue_argument
 
     def convert_color(self):
