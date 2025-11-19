@@ -69,7 +69,7 @@ plot_json = {
             "dashes":[None,None],
             "snap":None
         },
-        "hue":None,
+        "hue":[None,{True:"True",False:"False"}],
         "style":None,
         "size":None,
         "palette":None,
@@ -11644,7 +11644,7 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
         db = self.plot_manager.get_db()
         if (db != []):
             dataset = pd.read_csv("./dataset/user_dataset.csv")
-            hue_parameter = db["hue"]
+            hue_parameter = db["hue"][0]
             if (hue_parameter == None):
                 return []
             if ("self.dataset" in hue_parameter):
@@ -15201,7 +15201,13 @@ class hue_button(QDialog):
         self.numerical_columns = self.get_numerical_columns()
         self.columns = self.categorical_columns + self.numerical_columns
 
-        self.hue = None
+        self.hue_value = None
+        self.hue_mapping = {
+            True:"True",
+            False:"False",
+        }
+
+        self.hue = [self.hue_value,self.hue_mapping]
 
         self.premade_boolean_expression_format = {
             "column":"",
@@ -15823,6 +15829,46 @@ class hue_button(QDialog):
         self.premade_and_logical_button.clicked.connect(self.premade_add_and_logical_to_boolean_expression)
         self.premade_or_logical_button.clicked.connect(self.premade_add_or_logical_to_boolean_expression)
 
+        #-----Hue Mapping Button-----
+        self.hue_mapping_button = QPushButton("Add Hue Mapping")
+        self.hue_mapping_button.setObjectName("hue_mapping_button")
+        self.hue_mapping_button.setStyleSheet("""
+            QPushButton#hue_mapping_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#hue_mapping_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.hue_mapping_button.clicked.connect(self.change_to_hue_mapping_screen)
+
         #-----Logical Operator Buttons-----
         self.available_logical_operators = [self.premade_and_logical_button,self.premade_or_logical_button,
                                             self.manual_and_logical_button,self.manual_or_logical_button]
@@ -16156,6 +16202,24 @@ class hue_button(QDialog):
         self.create_logical_operator_screen()
         self.logical_operator_screen.hide()
 
+        #-----Hue Mapping Screen-----
+        self.hue_mapping_screen = QWidget()
+        self.hue_mapping_screen.setObjectName("hue_mapping_screen")
+        self.hue_mapping_screen.setStyleSheet("""
+            QWidget#hue_mapping_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.create_hue_mapping_screen()
+        self.hue_mapping_screen.hide()
+
         #-----Hue Adjustment Section-----
         self.hue_adjustment_section = QWidget()
         self.hue_adjustment_section.setObjectName("hue_adjustment_section")
@@ -16181,6 +16245,7 @@ class hue_button(QDialog):
         hue_adjustment_section_layout.addWidget(self.boolean_expression_premade_select_operator_screen)
         hue_adjustment_section_layout.addWidget(self.boolean_expression_premade_input_value_screen)
         hue_adjustment_section_layout.addWidget(self.logical_operator_screen)
+        hue_adjustment_section_layout.addWidget(self.hue_mapping_screen)
         hue_adjustment_section_layout.setContentsMargins(0,0,0,0)
 
         #-----Initialize Screen Value-----
@@ -16190,7 +16255,7 @@ class hue_button(QDialog):
                                 self.boolean_expression_premade_select_column_screen,
                                 self.boolean_expression_premade_select_operator_screen,
                                 self.boolean_expression_premade_input_value_screen,
-                                self.logical_operator_screen]
+                                self.logical_operator_screen,self.hue_mapping_screen]
         self.current_screen_idx = 0
         self.available_screens[self.current_screen_idx].show()
 
@@ -17049,6 +17114,7 @@ class hue_button(QDialog):
         premade_boolean_expression_value_layout.addWidget(self.premade_invalid_input_widget)
         premade_boolean_expression_value_layout.addStretch()
         premade_boolean_expression_value_layout.addWidget(premade_logical_operator_button)
+        premade_boolean_expression_value_layout.addWidget(self.hue_mapping_button)
         premade_boolean_expression_value_layout.setContentsMargins(10,10,10,10)
         premade_boolean_expression_value_layout.setSpacing(5)
 
@@ -17058,22 +17124,75 @@ class hue_button(QDialog):
             button.hide()
             logical_operator_screen_layout.addWidget(button)
         logical_operator_screen_layout.setContentsMargins(10,10,10,10)
-        logical_operator_screen_layout.setSpacing(10)
+        logical_operator_screen_layout.setSpacing(5)
         logical_operator_screen_layout.addStretch()
 
+    def create_hue_mapping_screen(self):
+        hue_mapping_screen_layout = QVBoxLayout(self.hue_mapping_screen)
+        
+        self.true_marker_input = QLineEdit()
+        self.true_marker_input.setObjectName("true_marker_input")
+        self.true_marker_input.setPlaceholderText("True Marker:")
+        self.true_marker_input.setStyleSheet("""
+            QLineEdit#true_marker_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.true_marker_input.setMinimumHeight(60)
+        
+        self.false_marker_input = QLineEdit()
+        self.false_marker_input.setObjectName("false_marker_input")
+        self.false_marker_input.setPlaceholderText("False Marker:")
+        self.false_marker_input.setStyleSheet("""
+            QLineEdit#false_marker_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.false_marker_input.setMinimumHeight(60)
+
+        self.true_marker_input.textChanged.connect(self.change_true_marker_input)
+        self.false_marker_input.textChanged.connect(self.change_false_marker_input)
+
+        hue_mapping_screen_layout.addWidget(self.true_marker_input)
+        hue_mapping_screen_layout.addWidget(self.false_marker_input)
+        hue_mapping_screen_layout.setContentsMargins(10,10,10,10)
+        hue_mapping_screen_layout.setSpacing(5)
+        hue_mapping_screen_layout.addStretch()
+
     def change_to_previous_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
         if (self.current_screen_idx == 3 or self.current_screen_idx == 4):
-            self.available_screens[self.current_screen_idx].hide()
             self.current_screen_idx = 2
             self.premade_boolean_expression_format["column"] = ""
-        elif (self.current_screen_idx >= 5):
-            self.available_screens[self.current_screen_idx].hide()
+        elif (self.current_screen_idx >= 5 and self.current_screen_idx < 7):
             self.current_screen_idx -= 1
             if (self.current_screen_idx == 4):
                 self.premade_boolean_expression_format["operation"] = ""
             if (self.current_screen_idx == 5):
                 self.boolean_expression_value_input.clear()
                 self.premade_boolean_expression_format["value"] = ""
+        else:
+            self.current_screen_idx = 6
+            self.true_marker_input.clear()
+            self.false_marker_input.clear()
 
         self.available_screens[self.current_screen_idx].show() 
 
@@ -17126,14 +17245,19 @@ class hue_button(QDialog):
         self.current_screen_idx = 7
         self.available_screens[self.current_screen_idx].show()
 
+    def change_to_hue_mapping_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 8
+        self.available_screens[self.current_screen_idx].show()
+
     def change_categorical_hue_column(self,index):
         source_index = self.categorical_filter_proxy.mapToSource(index)
-        self.hue = self.categorical_column_model.data(source_index, Qt.ItemDataRole.DisplayRole)
+        self.hue_value = self.categorical_column_model.data(source_index, Qt.ItemDataRole.DisplayRole)
         self.update_hue()
         
     def change_numerical_hue_column(self,index):
         source_index = self.numerical_filter_proxy.mapToSource(index)
-        self.hue = self.numerical_column_model.data(source_index, Qt.ItemDataRole.DisplayRole)
+        self.hue_value = self.numerical_column_model.data(source_index, Qt.ItemDataRole.DisplayRole)
         self.update_hue()
 
     def change_boolean_expression_manual_column_input(self):
@@ -17272,7 +17396,7 @@ class hue_button(QDialog):
             elif (operation == "upper"):
                 boolean_expression = f"self.dataset['{column_name}'].str.{operation}() == {value}" 
                 
-            self.hue = " ".join(self.manual_nested_boolean_expression + [boolean_expression])
+            self.hue_value = " ".join(self.manual_nested_boolean_expression + [boolean_expression])
             self.update_hue()
 
     def change_boolean_expression_premade_column(self,index):
@@ -17303,6 +17427,8 @@ class hue_button(QDialog):
             self.premade_and_logical_button.hide()
             self.premade_or_logical_button.hide()
             self.premade_boolean_expression_format["value"] = ""
+            self.hue_value = None
+            self.update_hue()
             return 
 
         try:
@@ -17381,14 +17507,39 @@ class hue_button(QDialog):
             elif (operation == "upper"):
                 boolean_expression = f"self.dataset['{column_name}'].str.{operation}() == {value}" 
 
-            self.hue = " ".join(self.premade_nested_boolean_expression + [boolean_expression])
+            self.hue_value = " ".join(self.premade_nested_boolean_expression + [boolean_expression])
             self.update_hue()
 
-    def change_hue_to_none(self):
-        self.hue = None
+    def change_true_marker_input(self):
+        true_marker = self.true_marker_input.text().strip()
+
+        if (true_marker == ""):
+            self.hue_mapping[True] = "True"
+            self.update_hue()
+            return 
+
+        self.hue_mapping[True] = true_marker
         self.update_hue()
-    
+
+    def change_false_marker_input(self):
+        false_marker = self.false_marker_input.text().strip()
+
+        if (false_marker == ""):
+            self.hue_mapping[False] = "False"
+            self.update_hue()
+            return 
+
+        self.hue_mapping[False] = false_marker
+        self.update_hue()
+
+    def change_hue_to_none(self):
+        self.hue_value = None
+        self.update_hue()
+
     def update_hue(self):
+        self.hue[0] = self.hue_value
+        self.hue[1] = self.hue_mapping
+
         #Grab the newest entry in the json
         db = self.plot_manager.get_db()
         #Check if the entry is empty or not and update if it's not empty and create one with the state if it's empty
@@ -17446,7 +17597,12 @@ class hue_button(QDialog):
 
         self.update_hue()
 
-        self.hue = None
+        self.hue_value = None
+        self.hue_mapping = {
+            True:"True",
+            False:"False"
+        }
+        self.hue = [self.hue_value,self.hue_mapping]
 
     def close_dialog(self):
-        self.close() 
+        self.close()
