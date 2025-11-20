@@ -1,6 +1,6 @@
 from math import log
 from PyQt6.QtCore import QSortFilterProxyModel, QStringListModel, Qt
-from PyQt6.QtGui import QFont, QKeySequence, QShortcut
+from PyQt6.QtGui import QFont, QKeySequence, QShortcut, QStandardItem, QStandardItemModel
 from PyQt6.QtWidgets import (
     QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QPushButton, 
     QSizePolicy, QTableView, QWidget, QVBoxLayout, QStyledItemDelegate, QSizePolicy
@@ -11474,90 +11474,7 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
 
         self.hue_order = []
 
-        #-----Valid Size Order Widget-----
-        self.valid_hue_order_widget = QWidget()
-        self.valid_hue_order_widget.setObjectName("valid_hue_order_widget")
-        self.valid_hue_order_widget.setStyleSheet("""
-            QWidget#valid_hue_order_widget{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),   
-                    stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1),  
-                    stop:1 rgba(180, 200, 255, 1)  
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.valid_hue_order_label = QLabel("Valid Hue Order")
-        self.valid_hue_order_label.setObjectName("valid_hue_order_label")
-        self.valid_hue_order_label.setWordWrap(True)
-        self.valid_hue_order_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.valid_hue_order_label.setStyleSheet("""
-            QLabel#valid_hue_order_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-        
-        valid_hue_order_widget_layout = QVBoxLayout(self.valid_hue_order_widget)
-        valid_hue_order_widget_layout.addWidget(self.valid_hue_order_label)
-        valid_hue_order_widget_layout.setContentsMargins(0,0,0,0)
-        valid_hue_order_widget_layout.setSpacing(0)
-
-        #-----Invalid Custom Dashes Widget and Label-----
-        self.invalid_hue_order_widget = QWidget()
-        self.invalid_hue_order_widget.setObjectName("invalid_hue_order_widget")
-        self.invalid_hue_order_widget.setStyleSheet("""
-            QWidget#invalid_hue_order_widget{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 100, 100, 1),   
-                    stop:0.4 rgba(255, 130, 120, 1), 
-                    stop:0.7 rgba(200, 90, 150, 1), 
-                    stop:1 rgba(180, 60, 140, 1)     
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.invalid_hue_order_label = QLabel("Invalid Hue Order")
-        self.invalid_hue_order_label.setObjectName("invalid_hue_order_label")
-        self.invalid_hue_order_label.setWordWrap(True)
-        self.invalid_hue_order_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.invalid_hue_order_label.setStyleSheet("""
-            QLabel#invalid_hue_order_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-        
-        invalid_hue_order_widget_layout = QVBoxLayout(self.invalid_hue_order_widget)
-        invalid_hue_order_widget_layout.addWidget(self.invalid_hue_order_label)
-        invalid_hue_order_widget_layout.setContentsMargins(0,0,0,0)
-        invalid_hue_order_widget_layout.setSpacing(0)
-
-        #-----Set the Height of both widgets and hide them-----
-        self.valid_hue_order_widget.setMinimumHeight(50)
-        self.invalid_hue_order_widget.setMinimumHeight(50)
-        
-        self.valid_hue_order_widget.hide()
-        self.invalid_hue_order_widget.hide()
-
-        #-----Size Order Screen-----
+        #-----Hue Order Screen-----
         self.hue_order_adjustment_screen = QWidget()
         self.hue_order_adjustment_screen.setObjectName("hue_order_adjustment_screen")
         self.hue_order_adjustment_screen.setStyleSheet("""
@@ -11572,63 +11489,104 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-
-        self.hue_order_adjustment_input = QLineEdit()
-        self.hue_order_adjustment_input.setObjectName("hue_order_adjustment_input")
-        self.hue_order_adjustment_input.setPlaceholderText("Hue Order: ")
-        self.hue_order_adjustment_input.setStyleSheet("""
-            QLineEdit#hue_order_adjustment_input{ 
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                color: black;
-                font-size: 24pt;
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-        self.hue_order_adjustment_input.textChanged.connect(self.change_hue_order)
-
-        self.hue_order_adjustment_input.setMinimumHeight(60)
-
-        hue_order_adjustment_screen_layout = QVBoxLayout(self.hue_order_adjustment_screen)
-        hue_order_adjustment_screen_layout.addWidget(self.hue_order_adjustment_input)
-        hue_order_adjustment_screen_layout.addWidget(self.valid_hue_order_widget)
-        hue_order_adjustment_screen_layout.addWidget(self.invalid_hue_order_widget)
-        hue_order_adjustment_screen_layout.setContentsMargins(10,10,10,10)
-        hue_order_adjustment_screen_layout.setSpacing(10) 
-        hue_order_adjustment_screen_layout.addStretch()
+        self.create_hue_order_adjustment_screen()
 
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.hue_order_adjustment_screen)
         main_layout.setContentsMargins(0,0,0,0)
         main_layout.setSpacing(0)
 
-    def change_hue_order(self):
-        hue_order = self.hue_order_adjustment_input.text().strip().split(" ")
-        hue_order = list(filter(lambda x: x != "",hue_order))
+    def create_hue_order_adjustment_screen(self):
+        hue_order_adjustment_screen_layout = QVBoxLayout(self.hue_order_adjustment_screen)
+    
+        self.hue_order_list_view = QListView()
+        self.hue_order_model = QStandardItemModel()
 
-        if (self.hue_value != []):
-            if (len(self.hue_value) != len(hue_order)):
-                self.valid_hue_order_widget.hide()
-                self.invalid_hue_order_widget.show()
-                return
-            else:
-                for i in hue_order:
-                    if (i not in self.hue_value): 
-                        self.valid_hue_order_widget.hide()
-                        self.invalid_hue_order_widget.show()
-                        return
-                self.valid_hue_order_widget.show()
-                self.invalid_hue_order_widget.hide()
-                self.hue_order = hue_order
-        else:
-            self.hue_order = hue_order
+        for hue_label in self.hue_values:
+            item = QStandardItem(str(hue_label))
+            item.setEditable(False)
+            self.hue_order_model.appendRow(item)
+
+        self.hue_order_list_view.setModel(self.hue_order_model)
+        self.hue_order_list_view.setObjectName("hue_order_list_view")
+        self.hue_order_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        self.hue_order_list_view.setDragEnabled(True)
+        self.hue_order_list_view.setAcceptDrops(True)
+        self.hue_order_list_view.setDropIndicatorShown(True)
+        self.hue_order_list_view.setDefaultDropAction(Qt.DropAction.MoveAction)
+        self.hue_order_list_view.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
         
-        self.update_hue_order()
+        self.hue_order_list_view.setItemDelegate(CustomDelegate())
+
+        self.hue_order_list_view.setStyleSheet("""
+            QListView#hue_order_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#hue_order_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#hue_order_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#hue_order_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.hue_order_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.hue_order_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.hue_order_list_view.setSpacing(3)
+
+        hue_order_adjustment_screen_layout.addWidget(self.hue_order_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        hue_order_adjustment_screen_layout.setContentsMargins(10, 10, 10, 10)
 
     def update_hue_order(self):
         db = self.plot_manager.get_db()
@@ -11652,10 +11610,11 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
             return dataset[hue_parameter].unique()
         else:
             return []
-        
-    def mousePressEvent(self,event):
-        if (not self.hue_order_adjustment_input.geometry().contains(event.position().toPoint())):
-            self.hue_order_adjustment_input.clearFocus()
+
+    def dropEvent(self, event):
+        super().dropEvent(event)
+        self.hue_order = [self.hue_order_model.item(i).text() for i in range(self.hue_order_model.rowCount())]
+        self.update_hue_order()
 
     def showEvent(self,event):
         super().showEvent(event)
@@ -15201,13 +15160,7 @@ class hue_button(QDialog):
         self.numerical_columns = self.get_numerical_columns()
         self.columns = self.categorical_columns + self.numerical_columns
 
-        self.hue_value = None
-        self.hue_mapping = {
-            True:"True",
-            False:"False",
-        }
-
-        self.hue = [self.hue_value,self.hue_mapping]
+        self.hue = [None,{True:"True",False:"False"}]
 
         self.premade_boolean_expression_format = {
             "column":"",
@@ -17191,8 +17144,6 @@ class hue_button(QDialog):
                 self.premade_boolean_expression_format["value"] = ""
         else:
             self.current_screen_idx = 6
-            self.true_marker_input.clear()
-            self.false_marker_input.clear()
 
         self.available_screens[self.current_screen_idx].show() 
 
@@ -17246,18 +17197,23 @@ class hue_button(QDialog):
         self.available_screens[self.current_screen_idx].show()
 
     def change_to_hue_mapping_screen(self):
+        if (self.hue[1] == None):
+            self.hue[1] = {True:"True",False:"False"}
+
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 8
         self.available_screens[self.current_screen_idx].show()
 
     def change_categorical_hue_column(self,index):
         source_index = self.categorical_filter_proxy.mapToSource(index)
-        self.hue_value = self.categorical_column_model.data(source_index, Qt.ItemDataRole.DisplayRole)
+        self.hue[0] = self.categorical_column_model.data(source_index, Qt.ItemDataRole.DisplayRole)
+        self.hue[1] = None
         self.update_hue()
         
     def change_numerical_hue_column(self,index):
         source_index = self.numerical_filter_proxy.mapToSource(index)
-        self.hue_value = self.numerical_column_model.data(source_index, Qt.ItemDataRole.DisplayRole)
+        self.hue[0] = self.numerical_column_model.data(source_index, Qt.ItemDataRole.DisplayRole)
+        self.hue[1] = None
         self.update_hue()
 
     def change_boolean_expression_manual_column_input(self):
@@ -17396,7 +17352,8 @@ class hue_button(QDialog):
             elif (operation == "upper"):
                 boolean_expression = f"self.dataset['{column_name}'].str.{operation}() == {value}" 
                 
-            self.hue_value = " ".join(self.manual_nested_boolean_expression + [boolean_expression])
+            self.hue[0] = " ".join(self.manual_nested_boolean_expression + [boolean_expression])
+            self.hue[1] = None
             self.update_hue()
 
     def change_boolean_expression_premade_column(self,index):
@@ -17507,29 +17464,29 @@ class hue_button(QDialog):
             elif (operation == "upper"):
                 boolean_expression = f"self.dataset['{column_name}'].str.{operation}() == {value}" 
 
-            self.hue_value = " ".join(self.premade_nested_boolean_expression + [boolean_expression])
+            self.hue[0] = " ".join(self.premade_nested_boolean_expression + [boolean_expression])
             self.update_hue()
 
     def change_true_marker_input(self):
         true_marker = self.true_marker_input.text().strip()
 
         if (true_marker == ""):
-            self.hue_mapping[True] = "True"
+            self.hue[1][True] = "True"
             self.update_hue()
             return 
 
-        self.hue_mapping[True] = true_marker
+        self.hue[1][True] = true_marker
         self.update_hue()
 
     def change_false_marker_input(self):
         false_marker = self.false_marker_input.text().strip()
 
         if (false_marker == ""):
-            self.hue_mapping[False] = "False"
+            self.hue[1][False] = "False"
             self.update_hue()
             return 
 
-        self.hue_mapping[False] = false_marker
+        self.hue[1][False] = false_marker
         self.update_hue()
 
     def change_hue_to_none(self):
@@ -17537,9 +17494,6 @@ class hue_button(QDialog):
         self.update_hue()
 
     def update_hue(self):
-        self.hue[0] = self.hue_value
-        self.hue[1] = self.hue_mapping
-
         #Grab the newest entry in the json
         db = self.plot_manager.get_db()
         #Check if the entry is empty or not and update if it's not empty and create one with the state if it's empty
@@ -17570,7 +17524,11 @@ class hue_button(QDialog):
 
     def showEvent(self, event):
         super().showEvent(event)
-        
+
+        db = self.plot_manager.get_db()
+        if (db != []):
+            previous_hue = db["hue"]
+
         self.dataset = pd.read_csv("./dataset/user_dataset.csv")
         self.categorical_columns = self.get_categorical_columns()
         self.numerical_columns = self.get_numerical_columns()
@@ -17595,14 +17553,12 @@ class hue_button(QDialog):
         self.manual_boolean_expression_operator_input.clear()
         self.manual_boolean_expression_value_input.clear()
 
-        self.update_hue()
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 0
+        self.available_screens[self.current_screen_idx].show()
 
-        self.hue_value = None
-        self.hue_mapping = {
-            True:"True",
-            False:"False"
-        }
-        self.hue = [self.hue_value,self.hue_mapping]
+        self.hue = previous_hue
+        self.update_hue()
 
     def close_dialog(self):
         self.close()
