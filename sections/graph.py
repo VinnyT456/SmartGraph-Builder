@@ -62,13 +62,13 @@ class graph_generator(QWidget):
         self.default_graph_legend_parameters.pop("label",None)
 
         self.hue_mapping = self.current_graph_parameters["hue"][1]
-        true_mapping = self.hue_mapping['true']
-        false_mapping = self.hue_mapping['false']
-
-        self.hue_mapping = {
-            True:true_mapping,
-            False:false_mapping,
-        }
+        if (self.hue_mapping is not None):
+            true_mapping = self.hue_mapping['true']
+            false_mapping = self.hue_mapping['false']
+            self.hue_mapping = {
+                True:true_mapping,
+                False:false_mapping,
+            }
 
         self.current_graph_parameters["hue"] = self.current_graph_parameters["hue"][0]
 
@@ -127,7 +127,9 @@ class graph_generator(QWidget):
         if (isinstance(hue_argument,str) and "self.dataset" in hue_argument):
             hue_argument = hue_argument.replace("self.dataset['","").replace("']","")
             hue_argument = hue_argument.replace('self.dataset["',"").replace('"]',"")
-            hue_argument = self.dataset.eval(hue_argument).map(self.hue_mapping)
+            hue_argument = self.dataset.eval(hue_argument)
+            if (self.hue_mapping is not None):
+                hue_argument = hue_argument.map(self.hue_mapping)
             self.graph_parameters["hue"] = hue_argument
 
     def convert_color(self):
