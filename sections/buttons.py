@@ -14810,7 +14810,336 @@ class grid_dashes_adjustment_section(QWidget):
         self.graph_display = graph_display
         self.plot_manager = PlotManager()
 
+        self.grid_offset = None
+        self.grid_sequence = None
+
         self.grid_dashes = ""
+
+        #-----Valid Offset Widget-----
+        self.valid_offset_widget = QWidget()
+        self.valid_offset_widget.setObjectName("valid_offset_widget")
+        self.valid_offset_widget.setStyleSheet("""
+            QWidget#valid_offset_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_offset_label = QLabel("Valid Offset")
+        self.valid_offset_label.setObjectName("valid_offset_label")
+        self.valid_offset_label.setWordWrap(True)
+        self.valid_offset_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_offset_label.setStyleSheet("""
+            QLabel#valid_offset_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        valid_offset_widget_layout = QVBoxLayout(self.valid_offset_widget)
+        valid_offset_widget_layout.addWidget(self.valid_offset_label)
+        valid_offset_widget_layout.setContentsMargins(0,0,0,0)
+        valid_offset_widget_layout.setSpacing(0)
+
+        #-----Invalid Offset Widget-----
+        self.invalid_offset_widget = QWidget()
+        self.invalid_offset_widget.setObjectName("invalid_offset_widget")
+        self.invalid_offset_widget.setStyleSheet("""
+            QWidget#invalid_offset_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_offset_label = QLabel("Invalid Offset")
+        self.invalid_offset_label.setObjectName("invalid_offset_label")
+        self.invalid_offset_label.setWordWrap(True)
+        self.invalid_offset_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_offset_label.setStyleSheet("""
+            QLabel#invalid_offset_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        invalid_offset_widget_layout = QVBoxLayout(self.invalid_offset_widget)
+        invalid_offset_widget_layout.addWidget(self.invalid_offset_label)
+        invalid_offset_widget_layout.setContentsMargins(0,0,0,0)
+        invalid_offset_widget_layout.setSpacing(0)
+
+        #-----Valid Sequence Widget-----
+        self.valid_sequence_widget = QWidget()
+        self.valid_sequence_widget.setObjectName("valid_sequence_widget")
+        self.valid_sequence_widget.setStyleSheet("""
+            QWidget#valid_sequence_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_sequence_label = QLabel("Valid Sequence")
+        self.valid_sequence_label.setObjectName("valid_sequence_label")
+        self.valid_sequence_label.setWordWrap(True)
+        self.valid_sequence_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_sequence_label.setStyleSheet("""
+            QLabel#valid_sequence_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        valid_sequence_widget_layout = QVBoxLayout(self.valid_sequence_widget)
+        valid_sequence_widget_layout.addWidget(self.valid_sequence_label)
+        valid_sequence_widget_layout.setContentsMargins(0,0,0,0)
+        valid_sequence_widget_layout.setSpacing(0)
+
+        #-----Invalid Sequence Widget-----
+        self.invalid_sequence_widget = QWidget()
+        self.invalid_sequence_widget.setObjectName("invalid_sequence_widget")
+        self.invalid_sequence_widget.setStyleSheet("""
+            QWidget#invalid_sequence_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_sequence_label = QLabel("Invalid Sequence")
+        self.invalid_sequence_label.setObjectName("invalid_sequence_label")
+        self.invalid_sequence_label.setWordWrap(True)
+        self.invalid_sequence_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_sequence_label.setStyleSheet("""
+            QLabel#invalid_sequence_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        invalid_sequence_widget_layout = QVBoxLayout(self.invalid_sequence_widget)
+        invalid_sequence_widget_layout.addWidget(self.invalid_sequence_label)
+        invalid_sequence_widget_layout.setContentsMargins(0,0,0,0)
+        invalid_sequence_widget_layout.setSpacing(0)
+
+        #-----Customize the Widgets-----
+        self.valid_offset_widget.hide()
+        self.valid_sequence_widget.hide()
+        self.invalid_offset_widget.hide()
+        self.invalid_sequence_widget.hide()
+
+        self.valid_offset_widget.setMinimumHeight(60)
+        self.valid_sequence_widget.setMinimumHeight(60)
+        self.invalid_offset_widget.setMinimumHeight(60)
+        self.invalid_sequence_widget.setMinimumHeight(60)
+
+        #-----Store all the valid/invalid widgets in a list-----
+        self.validity_check_widgets = [self.valid_offset_widget,self.invalid_offset_widget,
+                                    self.valid_sequence_widget,self.invalid_sequence_widget]
+
+        #-----Grid Dashes Adjustment Screen-----
+        self.grid_dashes_adjustment_screen = QWidget()
+        self.grid_dashes_adjustment_screen.setObjectName("grid_dashes_adjustment_screen")
+        self.grid_dashes_adjustment_screen.setStyleSheet("""
+            QWidget#grid_dashes_adjustment_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.create_grid_dashes_adjustment_screen()
+
+        #-----Add the Grid Dashes Adjustment Screen to the Main Screen-----
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.grid_dashes_adjustment_screen)
+        main_layout.setContentsMargins(0,0,0,0)
+        main_layout.setSpacing(0)
+
+    def create_grid_dashes_adjustment_screen(self):
+        grid_dashes_adjustment_screen_layout = QVBoxLayout(self.grid_dashes_adjustment_screen)
+        
+        self.grid_dashes_offset_input = QLineEdit()
+        self.grid_dashes_offset_input.setObjectName("grid_dashes_offset_input")
+        self.grid_dashes_offset_input.setPlaceholderText("Offset: ")
+        self.grid_dashes_offset_input.setStyleSheet("""
+            QLineEdit#grid_dashes_offset_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.grid_dashes_sequence_input = QLineEdit()
+        self.grid_dashes_sequence_input.setObjectName("grid_dashes_sequence_input")
+        self.grid_dashes_sequence_input.setPlaceholderText("Sequence: ")
+        self.grid_dashes_sequence_input.setStyleSheet("""
+            QLineEdit#grid_dashes_sequence_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.grid_dashes_offset_input.setMinimumHeight(60)
+        self.grid_dashes_sequence_input.setMinimumHeight(60)
+
+        self.grid_dashes_offset_input.textChanged.connect(self.change_grid_dashes_offset)
+        self.grid_dashes_sequence_input.textChanged.connect(self.change_grid_dashes_sequence)
+
+        grid_dashes_adjustment_screen_layout.addWidget(self.grid_dashes_offset_input)
+        grid_dashes_adjustment_screen_layout.addWidget(self.grid_dashes_sequence_input)
+        grid_dashes_adjustment_screen_layout.addWidget(self.valid_offset_widget)
+        grid_dashes_adjustment_screen_layout.addWidget(self.valid_sequence_widget)
+        grid_dashes_adjustment_screen_layout.addWidget(self.invalid_offset_widget)
+        grid_dashes_adjustment_screen_layout.addWidget(self.invalid_sequence_widget)
+        
+        grid_dashes_adjustment_screen_layout.setContentsMargins(10,10,10,10)
+        grid_dashes_adjustment_screen_layout.setSpacing(10)
+        grid_dashes_adjustment_screen_layout.addStretch()
+
+    def change_grid_dashes_offset(self):
+        grid_dashes_offset = self.grid_dashes_offset_input.text().strip()
+
+        [widget.hide() for widget in self.validity_check_widgets]
+
+        if (grid_dashes_offset == ""):
+            self.grid_dashes[0] = None
+            self.update_grid_dashes()
+            return 
+
+        try:
+            grid_dashes_offset = float(grid_dashes_offset)
+            if (grid_dashes_offset < 0):
+                raise Exception
+            self.valid_offset_widget.show()
+        except:
+            self.invalid_offset_widget.show()
+        else:
+            self.grid_offset = grid_dashes_offset
+            self.change_grid_dashes()
+            if (self.grid_dashes != [None,None]):
+                self.update_grid_dashes()
+
+    def change_grid_dashes_sequence(self):
+        grid_dashes_sequence = self.grid_dashes_sequence_input.text().strip()
+
+        if (" " in grid_dashes_sequence):
+            grid_dashes_sequence = grid_dashes_sequence.split(" ")
+        elif ("," in grid_dashes_sequence):
+            grid_dashes_sequence = grid_dashes_sequence.split(",")
+        else:
+            grid_dashes_sequence = [grid_dashes_sequence]
+
+        [widget.hide() for widget in self.validity_check_widgets]
+
+        if (grid_dashes_sequence == ""):
+            self.grid_dashes[1] = None
+            self.update_grid_dashes()
+            return 
+
+        try:
+            grid_dashes_sequence = list(map(float,grid_dashes_sequence))
+            grid_dashes_sequence = list(filter(lambda x:x > 0,grid_dashes_sequence))
+
+            if (len(grid_dashes_sequence) < 4 or len(grid_dashes_sequence) % 2 == 1):
+                raise Exception
+
+            self.valid_sequence_widget.show()
+        except:
+            self.invalid_sequence_widget.show()
+        else:
+            self.grid_sequence = grid_dashes_sequence
+            self.change_grid_dashes()
+            if (self.grid_dashes != [None,None]):
+                self.update_grid_dashes()
+
+    def change_grid_dashes(self):
+        self.grid_dashes = [None,None]
+        if (self.grid_dashes[0] is None and self.grid_sequence is not None):
+            self.grid_dashes = [0,self.grid_sequence]
+        if (self.grid_offset is not None and self.grid_sequence is not None):
+            self.grid_dashes = [self.grid_offset,self.grid_sequence]
+
+    def update_grid_dashes(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_grid("dashes",self.grid_dashes)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["grid"]["dashes"] = self.grid_dashes
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
+
+    def mousePressEvent(self, event):
+        if not self.grid_dashes_offset_input.geometry().contains(event.position().toPoint()):
+            self.grid_dashes_offset_input.clearFocus()
+        if not self.grid_dashes_sequence_input.geometry().contains(event.position().toPoint()):
+            self.grid_dashes_sequence_input.clearFocus()
+        super().mousePressEvent(event)
 
 class grid_snap_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
