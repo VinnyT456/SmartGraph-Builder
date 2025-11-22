@@ -11281,89 +11281,6 @@ class seaborn_legend_size_order_adjustment_section(QWidget):
 
         self.size_order = []
 
-        #-----Valid Size Order Widget-----
-        self.valid_size_order_widget = QWidget()
-        self.valid_size_order_widget.setObjectName("valid_size_order_widget")
-        self.valid_size_order_widget.setStyleSheet("""
-            QWidget#valid_size_order_widget{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),   
-                    stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1),  
-                    stop:1 rgba(180, 200, 255, 1)  
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.valid_size_order_label = QLabel("Valid Size Order")
-        self.valid_size_order_label.setObjectName("valid_size_order_label")
-        self.valid_size_order_label.setWordWrap(True)
-        self.valid_size_order_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.valid_size_order_label.setStyleSheet("""
-            QLabel#valid_size_order_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-        
-        valid_size_order_widget_layout = QVBoxLayout(self.valid_size_order_widget)
-        valid_size_order_widget_layout.addWidget(self.valid_size_order_label)
-        valid_size_order_widget_layout.setContentsMargins(0,0,0,0)
-        valid_size_order_widget_layout.setSpacing(0)
-
-        #-----Invalid Custom Dashes Widget and Label-----
-        self.invalid_size_order_widget = QWidget()
-        self.invalid_size_order_widget.setObjectName("invalid_size_order_widget")
-        self.invalid_size_order_widget.setStyleSheet("""
-            QWidget#invalid_size_order_widget{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 100, 100, 1),   
-                    stop:0.4 rgba(255, 130, 120, 1), 
-                    stop:0.7 rgba(200, 90, 150, 1), 
-                    stop:1 rgba(180, 60, 140, 1)     
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.invalid_size_order_label = QLabel("Invalid Size Order")
-        self.invalid_size_order_label.setObjectName("invalid_size_order_label")
-        self.invalid_size_order_label.setWordWrap(True)
-        self.invalid_size_order_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.invalid_size_order_label.setStyleSheet("""
-            QLabel#invalid_size_order_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-        
-        invalid_size_order_widget_layout = QVBoxLayout(self.invalid_size_order_widget)
-        invalid_size_order_widget_layout.addWidget(self.invalid_size_order_label)
-        invalid_size_order_widget_layout.setContentsMargins(0,0,0,0)
-        invalid_size_order_widget_layout.setSpacing(0)
-
-        #-----Set the Height of both widgets and hide them-----
-        self.valid_size_order_widget.setMinimumHeight(50)
-        self.invalid_size_order_widget.setMinimumHeight(50)
-        
-        self.valid_size_order_widget.hide()
-        self.invalid_size_order_widget.hide()
-
         #-----Size Order Screen-----
         self.size_order_adjustment_screen = QWidget()
         self.size_order_adjustment_screen.setObjectName("size_order_adjustment_screen")
@@ -11379,32 +11296,9 @@ class seaborn_legend_size_order_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-
-        self.size_order_adjustment_input = QLineEdit()
-        self.size_order_adjustment_input.setObjectName("size_order_adjustment_input")
-        self.size_order_adjustment_input.setPlaceholderText("Size Order: ")
-        self.size_order_adjustment_input.setStyleSheet("""
-            QLineEdit#size_order_adjustment_input{ 
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                color: black;
-                font-size: 24pt;
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-        self.size_order_adjustment_input.textChanged.connect(self.change_size_order)
-
-        self.size_order_adjustment_input.setMinimumHeight(60)
+        self.create_size_order_adjustment_screen()
 
         size_order_adjustment_screen_layout = QVBoxLayout(self.size_order_adjustment_screen)
-        size_order_adjustment_screen_layout.addWidget(self.size_order_adjustment_input)
-        size_order_adjustment_screen_layout.addWidget(self.valid_size_order_widget)
-        size_order_adjustment_screen_layout.addWidget(self.invalid_size_order_widget)
         size_order_adjustment_screen_layout.setContentsMargins(10,10,10,10)
         size_order_adjustment_screen_layout.setSpacing(10) 
         size_order_adjustment_screen_layout.addStretch()
@@ -11414,30 +11308,92 @@ class seaborn_legend_size_order_adjustment_section(QWidget):
         main_layout.setContentsMargins(0,0,0,0)
         main_layout.setSpacing(0)
 
-    def change_size_order(self):
-        size_order = self.size_order_adjustment_input.text().strip().split(" ")
-        size_order = list(filter(lambda x: x != "",size_order))
+    def create_size_order_adjustment_screen(self):
+        size_order_adjustment_screen_layout = QVBoxLayout(self.size_order_adjustment_screen)
+    
+        self.size_order_listwidget = QListWidget()
+        self.size_order_listwidget.setObjectName("size_order_listwidget")
 
-        if (self.size_value != []):
-            if (len(self.size_value) != len(size_order)):
-                self.valid_size_order_widget.hide()
-                self.invalid_size_order_widget.show()
-                return
-            else:
-                for i in size_order:
-                    if (i not in self.size_value): 
-                        self.valid_size_order_widget.hide()
-                        self.invalid_size_order_widget.show()
-                        return
-                self.valid_size_order_widget.show()
-                self.invalid_size_order_widget.hide()
-                self.size_order = size_order
-        else:
-            self.size_order = size_order
+        # Enable drag & drop reordering
+        self.size_order_listwidget.setDragDropMode(QListWidget.DragDropMode.InternalMove)
+        for size in self.size_values:
+            self.size_order_listwidget.addItem(QListWidgetItem(size))
+            
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
         
-        self.update_size_order()
+        self.size_order_listwidget.setItemDelegate(CustomDelegate())
+        self.size_order_listwidget.setStyleSheet("""
+            QListWidget#size_order_listwidget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListWidget#size_order_listwidget::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListWidget#size_order_listwidget::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListWidget#size_order_listwidget::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.size_order_listwidget.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.size_order_listwidget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.size_order_listwidget.setSpacing(3)
+
+        self.size_order_listwidget.model().rowsMoved.connect(self.update_size_order)
+
+        size_order_adjustment_screen_layout.addWidget(self.size_order_listwidget)
+
+        # Add margins and spacing to make it look good and push content to the top
+        size_order_adjustment_screen_layout.setContentsMargins(10, 10, 10, 10)
 
     def update_size_order(self):
+        self.size_roder = [self.size_order_model.item(i).text() for i in range(self.size_order_model.rowCount())]
         db = self.plot_manager.get_db()
         if (db != []): 
             self.plot_manager.update_seaborn_legend("size_order",self.size_order)
@@ -11457,10 +11413,10 @@ class seaborn_legend_size_order_adjustment_section(QWidget):
             return dataset[size_parameter].unique()
         else:
             return []
-        
-    def mousePressEvent(self,event):
-        if (not self.size_order_adjustment_input.geometry().contains(event.position().toPoint())):
-            self.size_order_adjustment_input.clearFocus()
+
+    def showEvent(self,event):
+        super().showEvent(event)
+        self.size_values = self.get_size_values()
 
 class seaborn_legend_hue_order_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
@@ -11515,7 +11471,7 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
         
         self.hue_order_listwidget.setItemDelegate(CustomDelegate())
         self.hue_order_listwidget.setStyleSheet("""
-            QListView#hue_order_listwidget{
+            QListWidget#hue_order_listwidget{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -11525,7 +11481,7 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
                 border: transparent;
                 border-radius: 16px;
             }
-            QListView#hue_order_listwidget::item {
+            QListWidget#hue_order_listwidget::item {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -11539,7 +11495,7 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#hue_order_listwidget::item:selected {
+            QListWidget#hue_order_listwidget::item:selected {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -11552,7 +11508,7 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#hue_order_listwidget::item:hover {
+            QListWidget#hue_order_listwidget::item:hover {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -11601,11 +11557,6 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
             return dataset[hue_parameter].unique()
         else:
             return []
-
-    def dropEvent(self, event):
-        super().dropEvent(event)
-        self.hue_order = [self.hue_order_model.item(i).text() for i in range(self.hue_order_model.rowCount())]
-        self.update_hue_order()
 
     def showEvent(self,event):
         super().showEvent(event)
