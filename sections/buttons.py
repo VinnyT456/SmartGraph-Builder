@@ -11393,7 +11393,7 @@ class seaborn_legend_size_order_adjustment_section(QWidget):
         size_order_adjustment_screen_layout.setContentsMargins(10, 10, 10, 10)
 
     def update_size_order(self):
-        self.size_roder = [self.size_order_model.item(i).text() for i in range(self.size_order_model.rowCount())]
+        self.size_order = [self.size_order_model.item(i).text() for i in range(self.size_order_model .rowCount())]
         db = self.plot_manager.get_db()
         if (db != []): 
             self.plot_manager.update_seaborn_legend("size_order",self.size_order)
@@ -11573,90 +11573,7 @@ class seaborn_legend_style_order_adjustment_section(QWidget):
 
         self.style_order = []
 
-        #-----Valid Size Order Widget-----
-        self.valid_style_order_widget = QWidget()
-        self.valid_style_order_widget.setObjectName("valid_style_order_widget")
-        self.valid_style_order_widget.setStyleSheet("""
-            QWidget#valid_style_order_widget{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),   
-                    stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1),  
-                    stop:1 rgba(180, 200, 255, 1)  
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.valid_style_order_label = QLabel("Valid Style Order")
-        self.valid_style_order_label.setObjectName("valid_style_order_label")
-        self.valid_style_order_label.setWordWrap(True)
-        self.valid_style_order_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.valid_style_order_label.setStyleSheet("""
-            QLabel#valid_style_order_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-        
-        valid_style_order_widget_layout = QVBoxLayout(self.valid_style_order_widget)
-        valid_style_order_widget_layout.addWidget(self.valid_style_order_label)
-        valid_style_order_widget_layout.setContentsMargins(0,0,0,0)
-        valid_style_order_widget_layout.setSpacing(0)
-
-        #-----Invalid Custom Dashes Widget and Label-----
-        self.invalid_style_order_widget = QWidget()
-        self.invalid_style_order_widget.setObjectName("invalid_style_order_widget")
-        self.invalid_style_order_widget.setStyleSheet("""
-            QWidget#invalid_style_order_widget{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 100, 100, 1),   
-                    stop:0.4 rgba(255, 130, 120, 1), 
-                    stop:0.7 rgba(200, 90, 150, 1), 
-                    stop:1 rgba(180, 60, 140, 1)     
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.invalid_style_order_label = QLabel("Invalid Style Order")
-        self.invalid_style_order_label.setObjectName("invalid_style_order_label")
-        self.invalid_style_order_label.setWordWrap(True)
-        self.invalid_style_order_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.invalid_style_order_label.setStyleSheet("""
-            QLabel#invalid_style_order_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-        
-        invalid_style_order_widget_layout = QVBoxLayout(self.invalid_style_order_widget)
-        invalid_style_order_widget_layout.addWidget(self.invalid_style_order_label)
-        invalid_style_order_widget_layout.setContentsMargins(0,0,0,0)
-        invalid_style_order_widget_layout.setSpacing(0)
-
-        #-----Set the Height of both widgets and hide them-----
-        self.valid_style_order_widget.setMinimumHeight(50)
-        self.invalid_style_order_widget.setMinimumHeight(50)
-        
-        self.valid_style_order_widget.hide()
-        self.invalid_style_order_widget.hide()
-
-        #-----Size Order Screen-----
+        #-----Style Order Screen-----
         self.style_order_adjustment_screen = QWidget()
         self.style_order_adjustment_screen.setObjectName("style_order_adjustment_screen")
         self.style_order_adjustment_screen.setStyleSheet("""
@@ -11671,32 +11588,9 @@ class seaborn_legend_style_order_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-
-        self.style_order_adjustment_input = QLineEdit()
-        self.style_order_adjustment_input.setObjectName("style_order_adjustment_input")
-        self.style_order_adjustment_input.setPlaceholderText("Style Order: ")
-        self.style_order_adjustment_input.setStyleSheet("""
-            QLineEdit#style_order_adjustment_input{ 
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                color: black;
-                font-size: 24pt;
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-        self.style_order_adjustment_input.textChanged.connect(self.change_style_order)
-
-        self.style_order_adjustment_input.setMinimumHeight(60)
+        self.create_style_order_adjustment_screen()
 
         style_order_adjustment_screen_layout = QVBoxLayout(self.style_order_adjustment_screen)
-        style_order_adjustment_screen_layout.addWidget(self.style_order_adjustment_input)
-        style_order_adjustment_screen_layout.addWidget(self.valid_style_order_widget)
-        style_order_adjustment_screen_layout.addWidget(self.invalid_style_order_widget)
         style_order_adjustment_screen_layout.setContentsMargins(10,10,10,10)
         style_order_adjustment_screen_layout.setSpacing(10) 
         style_order_adjustment_screen_layout.addStretch()
@@ -11706,30 +11600,92 @@ class seaborn_legend_style_order_adjustment_section(QWidget):
         main_layout.setContentsMargins(0,0,0,0)
         main_layout.setSpacing(0)
 
-    def change_style_order(self):
-        style_order = self.style_order_adjustment_input.text().strip().split(" ")
-        style_order = list(filter(lambda x: x != "",style_order))
+    def create_style_order_adjustment_screen(self):
+        style_order_adjustment_screen_layout = QVBoxLayout(self.style_order_adjustment_screen)
+    
+        self.style_order_listwidget = QListWidget()
+        self.style_order_listwidget.setObjectName("style_order_listwidget")
 
-        if (self.style_value != []):
-            if (len(self.style_value) != len(style_order)):
-                self.valid_style_order_widget.hide()
-                self.invalid_style_order_widget.show()
-                return
-            else:
-                for i in style_order:
-                    if (i not in self.style_values): 
-                        self.valid_style_order_widget.hide()
-                        self.invalid_style_order_widget.show()
-                        return
-                self.valid_style_order_widget.show()
-                self.invalid_style_order_widget.hide()
-                self.style_order = style_order
-        else:
-            self.style_order = style_order
+        # Enable drag & drop reordering
+        self.style_order_listwidget.setDragDropMode(QListWidget.DragDropMode.InternalMove)
+        for style in self.style_values:
+            self.style_order_listwidget.addItem(QListWidgetItem(style))
+            
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
         
-        self.update_style_order()
+        self.style_order_listwidget.setItemDelegate(CustomDelegate())
+        self.style_order_listwidget.setStyleSheet("""
+            QListWidget#style_order_listwidget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListWidget#style_order_listwidget::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListWidget#style_order_listwidget::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListWidget#style_order_listwidget::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.style_order_listwidget.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.style_order_listwidget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.style_order_listwidget.setSpacing(3)
+
+        self.style_order_listwidget.model().rowsMoved.connect(self.update_style_order)
+
+        style_order_adjustment_screen_layout.addWidget(self.style_order_listwidget)
+
+        # Add margins and spacing to make it look good and push content to the top
+        style_order_adjustment_screen_layout.setContentsMargins(10, 10, 10, 10)
 
     def update_style_order(self):
+        self.style_order = [self.style_order_model.item(i).text() for i in range(self.style_order_model .rowCount())]
         db = self.plot_manager.get_db()
         if (db != []): 
             self.plot_manager.update_seaborn_legend("style_order",self.style_order)
@@ -11743,20 +11699,16 @@ class seaborn_legend_style_order_adjustment_section(QWidget):
         db = self.plot_manager.get_db()
         if (db != []):
             dataset = pd.read_csv("./dataset/user_dataset.csv")
-            hue_parameter = db["style"]
-            if (hue_parameter == None):
+            size_parameter = db["style"]
+            if (size_parameter == None):
                 return []
-            return dataset[hue_parameter].unique()
+            return dataset[size_parameter].unique()
         else:
             return []
-        
-    def mousePressEvent(self,event):
-        if (not self.style_order_adjustment_input.geometry().contains(event.position().toPoint())):
-            self.hue_order_adjustment_input.clearFocus()
 
     def showEvent(self,event):
         super().showEvent(event)
-        self.style_value = self.get_style_values()
+        self.style_values = self.get_style_values()
 
 class legend_button(QDialog):
     def __init__(self,selected_graph, graph_display):
