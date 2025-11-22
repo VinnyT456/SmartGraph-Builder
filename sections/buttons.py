@@ -1,4 +1,3 @@
-from math import log
 from PyQt6.QtCore import QSortFilterProxyModel, QStringListModel, Qt
 from PyQt6.QtGui import QFont, QKeySequence, QShortcut, QStandardItem, QStandardItemModel
 from PyQt6.QtWidgets import (
@@ -14755,13 +14754,13 @@ class grid_zorder_adjustment_section(QWidget):
         self.grid_zorder_input.setMinimumHeight(60)
 
         #-----Grid Zorder Adjustment Screen Layout-----
-        gzorder_zorder_adjustment_screen_layout = QVBoxLayout(self.grid_zorder_adjustment_screen)
-        gzorder_zorder_adjustment_screen_layout.addWidget(self.grid_zorder_input)
-        gzorder_zorder_adjustment_screen_layout.addWidget(self.valid_zorder_widget)
-        gzorder_zorder_adjustment_screen_layout.addWidget(self.invalid_zorder_widget)
-        gzorder_zorder_adjustment_screen_layout.setContentsMargins(10,10,10,10)
-        gzorder_zorder_adjustment_screen_layout.setSpacing(10)
-        gzorder_zorder_adjustment_screen_layout.addStretch()
+        grid_zorder_adjustment_screen_layout = QVBoxLayout(self.grid_zorder_adjustment_screen)
+        grid_zorder_adjustment_screen_layout.addWidget(self.grid_zorder_input)
+        grid_zorder_adjustment_screen_layout.addWidget(self.valid_zorder_widget)
+        grid_zorder_adjustment_screen_layout.addWidget(self.invalid_zorder_widget)
+        grid_zorder_adjustment_screen_layout.setContentsMargins(10,10,10,10)
+        grid_zorder_adjustment_screen_layout.setSpacing(10)
+        grid_zorder_adjustment_screen_layout.addStretch()
 
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.grid_zorder_adjustment_screen)
@@ -14782,7 +14781,7 @@ class grid_zorder_adjustment_section(QWidget):
             self.valid_zorder_widget.show()
             self.invalid_zorder_widget.hide()
             self.grid_zorder = zorder
-            self.update_grid_alpha()
+            self.update_grid_zorder()
         except:
             self.valid_zorder_widget.hide()
             self.invalid_zorder_widget.show()
@@ -15067,7 +15066,7 @@ class grid_dashes_adjustment_section(QWidget):
         [widget.hide() for widget in self.validity_check_widgets]
 
         if (grid_dashes_offset == ""):
-            self.grid_dashes[0] = None
+            self.grid_offset = None
             self.update_grid_dashes()
             return 
 
@@ -15079,10 +15078,7 @@ class grid_dashes_adjustment_section(QWidget):
         except:
             self.invalid_offset_widget.show()
         else:
-            self.grid_offset = grid_dashes_offset
-            self.change_grid_dashes()
-            if (self.grid_dashes != [None,None]):
-                self.update_grid_dashes()
+            self.update_grid_dashes()
 
     def change_grid_dashes_sequence(self):
         grid_dashes_sequence = self.grid_dashes_sequence_input.text().strip()
@@ -15096,8 +15092,8 @@ class grid_dashes_adjustment_section(QWidget):
 
         [widget.hide() for widget in self.validity_check_widgets]
 
-        if (grid_dashes_sequence == ""):
-            self.grid_dashes[1] = None
+        if (grid_dashes_sequence == ['']):
+            self.grid_sequence = None
             self.update_grid_dashes()
             return 
 
@@ -15113,18 +15109,17 @@ class grid_dashes_adjustment_section(QWidget):
             self.invalid_sequence_widget.show()
         else:
             self.grid_sequence = grid_dashes_sequence
-            self.change_grid_dashes()
-            if (self.grid_dashes != [None,None]):
-                self.update_grid_dashes()
+            self.update_grid_dashes()
 
     def change_grid_dashes(self):
         self.grid_dashes = [None,None]
-        if (self.grid_dashes[0] is None and self.grid_sequence is not None):
+        if (self.grid_offset is None and self.grid_sequence is not None):
             self.grid_dashes = [0,self.grid_sequence]
         if (self.grid_offset is not None and self.grid_sequence is not None):
             self.grid_dashes = [self.grid_offset,self.grid_sequence]
 
     def update_grid_dashes(self):
+        self.change_grid_dashes()
         db = self.plot_manager.get_db()
         if (db != []):
             self.plot_manager.update_grid("dashes",self.grid_dashes)
