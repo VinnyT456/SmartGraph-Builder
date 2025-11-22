@@ -50,7 +50,13 @@ class graph_generator(QWidget):
         self.y_axis_title = self.graph_axis_titles["y-axis-title"]
 
         self.graph_title = self.current_graph_parameters.get("title")
-        self.graph_grid_parameter = self.current_graph_parameters.get("grid")
+        self.graph_grid_parameter = self.current_graph_parameters.get("grid")       
+        self.graph_grid_dashes = self.graph_grid_parameter["dashes"]
+        
+        if (None not in self.graph_grid_dashes):
+            grid_offset = self.graph_grid_dashes[0]
+            grid_sequence = self.graph_grid_dashes[1]
+            self.graph_grid_parameter["dashes"] = (grid_offset,*grid_sequence)
 
         self.graph_legend_parameters = self.current_graph_parameters.get("legend")
         self.graph_seaborn_legend_parameters = self.graph_legend_parameters["seaborn_legends"]
