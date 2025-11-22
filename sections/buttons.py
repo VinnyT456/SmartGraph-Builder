@@ -1,7 +1,7 @@
 from PyQt6.QtCore import QSortFilterProxyModel, QStringListModel, Qt
 from PyQt6.QtGui import QFont, QKeySequence, QShortcut, QStandardItem, QStandardItemModel
 from PyQt6.QtWidgets import (
-    QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QPushButton, 
+    QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QListWidget, QListWidgetItem, QPushButton, 
     QSizePolicy, QTableView, QWidget, QVBoxLayout, QStyledItemDelegate, QSizePolicy
 )
 from sections.dataset import PrepareDataset
@@ -11498,23 +11498,13 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
     def create_hue_order_adjustment_screen(self):
         hue_order_adjustment_screen_layout = QVBoxLayout(self.hue_order_adjustment_screen)
     
-        self.hue_order_list_view = QListView()
-        self.hue_order_model = QStandardItemModel()
-
-        for hue_label in self.hue_values:
-            item = QStandardItem(str(hue_label))
-            item.setEditable(False)
-            self.hue_order_model.appendRow(item)
-
-        self.hue_order_list_view.setModel(self.hue_order_model)
-        self.hue_order_list_view.setObjectName("hue_order_list_view")
-        self.hue_order_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-
-        self.hue_order_list_view.setDragEnabled(True)
-        self.hue_order_list_view.setAcceptDrops(True)
-        self.hue_order_list_view.setDropIndicatorShown(True)
-        self.hue_order_list_view.setDefaultDropAction(Qt.DropAction.MoveAction)
-        self.hue_order_list_view.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
+        self.hue_order_listwidget = QListWidget()
+        self.hue_order_listwidget.setObjectName("hue_order_listwidget")
+        # Enable drag & drop reordering
+        self.hue_order_listwidget.setDragDropMode(QListWidget.DragDropMode.InternalMove)
+        for hue in self.hue_values:
+            self.hue_order_listwidget.addItem(QListWidgetItem(hue))
+            
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -11523,10 +11513,9 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
                 option.font = font
                 super().paint(painter, option, index)
         
-        self.hue_order_list_view.setItemDelegate(CustomDelegate())
-
-        self.hue_order_list_view.setStyleSheet("""
-            QListView#hue_order_list_view{
+        self.hue_order_listwidget.setItemDelegate(CustomDelegate())
+        self.hue_order_listwidget.setStyleSheet("""
+            QListView#hue_order_listwidget{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -11536,7 +11525,7 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
                 border: transparent;
                 border-radius: 16px;
             }
-            QListView#hue_order_list_view::item {
+            QListView#hue_order_listwidget::item {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -11550,7 +11539,7 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#hue_order_list_view::item:selected {
+            QListView#hue_order_listwidget::item:selected {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -11563,7 +11552,7 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#hue_order_list_view::item:hover {
+            QListView#hue_order_listwidget::item:hover {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -11578,16 +11567,19 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
             }
         """)
 
-        self.hue_order_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.hue_order_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.hue_order_list_view.setSpacing(3)
+        self.hue_order_listwidget.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.hue_order_listwidget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.hue_order_listwidget.setSpacing(3)
 
-        hue_order_adjustment_screen_layout.addWidget(self.hue_order_list_view)
+        self.hue_order_listwidget.model().rowsMoved.connect(self.update_hue_order)
+
+        hue_order_adjustment_screen_layout.addWidget(self.hue_order_listwidget)
 
         # Add margins and spacing to make it look good and push content to the top
         hue_order_adjustment_screen_layout.setContentsMargins(10, 10, 10, 10)
 
     def update_hue_order(self):
+        self.hue_order = [self.hue_order_listwidget.item(i).text() for i in range(self.hue_order_listwidget.count())]
         db = self.plot_manager.get_db()
         if (db != []): 
             self.plot_manager.update_seaborn_legend("hue_order",self.hue_order)
