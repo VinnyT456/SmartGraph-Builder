@@ -11298,11 +11298,6 @@ class seaborn_legend_size_order_adjustment_section(QWidget):
         """)
         self.create_size_order_adjustment_screen()
 
-        size_order_adjustment_screen_layout = QVBoxLayout(self.size_order_adjustment_screen)
-        size_order_adjustment_screen_layout.setContentsMargins(10,10,10,10)
-        size_order_adjustment_screen_layout.setSpacing(10) 
-        size_order_adjustment_screen_layout.addStretch()
-
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.size_order_adjustment_screen)
         main_layout.setContentsMargins(0,0,0,0)
@@ -11446,11 +11441,6 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
         """)
         self.create_hue_order_adjustment_screen()
 
-        main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.hue_order_adjustment_screen)
-        main_layout.setContentsMargins(0,0,0,0)
-        main_layout.setSpacing(0)
-
     def create_hue_order_adjustment_screen(self):
         hue_order_adjustment_screen_layout = QVBoxLayout(self.hue_order_adjustment_screen)
     
@@ -11534,6 +11524,11 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
         # Add margins and spacing to make it look good and push content to the top
         hue_order_adjustment_screen_layout.setContentsMargins(10, 10, 10, 10)
 
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.hue_order_adjustment_screen)
+        main_layout.setContentsMargins(0,0,0,0)
+        main_layout.setSpacing(0)
+
     def update_hue_order(self):
         self.hue_order = [self.hue_order_listwidget.item(i).text() for i in range(self.hue_order_listwidget.count())]
         db = self.plot_manager.get_db()
@@ -11561,6 +11556,10 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
     def showEvent(self,event):
         super().showEvent(event)
         self.hue_value = self.get_hue_values()
+        for row,hue_value in enumerate(self.hue_value):
+            old_hue = self.hue_order_listwidget.takeItem(row)
+            del old_hue
+            self.hue_order_listwidget.insertItem(row,QListWidgetItem(hue_value))
 
 class seaborn_legend_style_order_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
@@ -11589,11 +11588,6 @@ class seaborn_legend_style_order_adjustment_section(QWidget):
             }
         """)
         self.create_style_order_adjustment_screen()
-
-        style_order_adjustment_screen_layout = QVBoxLayout(self.style_order_adjustment_screen)
-        style_order_adjustment_screen_layout.setContentsMargins(10,10,10,10)
-        style_order_adjustment_screen_layout.setSpacing(10) 
-        style_order_adjustment_screen_layout.addStretch()
 
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.style_order_adjustment_screen)
@@ -17715,9 +17709,18 @@ class hue_button(QDialog):
     def update_hue(self):
         #Grab the newest entry in the json
         db = self.plot_manager.get_db()
+        dataset = pd.read_csv("./dataset/user_dataset.csv")
         #Check if the entry is empty or not and update if it's not empty and create one with the state if it's empty
         if (db != []):
             self.plot_manager.update_hue(self.hue)
+
+            hue_order = db["legend"]["seaborn_legends"]["hue_order"]
+
+            if (self.hue[0] is not None and hue_order is not None and "self.dataset" not in self.hue[0]):
+                hue_value = set(dataset[self.hue[0]].unique())
+                hue_order = set(hue_order)
+                if (hue_order - hue_value != set()):
+                    self.plot_manager.update_seaborn_legend("hue_order",None)
         else:
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["hue"] = self.hue
