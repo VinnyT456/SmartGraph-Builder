@@ -11420,9 +11420,51 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
         self.graph_display = graph_display
         self.plot_manager = PlotManager()
 
-        self.hue_values = self.get_hue_values()
-
         self.hue_order = []
+
+        #-----Change Hue Warning Widget-----
+        self.hue_order_warning_widget = QWidget()
+        self.hue_order_warning_widget.setObjectName("hue_order_warning_widget")
+        self.hue_order_warning_widget.setStyleSheet("""
+            QWidget#hue_order_warning_widget{
+              background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;  
+            }
+        """)
+
+        self.hue_order_warning_label = QLabel("Invalid Hue for Hue Order")
+        self.hue_order_warning_label.setObjectName("hue_order_warning_label")
+        self.hue_order_warning_label.setStyleSheet("""
+            QLabel#hue_order_warning_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.hue_order_warning_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.hue_order_warning_label.setWordWrap(True)
+
+        hue_order_warning_layout = QVBoxLayout(self.hue_order_warning_widget)
+        hue_order_warning_layout.addWidget(self.hue_order_warning_label)
+        hue_order_warning_layout.setSpacing(0)
+        hue_order_warning_layout.setContentsMargins(0,0,0,0)
+
+        self.hue_order_warning_widget.setMinimumHeight(70)
+        self.hue_order_warning_widget.hide()
+
+        #-----Get the Hue Values-----
+        self.hue_values = self.get_hue_values()
 
         #-----Hue Order Screen-----
         self.hue_order_adjustment_screen = QWidget()
@@ -11449,7 +11491,7 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
         # Enable drag & drop reordering
         self.hue_order_listwidget.setDragDropMode(QListWidget.DragDropMode.InternalMove)
         for hue in self.hue_values:
-            self.hue_order_listwidget.addItem(QListWidgetItem(hue))
+            self.hue_order_listwidget.addItem(QListWidgetItem(str(hue)))
             
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
@@ -11519,6 +11561,7 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
 
         self.hue_order_listwidget.model().rowsMoved.connect(self.update_hue_order)
 
+        hue_order_adjustment_screen_layout.addWidget(self.hue_order_warning_widget)
         hue_order_adjustment_screen_layout.addWidget(self.hue_order_listwidget)
 
         # Add margins and spacing to make it look good and push content to the top
@@ -11546,9 +11589,15 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
             dataset = pd.read_csv("./dataset/user_dataset.csv")
             hue_parameter = db["hue"][0]
             if (hue_parameter == None):
+                self.hue_order_warning_widget.show()
                 return []
             if ("self.dataset" in hue_parameter):
+                self.hue_order_warning_widget.show()
                 return []
+            if ("float" in str(dataset[hue_parameter].dtype)):
+                self.hue_order_warning_widget.show()
+                return []
+            self.hue_order_warning_widget.hide()
             return dataset[hue_parameter].unique()
         else:
             return []
@@ -11556,10 +11605,9 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
     def showEvent(self,event):
         super().showEvent(event)
         self.hue_value = self.get_hue_values()
+        self.hue_order_listwidget.clear()
         for row,hue_value in enumerate(self.hue_value):
-            old_hue = self.hue_order_listwidget.takeItem(row)
-            del old_hue
-            self.hue_order_listwidget.insertItem(row,QListWidgetItem(hue_value))
+            self.hue_order_listwidget.insertItem(row,QListWidgetItem(str(hue_value)))
 
 class seaborn_legend_style_order_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
@@ -15374,6 +15422,7 @@ class hue_button(QDialog):
         self.columns = self.categorical_columns + self.numerical_columns
 
         self.hue = [None,{True:"True",False:"False"}]
+        self.hue_parameters = ["Categorical Column","Numerical Column","Boolean Expression","Set Hue as None"]
 
         self.premade_boolean_expression_format = {
             "column":"",
@@ -16054,175 +16103,9 @@ class hue_button(QDialog):
                 border-radius: 16px;
             }            
         """)
-
-        self.categorical_column_hue_button = QPushButton("Categorical Column")
-        self.categorical_column_hue_button.setObjectName("categorical_column")
-        self.categorical_column_hue_button.setStyleSheet("""
-            QPushButton#categorical_column{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#categorical_column:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.numerical_column_hue_button = QPushButton("Numerical Column")
-        self.numerical_column_hue_button.setObjectName("numerical_column")
-        self.numerical_column_hue_button.setStyleSheet("""
-            QPushButton#numerical_column{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#numerical_column:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.boolean_expression_hue_button = QPushButton("Boolean Expression")
-        self.boolean_expression_hue_button.setObjectName("boolean_expression")
-        self.boolean_expression_hue_button.setStyleSheet("""
-            QPushButton#boolean_expression{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#boolean_expression:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.none_hue_button = QPushButton("Set Hue as None")
-        self.none_hue_button.setObjectName("none")
-        self.none_hue_button.setStyleSheet("""
-            QPushButton#none{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#none:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.categorical_column_hue_button.clicked.connect(self.change_to_categorical_column_hue_screen)
-        self.numerical_column_hue_button.clicked.connect(self.change_to_numerical_column_hue_screen)
-        self.boolean_expression_hue_button.clicked.connect(self.change_to_boolean_expression_hue_screen)
-        self.none_hue_button.clicked.connect(self.change_hue_to_none)
-
-        button_layout = QVBoxLayout(self.hue_parameter_section)
-        button_layout.addWidget(self.categorical_column_hue_button)
-        button_layout.addWidget(self.numerical_column_hue_button)
-        button_layout.addWidget(self.boolean_expression_hue_button)
-        button_layout.addWidget(self.none_hue_button)
-        button_layout.setContentsMargins(10,10,10,10)
-        button_layout.setSpacing(5)
-        button_layout.addStretch()
+        self.create_hue_parameter_buttons()
 
         #-----Categorical Column Screen-----
-
         self.categorical_column_screen = QWidget()
         self.categorical_column_screen.setObjectName("categorical_column_screen")
         self.categorical_column_screen.setStyleSheet("""
@@ -16241,7 +16124,6 @@ class hue_button(QDialog):
         self.categorical_column_screen.hide()
 
         #-----Numerical Column Screen-----
-
         self.numerical_column_screen = QWidget()
         self.numerical_column_screen.setObjectName("numerical_column_screen")
         self.numerical_column_screen.setStyleSheet("""
@@ -16260,7 +16142,6 @@ class hue_button(QDialog):
         self.numerical_column_screen.hide()
 
         #------Boolean Expression Screen ------
-
         self.boolean_expression_screen = QWidget()
         self.boolean_expression_screen.setObjectName("boolean_expression_screen")
         self.boolean_expression_screen.setStyleSheet("""
@@ -16538,6 +16419,93 @@ class hue_button(QDialog):
         self.manual_or_logical_button.hide()
 
         self.change_to_manual_boolean_expression_screen()
+
+    def create_hue_parameter_buttons(self):
+        hue_parameter_button_layout = QVBoxLayout(self.hue_parameter_section)
+
+        self.hue_parameter_list_view = QListView()
+        self.hue_parameter_model = QStringListModel(self.hue_parameters)
+
+        self.hue_parameter_list_view.setModel(self.hue_parameter_model)
+        self.hue_parameter_list_view.setObjectName("hue_parameter_list_view")
+        self.hue_parameter_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        screen_index = self.hue_parameter_model.index(0)  
+        self.hue_parameter_list_view.setCurrentIndex(screen_index)
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.hue_parameter_list_view.setItemDelegate(CustomDelegate())
+
+        self.hue_parameter_list_view.setStyleSheet("""
+            QListView#hue_parameter_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#hue_parameter_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#hue_parameter_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#hue_parameter_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.hue_parameter_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.hue_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.hue_parameter_list_view.setSpacing(3)
+
+        self.hue_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+
+        hue_parameter_button_layout.addWidget(self.hue_parameter_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        hue_parameter_button_layout.setContentsMargins(10, 10, 10, 10)
 
     def create_categorical_column_screen(self):
         categorical_column_screen_layout = QVBoxLayout(self.categorical_column_screen)
@@ -17343,6 +17311,21 @@ class hue_button(QDialog):
         hue_mapping_screen_layout.setSpacing(5)
         hue_mapping_screen_layout.addStretch()
 
+    def change_current_parameter_screen(self, index):
+        screen_name = self.hue_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
+        
+        if (screen_name == "Categorical Column"):
+            self.change_to_categorical_column_hue_screen()
+        
+        if (screen_name == "Numerical Column"):
+            self.change_to_numerical_column_hue_screen()
+
+        if (screen_name == "Boolean Expression"):
+            self.change_to_boolean_expression_hue_screen()
+
+        if (screen_name == "Set Hue as None"):
+            self.change_hue_to_none()
+
     def change_to_previous_screen(self):
         self.available_screens[self.current_screen_idx].hide()
         if (self.current_screen_idx == 3 or self.current_screen_idx == 4):
@@ -17775,12 +17758,90 @@ class hue_button(QDialog):
         self.manual_boolean_expression_operator_input.clear()
         self.manual_boolean_expression_value_input.clear()
 
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
-
         self.hue = previous_hue
         self.update_hue()
 
     def close_dialog(self):
         self.close()
+
+class style_button(QDialog):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+
+        self.setWindowTitle("Customize Style")
+        
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display 
+        self.plot_manager = PlotManager()
+
+        self.style = None
+
+        #-----Initialize the QDialog Window-----
+        self.setStyleSheet("""
+            QDialog{
+               background: qlineargradient(
+                    x1: 0, y1: 1, 
+                    x2: 0, y2: 0,
+                    stop: 0 rgba(25, 191, 188, 1),
+                    stop: 0.28 rgba(27, 154, 166, 1),
+                    stop: 0.65 rgba(78, 160, 242, 1),
+                    stop: 0.89 rgba(33, 218, 255, 1)
+                );
+            }
+        """)
+        self.setFixedWidth(600)
+        self.setFixedHeight(500)
+
+        #-----Create the Style Home Screen-----
+        self.style_adjustment_section = QWidget()
+        self.style_adjustment_section.setObjectName("style_adjustment_section")
+        self.style_adjustment_section.setStyleSheet("""
+            QWidget#style_adjustment_section{
+               background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+
+        self.categorical_column_style_button = QPushButton()
+        self.categorical_column_style_button.setObjectName("categorical_column_style_button")
+        self.categorical_column_style_button.setStyleSheet("""
+            QPushButton#categorical_column_style_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#categorical_column_style_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
