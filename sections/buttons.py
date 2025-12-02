@@ -1,9 +1,10 @@
-from PyQt6.QtCore import QSortFilterProxyModel, QStringListModel, Qt
-from PyQt6.QtGui import QFont, QKeySequence, QShortcut, QStandardItem, QStandardItemModel
+from PyQt6.QtCore import QItemSelectionModel, QSortFilterProxyModel, QStringListModel, Qt
+from PyQt6.QtGui import QFont, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QListWidget, QListWidgetItem, QPushButton, 
     QSizePolicy, QTableView, QWidget, QVBoxLayout, QStyledItemDelegate, QSizePolicy
 )
+from sections import plot_manager
 from sections.dataset import PrepareDataset
 from sections.plot_manager import PlotManager
 import matplotlib.colors as mcolors
@@ -11388,7 +11389,7 @@ class seaborn_legend_size_order_adjustment_section(QWidget):
         size_order_adjustment_screen_layout.setContentsMargins(10, 10, 10, 10)
 
     def update_size_order(self):
-        self.size_order = [self.size_order_model.item(i).text() for i in range(self.size_order_model .rowCount())]
+        self.size_order = [self.size_order_listwidget.item(i).text() for i in range(self.size_order_listwidget.count())]
         db = self.plot_manager.get_db()
         if (db != []): 
             self.plot_manager.update_seaborn_legend("size_order",self.size_order)
@@ -11598,6 +11599,7 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
                 self.hue_order_warning_widget.show()
                 return []
             self.hue_order_warning_widget.hide()
+
             return dataset[hue_parameter].unique()
         else:
             return []
@@ -11727,7 +11729,7 @@ class seaborn_legend_style_order_adjustment_section(QWidget):
         style_order_adjustment_screen_layout.setContentsMargins(10, 10, 10, 10)
 
     def update_style_order(self):
-        self.style_order = [self.style_order_model.item(i).text() for i in range(self.style_order_model .rowCount())]
+        self.style_order = [self.style_order_listwidget.item(i).text() for i in range(self.style_order_listwidget.count())]
         db = self.plot_manager.get_db()
         if (db != []): 
             self.plot_manager.update_seaborn_legend("style_order",self.style_order)
@@ -15422,7 +15424,7 @@ class hue_button(QDialog):
         self.columns = self.categorical_columns + self.numerical_columns
 
         self.hue = [None,{True:"True",False:"False"}]
-        self.hue_parameters = ["Categorical Column","Numerical Column","Boolean Expression","Set Hue as None"]
+        self.hue_parameters = ["Categorical Column","Numerical Column","Boolean Expression","Set Hue to None"]
 
         self.premade_boolean_expression_format = {
             "column":"",
@@ -16267,6 +16269,24 @@ class hue_button(QDialog):
         self.create_hue_mapping_screen()
         self.hue_mapping_screen.hide()
 
+        #-----None Hue Screen-----
+        self.none_hue_screen = QWidget()
+        self.none_hue_screen.setObjectName("none_hue_screen")
+        self.none_hue_screen.setStyleSheet("""
+            QWidget#none_hue_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                )
+                border: 2px solid black;
+                border-radius 16px;
+            }
+        """)
+        self.create_change_hue_to_none_screen()
+        self.none_hue_screen.hide()
+
         #-----Hue Adjustment Section-----
         self.hue_adjustment_section = QWidget()
         self.hue_adjustment_section.setObjectName("hue_adjustment_section")
@@ -16293,6 +16313,7 @@ class hue_button(QDialog):
         hue_adjustment_section_layout.addWidget(self.boolean_expression_premade_input_value_screen)
         hue_adjustment_section_layout.addWidget(self.logical_operator_screen)
         hue_adjustment_section_layout.addWidget(self.hue_mapping_screen)
+        hue_adjustment_section_layout.addWidget(self.none_hue_screen)
         hue_adjustment_section_layout.setContentsMargins(0,0,0,0)
 
         #-----Initialize Screen Value-----
@@ -16302,7 +16323,8 @@ class hue_button(QDialog):
                                 self.boolean_expression_premade_select_column_screen,
                                 self.boolean_expression_premade_select_operator_screen,
                                 self.boolean_expression_premade_input_value_screen,
-                                self.logical_operator_screen,self.hue_mapping_screen]
+                                self.logical_operator_screen,self.hue_mapping_screen,
+                                self.none_hue_screen]
         self.current_screen_idx = 0
         self.available_screens[self.current_screen_idx].show()
 
@@ -17311,6 +17333,78 @@ class hue_button(QDialog):
         hue_mapping_screen_layout.setSpacing(5)
         hue_mapping_screen_layout.addStretch()
 
+    def create_change_hue_to_none_screen(self):
+        none_hue_screen_layout = QVBoxLayout(self.none_hue_screen)
+        
+        #Create a label to put on top of the QPushButton
+        self.none_hue_label = QLabel("Reset Hue")
+        self.none_hue_label.setWordWrap(True)
+        self.none_hue_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.none_hue_label.setObjectName("none_hue_label")
+        self.none_hue_label.setStyleSheet("""
+            QLabel#none_hue_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.none_hue_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+    
+        #Create a button to allow the user to switch grid visibility
+        self.none_hue_button = QPushButton()
+        self.none_hue_button.setObjectName("none_hue_button")
+        self.none_hue_button.setStyleSheet("""
+            QPushButton#none_hue_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#none_hue_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.none_hue_button.setMinimumHeight(50)
+
+        self.none_hue_button.clicked.connect(self.change_hue_to_none)
+        
+        none_hue_button_layout = QVBoxLayout(self.none_hue_button)
+        none_hue_button_layout.addWidget(self.none_hue_label)
+        none_hue_button_layout.setContentsMargins(0,0,0,0)
+        none_hue_button_layout.setSpacing(0)
+
+        none_hue_screen_layout.addWidget(self.none_hue_button)
+        none_hue_screen_layout.setContentsMargins(10,10,10,10)
+        none_hue_screen_layout.addStretch()
+
     def change_current_parameter_screen(self, index):
         screen_name = self.hue_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
         
@@ -17323,8 +17417,8 @@ class hue_button(QDialog):
         if (screen_name == "Boolean Expression"):
             self.change_to_boolean_expression_hue_screen()
 
-        if (screen_name == "Set Hue as None"):
-            self.change_hue_to_none()
+        if (screen_name == "Set Hue to None"):
+            self.change_to_none_hue_screen()
 
     def change_to_previous_screen(self):
         self.available_screens[self.current_screen_idx].hide()
@@ -17338,7 +17432,7 @@ class hue_button(QDialog):
             if (self.current_screen_idx == 5):
                 self.boolean_expression_value_input.clear()
                 self.premade_boolean_expression_format["value"] = ""
-        else:
+        elif (self.current_screen_idx == 7):
             self.current_screen_idx = 6
 
         self.available_screens[self.current_screen_idx].show() 
@@ -17398,6 +17492,11 @@ class hue_button(QDialog):
 
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 8
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_none_hue_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 9
         self.available_screens[self.current_screen_idx].show()
 
     def change_categorical_hue_column(self,index):
@@ -17686,7 +17785,9 @@ class hue_button(QDialog):
         self.update_hue()
 
     def change_hue_to_none(self):
-        self.hue_value = None
+        self.hue = [None,None]
+        self.true_marker_input.clear()
+        self.false_marker_input.clear()
         self.update_hue()
 
     def update_hue(self):
@@ -17758,6 +17859,17 @@ class hue_button(QDialog):
         self.manual_boolean_expression_operator_input.clear()
         self.manual_boolean_expression_value_input.clear()
 
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 0
+        self.available_screens[self.current_screen_idx].show()
+
+        for row in range(self.hue_parameter_model.rowCount()):
+            index = self.hue_parameter_model.index(row, 0)  # row 2, column 0
+            self.hue_parameter_list_view.selectionModel().select(
+                index,
+                QItemSelectionModel.SelectionFlag.Deselect if (row != 0) else QItemSelectionModel.SelectionFlag.Select 
+            )
+
         self.hue = previous_hue
         self.update_hue()
 
@@ -17774,7 +17886,12 @@ class style_button(QDialog):
         self.graph_display = graph_display 
         self.plot_manager = PlotManager()
 
+        self.dataset = pd.read_csv("./dataset/user_dataset.csv")
+
         self.style = None
+        self.style_parameters = ["Column Style","List Style","Set Style to None"]
+        self.column_style_arguments = self.get_column_style_arguments()
+        self.y_axis_size = self.get_y_axis_size()
 
         #-----Initialize the QDialog Window-----
         self.setStyleSheet("""
@@ -17793,10 +17910,10 @@ class style_button(QDialog):
         self.setFixedHeight(500)
 
         #-----Create the Style Home Screen-----
-        self.style_adjustment_section = QWidget()
-        self.style_adjustment_section.setObjectName("style_adjustment_section")
-        self.style_adjustment_section.setStyleSheet("""
-            QWidget#style_adjustment_section{
+        self.style_parameter_section = QWidget()
+        self.style_parameter_section.setObjectName("style_parameter_section")
+        self.style_parameter_section.setStyleSheet("""
+            QWidget#style_parameter_section{
                background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -17807,11 +17924,391 @@ class style_button(QDialog):
                 border-radius: 16px; 
             }
         """)
+        self.create_style_parameter_button()
 
-        self.categorical_column_style_button = QPushButton()
-        self.categorical_column_style_button.setObjectName("categorical_column_style_button")
-        self.categorical_column_style_button.setStyleSheet("""
-            QPushButton#categorical_column_style_button{
+        #-----Create the Column Style Screen-----
+        self.column_style_screen = QWidget()
+        self.column_style_screen.setObjectName("column_style_screen")
+        self.column_style_screen.setStyleSheet("""
+            QWidget#column_style_screen{
+               background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_column_style_screen()
+        self.column_style_screen.hide()
+
+        #-----Create the List Style Screen-----
+        self.list_style_screen = QWidget()
+        self.list_style_screen.setObjectName("list_style_screen")
+        self.list_style_screen.setStyleSheet("""
+            QWidget#list_style_screen{
+               background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_list_style_screen()
+        self.list_style_screen.hide()
+
+        #-----Create the None Style Screen-----
+        self.none_style_screen = QWidget()
+        self.none_style_screen.setObjectName("none_style_screen")
+        self.none_style_screen.setStyleSheet("""
+            QWidget#none_style_screen{
+               background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_none_style_screen()
+        self.none_style_screen.hide()
+
+        #-----Style Adjustment Section-----
+        self.style_adjustment_section = QWidget()
+        self.style_adjustment_section.setObjectName("style_adjustment_section")
+        self.style_adjustment_section.setStyleSheet(""" 
+            QWidget#style_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }   
+        """)
+        
+        #-----Add Screens to Style Adjustment Section-----
+        style_adjustment_section_layout = QVBoxLayout(self.style_adjustment_section)
+        style_adjustment_section_layout.addWidget(self.column_style_screen)
+        style_adjustment_section_layout.addWidget(self.list_style_screen)
+        style_adjustment_section_layout.addWidget(self.none_style_screen)
+        style_adjustment_section_layout.setContentsMargins(0,0,0,0)
+
+        #-----Available Screens-----
+        self.available_screens = [self.column_style_screen,self.list_style_screen,self.none_style_screen]
+        self.current_screen_index = 0
+        self.available_screens[self.current_screen_index].show()
+
+        #-----Put the screens onto the main screen-----
+        main_layout = QHBoxLayout(self)
+        main_layout.addWidget(self.style_parameter_section,stretch=1)
+        main_layout.addWidget(self.style_adjustment_section,stretch=1)
+        main_layout.setSpacing(10)
+        main_layout.setContentsMargins(15,15,15,15)
+
+    def create_style_parameter_button(self):
+        style_parameter_button_layout = QVBoxLayout(self.style_parameter_section)
+
+        self.style_parameter_list_view = QListView()
+        self.style_parameter_model = QStringListModel(self.style_parameters)
+
+        self.style_parameter_list_view.setModel(self.style_parameter_model)
+        self.style_parameter_list_view.setObjectName("style_parameter_list_view")
+        self.style_parameter_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        screen_index = self.style_parameter_model.index(0)  
+        self.style_parameter_list_view.setCurrentIndex(screen_index)
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.style_parameter_list_view.setItemDelegate(CustomDelegate())
+
+        self.style_parameter_list_view.setStyleSheet("""
+            QListView#style_parameter_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#style_parameter_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#style_parameter_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#style_parameter_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.style_parameter_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.style_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.style_parameter_list_view.setSpacing(3)
+
+        self.style_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+
+        style_parameter_button_layout.addWidget(self.style_parameter_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        style_parameter_button_layout.setContentsMargins(10, 10, 10, 10)
+        
+    def create_column_style_screen(self):
+        column_style_screen_layout = QVBoxLayout(self.column_style_screen)
+
+        self.column_style_search_bar = QLineEdit()
+        self.column_style_search_bar.setObjectName("column_style_search_bar")
+        self.column_style_search_bar.setPlaceholderText("Search: ")
+        self.column_style_search_bar.setStyleSheet("""
+            QLineEdit#column_style_search_bar{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.column_style_search_bar.setMinimumHeight(60)
+
+        column_style_screen_layout.addWidget(self.column_style_search_bar)
+        column_style_screen_layout.addSpacing(15)
+
+        self.column_style_list_view = QListView()
+        self.column_style_model = QStringListModel(self.column_style_arguments)
+
+        self.column_style_filter_proxy = QSortFilterProxyModel()
+        self.column_style_filter_proxy.setSourceModel(self.column_style_model)
+        self.column_style_filter_proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive) 
+        self.column_style_filter_proxy.setFilterKeyColumn(0)  
+
+        self.column_style_list_view.setModel(self.column_style_filter_proxy)
+        self.column_style_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.column_style_list_view.setObjectName("column_style_list_view")
+        self.column_style_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        self.column_style_search_bar.textChanged.connect(self.column_style_filter_proxy.setFilterFixedString)
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.column_style_list_view.setItemDelegate(CustomDelegate())
+
+        self.column_style_list_view.setStyleSheet("""
+            QListView#column_style_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#column_style_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#column_style_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#column_style_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.column_style_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.column_style_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.column_style_list_view.setSpacing(3)
+
+        self.column_style_list_view.clicked.connect(self.change_column_style)
+
+        column_style_screen_layout.addWidget(self.column_style_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        column_style_screen_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_list_style_screen(self):
+        list_style_screen_layout = QVBoxLayout(self.list_style_screen)
+
+        self.element_left_label = QLabel(f"Element Left: {self.y_axis_size}")
+        self.element_left_label.setWordWrap(True)
+        self.element_left_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.element_left_label.setObjectName("element_left_label")
+        self.element_left_label.setStyleSheet("""
+            QLabel#element_left_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        self.element_left_widget = QWidget()
+        self.element_left_widget.setObjectName("element_left_widget")
+        self.element_left_widget.setStyleSheet("""
+            QWidget#element_left_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        element_left_widget_layout = QVBoxLayout(self.element_left_widget)
+        element_left_widget_layout.addWidget(self.element_left_label)
+        element_left_widget_layout.setContentsMargins(0,0,0,0)
+        element_left_widget_layout.setSpacing(0)
+        
+        self.list_style_input = QLineEdit()
+        self.list_style_input.setPlaceholderText("List Style: ")
+        self.list_style_input.setObjectName("list_style_input")
+        self.list_style_input.setStyleSheet("""
+            QLineEdit#list_style_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.list_style_input.setMinimumHeight(60)
+
+        self.list_style_input.textChanged.connect(self.change_list_style)
+        
+        list_style_screen_layout.addWidget(self.element_left_widget)
+        list_style_screen_layout.addWidget(self.list_style_input)
+        list_style_screen_layout.setContentsMargins(10,10,10,10)
+        list_style_screen_layout.setSpacing(10)
+        list_style_screen_layout.addStretch()
+
+    def create_none_style_screen(self):
+        none_style_screen_layout = QVBoxLayout(self.none_style_screen)
+        
+        #Create a label to put on top of the QPushButton
+        self.none_style_label = QLabel("Reset Style")
+        self.none_style_label.setWordWrap(True)
+        self.none_style_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.none_style_label.setObjectName("none_style_label")
+        self.none_style_label.setStyleSheet("""
+            QLabel#none_style_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.none_style_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+    
+        #Create a button to allow the user to switch grid visibility
+        self.none_style_button = QPushButton()
+        self.none_style_button.setObjectName("none_style_button")
+        self.none_style_button.setStyleSheet("""
+            QPushButton#none_style_button{
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -17824,11 +18321,11 @@ class style_button(QDialog):
                 border-radius: 16px;
                 font-family: "SF Pro Display";
                 font-weight: 600;
-                font-size: 24px;
+                font-size: 16px;
                 padding: 6px;
                 color: black;
             }
-            QPushButton#categorical_column_style_button:hover{
+            QPushButton#none_style_button:hover{
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -17845,3 +18342,103 @@ class style_button(QDialog):
                 color: black;
             }
         """)
+        self.none_style_button.setMinimumHeight(50)
+
+        self.none_style_button.clicked.connect(self.change_style_to_none)
+        
+        none_style_button_layout = QVBoxLayout(self.none_style_button)
+        none_style_button_layout.addWidget(self.none_style_label)
+        none_style_button_layout.setContentsMargins(0,0,0,0)
+        none_style_button_layout.setSpacing(0)
+
+        none_style_screen_layout.addWidget(self.none_style_button)
+        none_style_screen_layout.setContentsMargins(10,10,10,10)
+        none_style_screen_layout.addStretch()
+
+    def change_current_parameter_screen(self,index):
+        screen_name = self.style_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
+        
+        if (screen_name == "Column Style"):
+            self.change_to_column_style_screen()
+
+        if (screen_name == "List Style"):
+            self.change_to_list_style_screen()
+
+        if (screen_name == "Set Style to None"):
+            self.change_to_none_style_screen()
+
+    def change_to_column_style_screen(self):
+        self.available_screens[self.current_screen_index].hide()
+        self.current_screen_index = 0
+        self.available_screens[self.current_screen_index].show()
+
+    def change_to_list_style_screen(self):
+        self.available_screens[self.current_screen_index].hide()
+        self.current_screen_index = 1
+        self.available_screens[self.current_screen_index].show()
+    
+    def change_to_none_style_screen(self):
+        self.available_screens[self.current_screen_index].hide()
+        self.current_screen_index = 2
+        self.available_screens[self.current_screen_index].show()
+
+    def change_column_style(self,index):
+        source_index = self.column_style_filter_proxy.mapToSource(index)
+        self.style = self.column_style_model.data(source_index, Qt.ItemDataRole.DisplayRole)
+        self.update_style()
+
+    def change_list_style(self):
+        list_style_input_values = self.list_style_input.text().strip().split()
+        list_style_input_values = list(filter(lambda x:x != "",list_style_input_values))
+
+        remaining_element = max(self.y_axis_size-len(list_style_input_values),0)
+
+        self.element_left_label.setText(f"Element Left: {remaining_element}")
+
+        if (remaining_element == 0):
+            self.style = list_style_input_values[:self.y_axis_size]
+            self.update_style()
+
+    def change_style_to_none(self):
+        self.style = None
+        self.update_style()
+
+    def update_style(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_style(self.style)
+        else:
+            plot_parameter = plot_json[self.selected_graph].copy()
+            plot_parameter["style"] = self.style
+            self.plot_manager.insert_plot_parameter(plot_manager)
+        self.graph_display.show_graph()
+
+    def get_column_style_arguments(self):
+        categorical_columns = self.dataset.select_dtypes(include=["object"]).columns
+        return categorical_columns
+
+    def get_y_axis_size(self):
+        db = self.plot_manager.get_db()
+        y_axis_size = 0
+        if (db != []):
+            y_axis = db["y"]
+            y_axis_size = self.dataset[y_axis].shape[0]
+        return y_axis_size
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.column_style_arguments = self.get_column_style_arguments()
+
+        self.dataset = pd.read_csv("./dataset/user_dataset.csv")
+
+        db = self.plot_manager.get_db()
+        if (db != []): 
+            previous_style = db["style"]
+
+        self.list_style_input.clear()
+
+        self.column_style_arguments = self.get_column_style_arguments()
+        self.y_axis_size = self.get_y_axis_size()
+
+        self.style = previous_style
+        self.update_style()
