@@ -162,6 +162,7 @@ class graph_parameter_table(QWidget):
             "hue":hue_button,
             "style":style_button,
             "size":size_button,
+            "palette":palette_button,
         }
 
         #Customize the parameter table
