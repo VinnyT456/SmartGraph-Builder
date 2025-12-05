@@ -1,3 +1,4 @@
+from PyQt6.QtCore import QUrl
 from tinydb import TinyDB, Query
 
 class PlotManager:
@@ -66,6 +67,9 @@ class PlotManager:
 
     def update_sizes(self,sizes):
         self.db.update({"sizes":sizes},Query().version == self.current_version)
+
+    def update_palette(self,palette):
+        self.db.update({"palette":palette},Query().version == self.current_version)
 
     def insert_plot_parameter(self, plot_data):
         plot_copy = plot_data.copy()
