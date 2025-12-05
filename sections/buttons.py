@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (
     QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QListWidget, QListWidgetItem, QPushButton, 
     QSizePolicy, QTableView, QWidget, QVBoxLayout, QStyledItemDelegate, QSizePolicy, QWidgetAction
 )
+from pandas.core.ops.docstrings import key
 from sections import plot_manager
 from sections.dataset import PrepareDataset
 from sections.plot_manager import PlotManager
@@ -19330,62 +19331,51 @@ class palette_button(QDialog):
 
         self.palette = None
         self.available_palettes = {
-            "seaborn_qualitative": ["deep", "muted", "bright", "pastel", "dark", "colorblind"],
-            "seaborn_sequential": ["rocket", "mako", "flare", "crest"],
-            "seaborn_diverging": ["vlag", "icefire"],
-            "seaborn_color_space": ["hls", "husl"],
-            "seaborn_sequential_r": ["rocket_r", "mako_r", "flare_r", "crest_r"],
-            "seaborn_diverging_r": ["vlag_r", "icefire_r"],
-            "matplotlib_perceptual": ["viridis", "plasma", "inferno", "magma", "cividis"],
-            "matplotlib_perceptual_r": ["viridis_r", "plasma_r", "inferno_r", "magma_r", "cividis_r"],
-            "matplotlib_qualitative": [
-                "Pastel1", "Pastel2", "Paired", "Accent", "Dark2",
-                "Set1", "Set2", "Set3", "tab10", "tab20", "tab20b", "tab20c"
-            ],
-            "matplotlib_qualitative_r": [
-                "Pastel1_r", "Pastel2_r", "Paired_r", "Accent_r", "Dark2_r",
-                "Set1_r", "Set2_r", "Set3_r", "tab10_r", "tab20_r", "tab20b_r", "tab20c_r"
-            ],
-            "matplotlib_cyclic": ["twilight", "twilight_shifted", "hsv"],
-            "matplotlib_cyclic_r": ["twilight_r", "twilight_shifted_r", "hsv_r"],
-            "matplotlib_sequential": [
-                "Greys", "Purples", "Blues", "Greens", "Oranges",
-                "Reds", "YlOrBr", "YlOrRd", "OrRd", "PuRd", "RdPu",
-                "BuPu", "GnBu", "PuBu", "YlGnBu", "PuBuGn", "BuGn",
-                "YlGn", "binary", "gist_yarg", "gist_gray", "gray",
-                "bone", "pink", "spring", "summer", "autumn", "winter",
-                "cool", "Wistia", "hot", "afmhot", "gist_heat", "copper"
-            ],
-            "matplotlib_sequential_r": [
-                "Greys_r", "Purples_r", "Blues_r", "Greens_r", "Oranges_r",
-                "Reds_r", "YlOrBr_r", "YlOrRd_r", "OrRd_r", "PuRd_r", "RdPu_r",
-                "BuPu_r", "GnBu_r", "PuBu_r", "YlGnBu_r", "PuBuGn_r", "BuGn_r",
-                "YlGn_r", "binary_r", "gist_yarg_r", "gist_gray_r", "gray_r",
-                "bone_r", "pink_r", "spring_r", "summer_r", "autumn_r", "winter_r",
-                "cool_r", "Wistia_r", "hot_r", "afmhot_r", "gist_heat_r", "copper_r"
-            ],
-            "matplotlib_diverging": [
-                "PiYG", "PRGn", "BrBG", "PuOr", "RdGy", "RdBu",
-                "RdYlBu", "RdYlGn", "Spectral", "coolwarm", "bwr", "seismic"
-            ],
-            "matplotlib_diverging_r": [
-                "PiYG_r", "PRGn_r", "BrBG_r", "PuOr_r", "RdGy_r", "RdBu_r",
-                "RdYlBu_r", "RdYlGn_r", "Spectral_r", "coolwarm_r", "bwr_r", "seismic_r"
-            ],
-            "matplotlib_miscellaneous": [
+            "Qualitative": ["deep", "muted", "bright", "pastel", "dark", "colorblind"
+                            "Pastel1", "Pastel2", "Paired", "Accent", "Dark2",
+                            "Set1", "Set2", "Set3", "tab10", "tab20", "tab20b", "tab20c"
+                            "Pastel1_r", "Pastel2_r", "Paired_r", "Accent_r", "Dark2_r",
+                            "Set1_r", "Set2_r", "Set3_r", "tab10_r", "tab20_r", "tab20b_r", 
+                            "tab20c_r"],
+            "Sequential": ["rocket", "mako", "flare", "crest"
+                        "Greys", "Purples", "Blues", "Greens", "Oranges",
+                        "Reds", "YlOrBr", "YlOrRd", "OrRd", "PuRd", "RdPu",
+                        "BuPu", "GnBu", "PuBu", "YlGnBu", "PuBuGn", "BuGn",
+                        "YlGn", "binary", "gist_yarg", "gist_gray", "gray",
+                        "bone", "pink", "spring", "summer", "autumn", "winter",
+                        "cool", "Wistia", "hot", "afmhot", "gist_heat", "copper"],
+            "Diverging": ["vlag", "icefire","PiYG", "PRGn", "BrBG", "PuOr", "RdGy", "RdBu",
+                        "RdYlBu", "RdYlGn", "Spectral", "coolwarm", "bwr", "seismic",
+                        "PiYG_r", "PRGn_r", "BrBG_r", "PuOr_r", "RdGy_r", "RdBu_r",
+                        "RdYlBu_r", "RdYlGn_r", "Spectral_r", "coolwarm_r", "bwr_r", "seismic_r"],
+            "Color Space": ["hls", "husl"],
+            "Sequential Reverse": ["rocket_r", "mako_r", "flare_r", "crest_r",
+                                "Greys_r", "Purples_r", "Blues_r", "Greens_r", "Oranges_r",
+                                "Reds_r", "YlOrBr_r", "YlOrRd_r", "OrRd_r", "PuRd_r", "RdPu_r",
+                                "BuPu_r", "GnBu_r", "PuBu_r", "YlGnBu_r", "PuBuGn_r", "BuGn_r",
+                                "YlGn_r", "binary_r", "gist_yarg_r", "gist_gray_r", "gray_r",
+                                "bone_r", "pink_r", "spring_r", "summer_r", "autumn_r", "winter_r",
+                                "cool_r", "Wistia_r", "hot_r", "afmhot_r", "gist_heat_r", "copper_r"],
+            "Diverging Reverse": ["vlag_r", "icefire_r"],
+            "Perceptual": ["viridis", "plasma", "inferno", "magma", "cividis"],
+            "Perceptual Reverse": ["viridis_r", "plasma_r", "inferno_r", "magma_r", "cividis_r"],
+            "Cyclic": ["twilight", "twilight_shifted", "hsv"],
+            "Cyclic Reverse": ["twilight_r", "twilight_shifted_r", "hsv_r"],
+            "Miscellaneous": [
                 "flag", "prism", "ocean", "gist_earth", "terrain",
                 "gist_stern", "gnuplot", "gnuplot2", "CMRmap",
                 "cubehelix", "brg", "gist_rainbow", "rainbow",
-                "jet", "turbo", "nipy_spectral", "gist_ncar"
-            ],
-            "matplotlib_miscellaneous_r": [
+                "jet", "turbo", "nipy_spectral", "gist_ncar",
                 "flag_r", "prism_r", "ocean_r", "gist_earth_r",
                 "terrain_r", "gist_stern_r", "gnuplot_r", "gnuplot2_r",
                 "CMRmap_r", "cubehelix_r", "brg_r", "gist_rainbow_r",
                 "rainbow_r", "jet_r", "turbo_r", "nipy_spectral_r", "gist_ncar_r"
             ],
-            "matplotlib_named_colors": sorted(mcolors.CSS4_COLORS.keys())
+            "Named Colors": sorted(mcolors.CSS4_COLORS.keys())
         }
+
+        self.palette_types = sorted(list(self.available_palettes.keys()))
+
         self.palette_parameters = ["Single Palette","List Palette","Dictionary Palette","No Palette"]
 
         #-----Initialize the QDialog Window-----
@@ -19438,24 +19428,6 @@ class palette_button(QDialog):
         """)
         self.create_single_palette_screen()
         self.single_palette_screen.hide()
-
-        #-----Create Premade Palette Screen-----
-        self.premade_palette_screen = QWidget()
-        self.premade_palette_screen.setObjectName("premade_palette_screen")
-        self.premade_palette_screen.setStyleSheet("""
-            QWidget#premade_palette_screen{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 2px solid black;
-                border-radius: 16px; 
-            }
-        """)
-        self.create_premade_palette_screen()
-        self.premade_palette_screen.hide()
 
         #-----Create Palette Selection Screen-----
         self.palette_selection_screen = QWidget()
@@ -19511,14 +19483,12 @@ class palette_button(QDialog):
 
         palette_adjustment_section_layout = QVBoxLayout(self.palette_adjustment_section)
         palette_adjustment_section_layout.addWidget(self.single_palette_screen)
-        palette_adjustment_section_layout.addWidget(self.premade_palette_screen)
-        palette_adjustment_section_layout.addWidget(self.custom_palette_screen)
+        palette_adjustment_section_layout.addWidget(self.palette_selection_screen)
         palette_adjustment_section_layout.setContentsMargins(0,0,0,0)
         palette_adjustment_section_layout.setSpacing(0)
 
         #-----Available Screens-----
-        self.available_screens = [self.single_palette_screen,self.premade_palette_screen,self.palette_selection_screen,
-                                self.custom_palette_screen]
+        self.available_screens = [self.single_palette_screen,self.palette_selection_screen]
         self.current_screen_idx = 0
         self.previous_screen_idx = []
         self.available_screens[self.current_screen_idx].show()
@@ -19623,28 +19593,38 @@ class palette_button(QDialog):
     def create_single_palette_screen(self): 
         single_palette_screen_layout = QVBoxLayout(self.single_palette_screen)
 
-        #Create Premade Palette Button  
-        self.premade_palette_label = QLabel("Premade Palette")
-        self.premade_palette_label.setWordWrap(True)
-        self.premade_palette_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.premade_palette_label.setObjectName("premade_palette_label")
-        self.premade_palette_label.setStyleSheet("""
-            QLabel#premade_palette_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-        self.premade_palette_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.single_palette_list_view = QListView()
+        self.single_palette_model = QStringListModel(self.palette_types)
+
+        self.single_palette_list_view.setModel(self.single_palette_model)
+        self.single_palette_list_view.setObjectName("single_palette_list_view")
+        self.single_palette_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        screen_index = self.single_palette_model.index(0)  
+        self.single_palette_list_view.setCurrentIndex(screen_index)
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
         
-        self.premade_palette_button = QPushButton()
-        self.premade_palette_button.setObjectName("premade_palette_button")
-        self.premade_palette_button.setStyleSheet("""
-            QPushButton#premade_palette_button{
+        self.single_palette_list_view.setItemDelegate(CustomDelegate())
+
+        self.single_palette_list_view.setStyleSheet("""
+            QListView#single_palette_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#single_palette_list_view::item {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -19658,7 +19638,20 @@ class palette_button(QDialog):
                 color: black;
                 min-height: 41px;
             }
-            QPushButton#premade_palette_button::hover{
+            QListView#single_palette_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#single_palette_list_view::item:hover {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -19673,80 +19666,129 @@ class palette_button(QDialog):
             }
         """)
 
-        premade_palette_button_layout = QVBoxLayout(self.premade_palette_button)
-        premade_palette_button_layout.addWidget(self.premade_palette_label)
-        premade_palette_button_layout.setContentsMargins(0,0,0,0)
-        premade_palette_button_layout.setSpacing(0)
-        
-        #Create Custom Palette Button
-        self.custom_palette_label = QLabel("Custom Palette")
-        self.custom_palette_label.setWordWrap(True)
-        self.custom_palette_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.custom_palette_label.setObjectName("custom_palette_label")
-        self.custom_palette_label.setStyleSheet("""
-            QLabel#custom_palette_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-        self.custom_palette_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.single_palette_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.single_palette_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.single_palette_list_view.setSpacing(3)
 
-        self.custom_palette_button = QPushButton("")
-        self.custom_palette_button.setObjectName("custom_palette_button")
-        self.custom_palette_button.setStyleSheet("""
-            QPushButton#custom_palette_button{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                color: black;
-                min-height: 41px;
-            }
-            QPushButton#custom_palette_button::hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                color: black;
-                min-height: 41px;
-            }
-        """)
+        self.single_palette_list_view.clicked.connect(self.change_to_palette_selection_screen)
 
-        custom_palette_button_layout = QVBoxLayout(self.custom_palette_button)
-        custom_palette_button_layout.addWidget(self.custom_palette_label)
-        custom_palette_button_layout.setContentsMargins(0,0,0,0)
-        custom_palette_button_layout.setSpacing(0)
+        single_palette_screen_layout.addWidget(self.single_palette_list_view)
 
-        self.premade_palette_button.clicked.connect(self.change_to_premade_palette_screen)
-        self.custom_palette_button.clicked.connect(self.change_to_custom_palette_screen)
-
-        single_palette_screen_layout.addWidget(self.premade_palette_button)
-        single_palette_screen_layout.addWidget(self.custom_palette_button)
-        single_palette_screen_layout.setContentsMargins(10,10,10,10)
-        single_palette_screen_layout.setSpacing(5)
-        single_palette_screen_layout.addStretch()
-
-    def create_premade_palette_screen(self):
-        pass
+        # Add margins and spacing to make it look good and push content to the top
+        single_palette_screen_layout.setContentsMargins(10, 10, 10, 10)
 
     def create_palette_selection_screen(self):
-        pass
+        palette_selection_screen_layout = QVBoxLayout(self.palette_selection_screen)
+
+        self.palette_search_bar = QLineEdit()
+        self.palette_search_bar.setObjectName("palette_search_bar")
+        self.palette_search_bar.setPlaceholderText("Search: ")
+        self.palette_search_bar.setStyleSheet("""
+            QLineEdit#palette_search_bar{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.palette_search_bar.setMinimumHeight(60)
+
+        palette_selection_screen_layout.addWidget(self.palette_search_bar)
+        palette_selection_screen_layout.addSpacing(15)
+    
+        self.palette_selection_list_view = QListView()
+        self.palette_selection_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.palette_selection_model = QStringListModel([])
+
+        self.filter_proxy = QSortFilterProxyModel()
+        self.filter_proxy.setSourceModel(self.palette_selection_model)
+        self.filter_proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive) 
+        self.filter_proxy.setFilterKeyColumn(0)  
+
+        self.palette_search_bar.textChanged.connect(self.filter_proxy.setFilterFixedString)
+
+        self.palette_selection_list_view.setModel(self.filter_proxy)
+        self.palette_selection_list_view.setObjectName("palette_selection_list_view")
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.palette_selection_list_view.setItemDelegate(CustomDelegate())
+
+        self.palette_selection_list_view.setStyleSheet("""
+            QListView#palette_selection_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#palette_selection_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#palette_selection_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#palette_selection_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.palette_selection_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.palette_selection_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.palette_selection_list_view.setSpacing(3)
+
+        self.palette_selection_list_view.clicked.connect(self.change_single_premade_palette)
+
+        palette_selection_screen_layout.addWidget(self.palette_selection_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        palette_selection_screen_layout.setContentsMargins(10, 10, 10, 10)
     
     def create_custom_palette_screen(self): 
         pass
@@ -19771,17 +19813,15 @@ class palette_button(QDialog):
         self.current_screen_idx = 0
         self.available_screens[self.current_screen_idx].show()
 
-    def change_to_premade_palette_screen(self):
+    def change_to_palette_selection_screen(self,index):
+        palette_type = self.single_palette_model.data(index,Qt.ItemDataRole.DisplayRole)
+        palette_values = sorted(self.available_palettes[palette_type])
+
+        self.palette_selection_model = QStringListModel(palette_values)
+        self.filter_proxy.setSourceModel(self.palette_selection_model)
+
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 1
-        self.available_screens[self.current_screen_idx].show()
-
-    def change_to_custom_palette_screen(self):
-        pass
-
-    def change_palette_selection_screne(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 2
         self.available_screens[self.current_screen_idx].show()
 
     def change_to_list_palette_screen(self):
@@ -19793,11 +19833,37 @@ class palette_button(QDialog):
     def change_to_no_palette_screen(self):
         pass
 
-    def update_palette(self):
+    def change_single_premade_palette(self,index):
+        source_index = self.filter_proxy.mapToSource(index)
+        self.palette = self.palette_selection_model.data(source_index,Qt.ItemDataRole.DisplayRole)
+        self.update_palette()
+
+    def change_single_custom_palette(self):
         pass
+
+    def update_palette(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            if (self.palette in list(mcolors.CSS4_COLORS.keys())):
+                self.plot_manager.update_palette([self.palette])
+            else:
+                self.plot_manager.update_palette(self.palette)
+        else:
+            plot_parameter = plot_json[self.selected_graph].copy()
+            if (self.palette in list(mcolors.CSS4_COLORS.keys())):
+                plot_parameter["palette"] = [self.palette]
+            else:
+                plot_parameter["palette"] = self.palette
+            self.plot_manager.insert_plot_parameter(plot_parameter)
+        self.graph_display.show_graph()
 
     def showEvent(self, event):
         super().showEvent(event)
+
+    def mousePressEvent(self, event):
+        if not self.palette_search_bar.geometry().contains(event.position().toPoint()):
+            self.palette_search_bar.clearFocus()
+        super().mousePressEvent(event)
 
     def close_dialog(self):
         self.close()
