@@ -1,9 +1,13 @@
+from math import e
+from re import S
+import select
 from PyQt6.QtCore import QItemSelectionModel, QSortFilterProxyModel, QStringListModel, Qt
 from PyQt6.QtGui import QFont, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QListWidget, QListWidgetItem, QPushButton, 
     QSizePolicy, QTableView, QWidget, QVBoxLayout, QStyledItemDelegate, QSizePolicy, QWidgetAction
 )
+from matplotlib import markers
 from pandas.core.ops.docstrings import key
 from sections import plot_manager
 from sections.dataset import PrepareDataset
@@ -8585,7 +8589,10 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                                 "8", "s", "p", "P", "*", "h", "H", "+", "x", "X",
                                 "D", "d", "|", "_"]
 
-        self.markers = ""
+        self.style_value = pd.read_csv("./dataset/user_dataset.csv")[self.plot_manager.get_db()["style"]].unique()
+        self.style_value_count = len(self.style_value)
+
+        self.markers = []
         self.markers_dictionary = dict()
         self.markers_dictionary_key = ""
         self.markers_dictionary_value = ""
@@ -8908,7 +8915,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
         sns_legend_markers_screen_layout.addWidget(self.select_multiple_markers_button)
         sns_legend_markers_screen_layout.addWidget(self.select_dictionary_markers_button)
         sns_legend_markers_screen_layout.setContentsMargins(10,10,10,10)
-        sns_legend_markers_screen_layout.setSpacing(10)
+        sns_legend_markers_screen_layout.setSpacing(5)
         sns_legend_markers_screen_layout.addStretch()
 
         #-----Seaborn Legend Select Single Markers Screen-----
@@ -8949,19 +8956,6 @@ class seaborn_legend_markers_adjustment_section(QWidget):
 
         #-----Seaborn Legend Dictionary Markers Screen----
         self.select_dictionary_markers_screen = QWidget()
-        self.select_dictionary_markers_screen.setObjectName("select_dictionary_markers_screen")
-        self.select_dictionary_markers_screen.setStyleSheet("""
-            QWidget#select_dictionary_markers_screen{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }  
-        """)
         self.create_select_dictionary_markers_screen()
         self.select_dictionary_markers_screen.hide()
 
@@ -9069,14 +9063,13 @@ class seaborn_legend_markers_adjustment_section(QWidget):
     def create_select_multiple_markers_screen(self):
         select_multiple_markers_screen_layout = QVBoxLayout(self.select_multiple_markers_screen)
 
-        self.multiple_select_markers_list_view = QListView()
-        self.multiple_select_markers_list_view.setSelectionMode(QListView.SelectionMode.MultiSelection)
-        self.multiple_select_markers_model = QStringListModel(self.available_markers)
+        self.multiple_select_markers_list_widget = QListWidget()
+        self.multiple_select_markers_list_widget.setSelectionMode(QListView.SelectionMode.MultiSelection)
+        self.multiple_select_markers_list_widget.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.multiple_select_markers_list_widget.setObjectName("multiple_select_markers_list_widget")
 
-        self.multiple_select_markers_list_view.setModel(self.multiple_select_markers_model)
-        self.multiple_select_markers_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.multiple_select_markers_list_view.setObjectName("multiple_select_markers_list_view")
-        self.multiple_select_markers_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        for marker in self.available_markers:
+            self.multiple_select_markers_list_widget.addItem(QListWidgetItem(marker))
 
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
@@ -9086,10 +9079,10 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 option.font = font
                 super().paint(painter, option, index)
         
-        self.multiple_select_markers_list_view.setItemDelegate(CustomDelegate())
+        self.multiple_select_markers_list_widget.setItemDelegate(CustomDelegate())
 
-        self.multiple_select_markers_list_view.setStyleSheet("""
-            QListView#multiple_select_markers_list_view{
+        self.multiple_select_markers_list_widget.setStyleSheet("""
+            QListView#multiple_select_markers_list_widget{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -9099,7 +9092,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 border: transparent;
                 border-radius: 16px;
             }
-            QListView#multiple_select_markers_list_view::item {
+            QListView#multiple_select_markers_list_widget::item {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -9113,7 +9106,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#multiple_select_markers_list_view::item:selected {
+            QListView#multiple_select_markers_list_widget::item:selected {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -9126,7 +9119,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#multiple_select_markers_list_view::item:hover {
+            QListView#multiple_select_markers_list_widget::item:hover {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -9141,46 +9134,65 @@ class seaborn_legend_markers_adjustment_section(QWidget):
             }
         """)
 
-        self.multiple_select_markers_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.multiple_select_markers_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.multiple_select_markers_list_view.setSpacing(3)
+        self.multiple_select_markers_list_widget.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.multiple_select_markers_list_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.multiple_select_markers_list_widget.setSpacing(3)
 
-        self.multiple_select_markers_list_view.selectionModel().selectionChanged.connect(self.change_multiple_select_marker)
-        select_multiple_markers_screen_layout.addWidget(self.multiple_select_markers_list_view)
+        self.multiple_select_markers_list_widget.itemClicked.connect(self.change_multiple_select_marker)
+        select_multiple_markers_screen_layout.addWidget(self.multiple_select_markers_list_widget)
 
         # Add margins and spacing to make it look good and push content to the top
         select_multiple_markers_screen_layout.setContentsMargins(10, 10, 10, 10)
 
     def create_select_dictionary_markers_screen(self):
-        select_dictionary_markers_screen_layout = QVBoxLayout(self.select_dictionary_markers_screen) 
+        select_dictionary_markers_screen_layout = QVBoxLayout(self.select_dictionary_markers_screen)  
 
-        self.select_dictionary_markers_key_input = QLineEdit()
-        self.select_dictionary_markers_key_input.setObjectName("select_dictionary_markers_key_input")
-        self.select_dictionary_markers_key_input.setPlaceholderText("Key:")
-        self.select_dictionary_markers_key_input.setStyleSheet("""
-            QLineEdit#select_dictionary_markers_key_input{
+        self.dictionary_markers_key_section = QWidget()
+        self.dictionary_markers_key_section.setObjectName("dictionay_markers_key_section")
+        self.dictionary_markers_key_section.setStyleSheet("""
+            QWidget#dictionay_markers_key_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
                     stop:0.5 #f7f5fc,
                     stop:1 #f0f0ff
                 );
-                color: black;
-                font-size: 24pt;
                 border: 2px solid black;
                 border-radius: 16px;
-            }
+            }  
         """)
-        self.select_dictionary_markers_key_input.textChanged.connect(self.change_dictionary_key_marker)
-        self.select_dictionary_markers_key_input.setMinimumHeight(50)
-        
-        self.dictionary_select_markers_list_view = QListView()
-        self.dictionary_select_markers_model = QStringListModel(self.available_markers)
+        self.create_dictionary_markers_key_section()
 
-        self.dictionary_select_markers_list_view.setModel(self.multiple_select_markers_model)
-        self.dictionary_select_markers_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.dictionary_select_markers_list_view.setObjectName("dictionary_select_markers_list_view")
-        self.dictionary_select_markers_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.dictionary_markers_value_section = QWidget()
+        self.dictionary_markers_value_section.setObjectName("dictionay_markers_value_section")
+        self.dictionary_markers_value_section.setStyleSheet("""
+            QWidget#dictionay_markers_value_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.create_dictionary_markers_value_section()
+
+        select_dictionary_markers_screen_layout.addWidget(self.dictionary_markers_key_section,stretch=1)
+        select_dictionary_markers_screen_layout.addWidget(self.dictionary_markers_value_section,stretch=1)
+        select_dictionary_markers_screen_layout.setSpacing(10)
+        select_dictionary_markers_screen_layout.setContentsMargins(0,0,0,0)
+
+    def create_dictionary_markers_key_section(self):
+        dictionary_marker_key_section_layout = QVBoxLayout(self.dictionary_markers_key_section)
+
+        self.dictionary_style_key_list_view = QListView()
+        self.dictionary_style_key_model = QStringListModel(self.style_value)
+        
+        self.dictionary_style_key_list_view.setModel(self.dictionary_style_key_model)
+        self.dictionary_style_key_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.dictionary_style_key_list_view.setObjectName("dictionary_style_key_list_view")
 
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
@@ -9190,10 +9202,10 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 option.font = font
                 super().paint(painter, option, index)
         
-        self.dictionary_select_markers_list_view.setItemDelegate(CustomDelegate())
+        self.dictionary_style_key_list_view.setItemDelegate(CustomDelegate())
 
-        self.dictionary_select_markers_list_view.setStyleSheet("""
-            QListView#dictionary_select_markers_list_view{
+        self.dictionary_style_key_list_view.setStyleSheet("""
+            QListView#dictionary_style_key_list_view{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -9203,7 +9215,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 border: transparent;
                 border-radius: 16px;
             }
-            QListView#dictionary_select_markers_list_view::item {
+            QListView#dictionary_style_key_list_view::item {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -9217,7 +9229,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#dictionary_select_markers_list_view::item:selected {
+            QListView#dictionary_style_key_list_view::item:selected {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -9230,7 +9242,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#dictionary_select_markers_list_view::item:hover {
+            QListView#dictionary_style_key_list_view::item:hover {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -9245,16 +9257,100 @@ class seaborn_legend_markers_adjustment_section(QWidget):
             }
         """)
 
-        self.dictionary_select_markers_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.dictionary_select_markers_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.dictionary_select_markers_list_view.setSpacing(3)
+        self.dictionary_style_key_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.dictionary_style_key_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.dictionary_style_key_list_view.setSpacing(3)
 
-        self.dictionary_select_markers_list_view.clicked.connect(self.change_dictionary_value_marker)
+        self.dictionary_style_key_list_view.clicked.connect(self.change_dictionary_style_key)
 
-        select_dictionary_markers_screen_layout.addWidget(self.select_dictionary_markers_key_input)
-        select_dictionary_markers_screen_layout.addWidget(self.dictionary_select_markers_list_view)
-        select_dictionary_markers_screen_layout.setContentsMargins(10,10,10,10)
-        select_dictionary_markers_screen_layout.setSpacing(10)
+        dictionary_marker_key_section_layout.addWidget(self.dictionary_style_key_list_view)
+        dictionary_marker_key_section_layout.setContentsMargins(10,10,10,10)
+        dictionary_marker_key_section_layout.setSpacing(10)
+        dictionary_marker_key_section_layout.addStretch()
+
+    def create_dictionary_markers_value_section(self):
+        dictionary_marker_value_section_layout = QVBoxLayout(self.dictionary_markers_value_section)
+
+        self.dictionary_markers_value_list_view = QListView()
+        self.dictionary_markers_value_model = QStringListModel(self.available_markers)
+        
+        self.dictionary_markers_value_list_view.setModel(self.dictionary_markers_value_model)
+        self.dictionary_markers_value_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.dictionary_markers_value_list_view.setObjectName("dictionary_markers_value_list_view")
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.dictionary_markers_value_list_view.setItemDelegate(CustomDelegate())
+
+        self.dictionary_markers_value_list_view.setStyleSheet("""
+            QListView#dictionary_markers_value_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#dictionary_markers_value_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#dictionary_markers_value_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#dictionary_markers_value_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.dictionary_markers_value_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.dictionary_markers_value_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.dictionary_markers_value_list_view.setSpacing(3)
+
+        self.dictionary_markers_value_list_view.clicked.connect(self.change_dictionary_markers_value)
+
+        dictionary_marker_value_section_layout.addWidget(self.dictionary_markers_value_list_view)
+        dictionary_marker_value_section_layout.setContentsMargins(10,10,10,10)
+        dictionary_marker_value_section_layout.setSpacing(10)
+        dictionary_marker_value_section_layout.addStretch()
 
     def change_to_home_screen(self):
         self.available_screens[self.current_screen_idx].hide()
@@ -9267,6 +9363,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
         self.available_screens[self.current_screen_idx].show()
 
     def change_to_multiple_markers_screen(self):
+        self.markers = []
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 2
         self.available_screens[self.current_screen_idx].show()
@@ -9286,50 +9383,71 @@ class seaborn_legend_markers_adjustment_section(QWidget):
         self.update_markers()
 
     def change_single_select_marker(self,index):
-        self.markers = self.multiple_select_markers_model.data(index, Qt.ItemDataRole.DisplayRole)
+        self.markers = [self.single_select_markers_model.data(index, Qt.ItemDataRole.DisplayRole)]
         self.update_markers()
     
-    def change_multiple_select_marker(self):
-        selected_indexes = self.multiple_select_markers_list_view.selectedIndexes()
-        self.markers = [index.data() for index in selected_indexes]
-        self.update_markers()
+    def change_multiple_select_marker(self,item):
+        if (item in self.markers):
+            self.markers.remove(item)
+            item.setSelected(False)
+        else:
+            if (len(self.markers) == self.style_value_count):
+                old_item = self.markers.pop(0)
+                old_item.setSelected(False)
+            self.markers.append(item)
+        
+        if (self.markers != []):
+            self.update_markers()
 
-    def change_dictionary_key_marker(self):
-        self.markers_dictionary_key = self.select_dictionary_markers_key_input.text().strip()
+    def change_dictionary_style_key(self,index):
+        self.markers_dictionary_key = self.dictionary_style_key_model.data(index,Qt.ItemDataRole.DisplayRole)
+        self.dictionary_markers_value_list_view.clearSelection()
+        self.markers_dictionary_value = ""
         self.change_dictionary_select_marker()
 
-    def change_dictionary_value_marker(self,index):
-        self.markers_dictionary_value = self.dictionary_select_markers_model.data(index,Qt.ItemDataRole.DisplayRole)
+    def change_dictionary_markers_value(self,index):
+        self.markers_dictionary_value = self.dictionary_markers_value_model.data(index,Qt.ItemDataRole.DisplayRole)
         self.change_dictionary_select_marker()
-        self.select_dictionary_markers_key_input.clear()
 
     def change_dictionary_select_marker(self):
         if (self.markers_dictionary_key != "" and self.markers_dictionary_value != ""):
+            
+            self.markers_dictionary[self.markers_dictionary_key] = self.markers_dictionary_value
+
             dictionary_keys = list(self.markers_dictionary.keys())
-            dictionary_values = list(self.markers_dictionary.values())
-            if (self.markers_dictionary_key not in dictionary_keys and self.markers_dictionary_value not in dictionary_values):
-                self.markers_dictionary[self.markers_dictionary_key] = self.markers_dictionary_value
+            
+            if (len(dictionary_keys) == self.style_value_count):
                 self.markers = self.markers_dictionary
                 self.update_markers()
 
     def update_markers(self):
         db = self.plot_manager.get_db()
+        markers = self.markers
         if (db != []):
-            self.plot_manager.update_seaborn_legend("markers",self.markers)
+            try:
+                markers = [item.text() for item in self.markers]
+            except:
+                pass
+            self.plot_manager.update_seaborn_legend("markers",markers)
         else:
+            try:
+                markers = [item.text() for item in self.markers if isinstance(item,str)]
+            except:
+                pass
             plot_parameters = plot_json[self.selected_graph].copy()
-            plot_parameters["legend"]["seaborn_legends"]["markers"] = self.markers
+            plot_parameters["legend"]["seaborn_legends"]["markers"] = markers
             self.plot_manager.insert_plot_parameter(plot_parameters)
         self.graph_display.show_graph()
 
     def reset_marker_selection(self):
         self.markers = []
-        self.markers_dictionary = dict()
-        self.markers_dictionary_key = ""
-        self.markers_dictionary_value = ""
+        self.markers_dictionary = {style:"o" for style in self.style_value}
 
     def showEvent(self,event):
         super().showEvent(event)
+        self.style_value = pd.read_csv("./dataset/user_dataset.csv")[self.plot_manager.get_db()["style"]].unique()
+        self.style_value_count = len(self.style_value)
+        self.multiple_select_markers_list_widget.clearSelection()
         self.reset_marker_selection()
         self.change_to_home_screen()
 
@@ -9872,7 +9990,7 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
         sns_legend_dashes_screen_layout.addWidget(self.select_multiple_dashes_button)
         sns_legend_dashes_screen_layout.addWidget(self.select_dictionary_dashes_button)
         sns_legend_dashes_screen_layout.setContentsMargins(10,10,10,10)
-        sns_legend_dashes_screen_layout.setSpacing(10)
+        sns_legend_dashes_screen_layout.setSpacing(5)
         sns_legend_dashes_screen_layout.addStretch()
 
         #-----Seaborn Legend Select Single Dashes Screen-----
@@ -19446,24 +19564,6 @@ class palette_button(QDialog):
         """)
         self.create_palette_selection_screen()
         self.palette_selection_screen.hide()
-
-        #-----Create Custom Palette Screen-----
-        self.custom_palette_screen = QWidget()
-        self.custom_palette_screen.setObjectName("custom_palette_screen")
-        self.custom_palette_screen.setStyleSheet("""
-            QWidget#custom_palette_screen{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 2px solid black;
-                border-radius: 16px; 
-            }
-        """)
-        self.create_custom_palette_screen()
-        self.custom_palette_screen.hide()
     
         #-----Create Palette Adjustment Section-----
         self.palette_adjustment_section = QWidget()
@@ -19789,8 +19889,14 @@ class palette_button(QDialog):
 
         # Add margins and spacing to make it look good and push content to the top
         palette_selection_screen_layout.setContentsMargins(10, 10, 10, 10)
-    
-    def create_custom_palette_screen(self): 
+
+    def create_list_palette_screen(self):
+        pass
+
+    def create_list_premade_palette_screen(self):
+        pass
+
+    def create_list_custom_palette_screen(self):
         pass
 
     def change_current_parameter_screen(self,index):
