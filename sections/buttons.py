@@ -2922,6 +2922,9 @@ class legend_face_color_adjustment_section(QWidget):
         self.named_colors = [c.replace("tab:","") for c in self.named_colors]
         self.named_colors = self.named_colors[:-8]
 
+        self.xkcd_colors = [color.replace("xkcd:","") for color in list(mcolors.XKCD_COLORS)]
+        self.tableau_colors = [color.replace("tab:","") for color in list(mcolors.TABLEAU_COLORS)]
+
         self.current_facecolor = ""
 
         #-----Home Screen-----
@@ -3941,6 +3944,12 @@ class legend_face_color_adjustment_section(QWidget):
     def change_named_color(self,index):
         source_index = self.filter_proxy.mapToSource(index)
         self.current_facecolor = self.named_color_model.data(source_index, Qt.ItemDataRole.DisplayRole)
+
+        if (self.current_facecolor in self.xkcd_colors):
+            self.current_facecolor = "xkcd:" + self.current_facecolor
+        if (self.current_facecolor in self.tableau_colors):
+            self.current_facecolor = "tab:" + self.current_facecolor
+
         self.update_color()
 
     def change_hex_code_color(self):
@@ -8589,8 +8598,12 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                                 "8", "s", "p", "P", "*", "h", "H", "+", "x", "X",
                                 "D", "d", "|", "_"]
 
-        self.style_value = pd.read_csv("./dataset/user_dataset.csv")[self.plot_manager.get_db()["style"]].unique()
-        self.style_value_count = len(self.style_value)
+        try:
+            self.style_value = pd.read_csv("./dataset/user_dataset.csv")[self.plot_manager.get_db()["style"]].unique()
+            self.style_value_count = len(self.style_value)
+        except:
+            self.style_value = []
+            self.style_value_count = 0
 
         self.markers = []
         self.markers_dictionary = dict()
@@ -19448,6 +19461,12 @@ class palette_button(QDialog):
         self.plot_manager = PlotManager()
 
         self.palette = None
+        self.hex_code = None
+        self.rgba_value = None
+        self.grayscale_value = None
+
+        self.initial_rgba = [0,0,0,1]
+
         self.available_palettes = {
             "Qualitative": ["deep", "muted", "bright", "pastel", "dark", "colorblind"
                             "Pastel1", "Pastel2", "Paired", "Accent", "Dark2",
@@ -19489,12 +19508,27 @@ class palette_button(QDialog):
                 "CMRmap_r", "cubehelix_r", "brg_r", "gist_rainbow_r",
                 "rainbow_r", "jet_r", "turbo_r", "nipy_spectral_r", "gist_ncar_r"
             ],
-            "Named Colors": sorted(mcolors.CSS4_COLORS.keys())
         }
 
-        self.palette_types = sorted(list(self.available_palettes.keys()))
+        self.named_colors = sorted(list(mcolors.get_named_colors_mapping().keys())[:-8])
+        self.named_colors = [c.replace("xkcd:","") for c in self.named_colors]
+        self.named_colors = [c.replace("tab:","") for c in self.named_colors]
 
+        self.available_palettes["Named Colors"] = self.named_colors
+
+        self.xkcd_colors = [c.replace("xkcd:","") for c in list(mcolors.XKCD_COLORS)]
+        self.tableau_colors = [c.replace("xkcd:","") for c in list(mcolors.TABLEAU_COLORS)]
+
+        self.palette_idx = 0
+        self.palette_types = sorted(list(self.available_palettes.keys()))
         self.palette_parameters = ["Single Palette","List Palette","Dictionary Palette","No Palette"]
+
+        try:
+            self.hue_value = pd.read_csv("./dataset/user_dataset.csv")[self.plot_manager.get_db()["hue"][0]].unique()
+            self.hue_value_count = len(self.hue_value)
+        except:
+            self.hue_value = []
+            self.hue_value_count = 0
 
         #-----Initialize the QDialog Window-----
         self.setStyleSheet("""
@@ -19511,6 +19545,254 @@ class palette_button(QDialog):
         """)
         self.setFixedWidth(600)
         self.setFixedHeight(500)
+
+        #-----Valid Hex Code Widget-----
+        self.valid_hex_code_widget = QWidget()
+        self.valid_hex_code_widget.setObjectName("valid_hex_code_widget")
+        self.valid_hex_code_widget.setStyleSheet("""
+            QWidget#valid_hex_code_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_hex_code_label = QLabel("Valid Hex Code")
+        self.valid_hex_code_label.setObjectName("valid_hex_code_label")
+        self.valid_hex_code_label.setWordWrap(True)
+        self.valid_hex_code_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_hex_code_label.setStyleSheet("""
+            QLabel#valid_hex_code_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        valid_hex_code_widget_layout = QVBoxLayout(self.valid_hex_code_widget)
+        valid_hex_code_widget_layout.addWidget(self.valid_hex_code_label)
+        valid_hex_code_widget_layout.setContentsMargins(0,0,0,0)
+        valid_hex_code_widget_layout.setSpacing(0)
+
+        #-----Invalid Hex Code Widget-----
+        self.invalid_hex_code_widget = QWidget()
+        self.invalid_hex_code_widget.setObjectName("invalid_hex_code_widget")
+        self.invalid_hex_code_widget.setStyleSheet("""
+            QWidget#invalid_hex_code_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_hex_code_label = QLabel("Invalid Hex Code")
+        self.invalid_hex_code_label.setObjectName("invalid_hex_code_label")
+        self.invalid_hex_code_label.setWordWrap(True)
+        self.invalid_hex_code_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_hex_code_label.setStyleSheet("""
+            QLabel#invalid_hex_code_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        invalid_hex_code_widget_layout = QVBoxLayout(self.invalid_hex_code_widget)
+        invalid_hex_code_widget_layout.addWidget(self.invalid_hex_code_label)
+        invalid_hex_code_widget_layout.setContentsMargins(0,0,0,0)
+        invalid_hex_code_widget_layout.setSpacing(0)
+
+        #-----Valid RGBA Value Widget-----
+        self.valid_rgba_value_widget = QWidget()
+        self.valid_rgba_value_widget.setObjectName("valid_rgba_value_widget")
+        self.valid_rgba_value_widget.setStyleSheet("""
+            QWidget#valid_rgba_value_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_rgba_value_label = QLabel("Valid RGBA Value")
+        self.valid_rgba_value_label.setObjectName("valid_rgba_value_label")
+        self.valid_rgba_value_label.setWordWrap(True)
+        self.valid_rgba_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_rgba_value_label.setStyleSheet("""
+            QLabel#valid_rgba_value_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        valid_rgba_value_widget_layout = QVBoxLayout(self.valid_rgba_value_widget)
+        valid_rgba_value_widget_layout.addWidget(self.valid_rgba_value_label)
+        valid_rgba_value_widget_layout.setContentsMargins(0,0,0,0)
+        valid_rgba_value_widget_layout.setSpacing(0)
+
+        #-----Invalid RGBA Value Widget-----
+        self.invalid_rgba_value_widget = QWidget()
+        self.invalid_rgba_value_widget.setObjectName("invalid_rgba_value_widget")
+        self.invalid_rgba_value_widget.setStyleSheet("""
+            QWidget#invalid_rgba_value_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_rgba_value_label = QLabel("Invalid RGBA Value")
+        self.invalid_rgba_value_label.setObjectName("invalid_rgba_value_label")
+        self.invalid_rgba_value_label.setWordWrap(True)
+        self.invalid_rgba_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_rgba_value_label.setStyleSheet("""
+            QLabel#invalid_rgba_value_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        invalid_rgba_value_widget_layout = QVBoxLayout(self.invalid_rgba_value_widget)
+        invalid_rgba_value_widget_layout.addWidget(self.invalid_rgba_value_label)
+        invalid_rgba_value_widget_layout.setContentsMargins(0,0,0,0)
+        invalid_rgba_value_widget_layout.setSpacing(0)
+
+        #-----Valid Grayscale Value Widget-----
+        self.valid_grayscale_value_widget = QWidget()
+        self.valid_grayscale_value_widget.setObjectName("valid_grayscale_value_widget")
+        self.valid_grayscale_value_widget.setStyleSheet("""
+            QWidget#valid_grayscale_value_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_grayscale_value_label = QLabel("Valid Grayscale Value")
+        self.valid_grayscale_value_label.setObjectName("valid_grayscale_value_label")
+        self.valid_grayscale_value_label.setWordWrap(True)
+        self.valid_grayscale_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_grayscale_value_label.setStyleSheet("""
+            QLabel#valid_grayscale_value_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        valid_grayscale_value_widget_layout = QVBoxLayout(self.valid_grayscale_value_widget)
+        valid_grayscale_value_widget_layout.addWidget(self.valid_grayscale_value_label)
+        valid_grayscale_value_widget_layout.setContentsMargins(0,0,0,0)
+        valid_grayscale_value_widget_layout.setSpacing(0)
+
+        #-----Invalid Grayscale Value Widget-----
+        self.invalid_grayscale_value_widget = QWidget()
+        self.invalid_grayscale_value_widget.setObjectName("invalid_grayscale_value_widget")
+        self.invalid_grayscale_value_widget.setStyleSheet("""
+            QWidget#invalid_grayscale_value_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_grayscale_value_label = QLabel("Invalid Grayscale Value")
+        self.invalid_grayscale_value_label.setObjectName("invalid_grayscale_value_label")
+        self.invalid_grayscale_value_label.setWordWrap(True)
+        self.invalid_grayscale_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_grayscale_value_label.setStyleSheet("""
+            QLabel#invalid_grayscale_value_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        invalid_grayscale_value_widget_layout = QVBoxLayout(self.invalid_grayscale_value_widget)
+        invalid_grayscale_value_widget_layout.addWidget(self.invalid_grayscale_value_label)
+        invalid_grayscale_value_widget_layout.setContentsMargins(0,0,0,0)
+        invalid_grayscale_value_widget_layout.setSpacing(0)
+
+        #-----Hide All Validity Check Widgets-----
+        self.valid_hex_code_widget.hide()
+        self.invalid_hex_code_widget.hide()
+
+        self.valid_rgba_value_widget.hide()
+        self.invalid_rgba_value_widget.hide()
+
+        self.valid_grayscale_value_widget.hide()
+        self.invalid_grayscale_value_widget.hide()
+
+        #-----Set the size for All Validitiy Check Widgets-----
+        self.valid_hex_code_widget.setMinimumHeight(50)
+        self.invalid_hex_code_widget.setMinimumHeight(50)
+
+        self.valid_rgba_value_widget.setMinimumHeight(50)
+        self.invalid_rgba_value_widget.setMinimumHeight(50)
+
+        self.valid_grayscale_value_widget.setMinimumHeight(50)
+        self.invalid_grayscale_value_widget.setMinimumHeight(50)
 
         #-----Create the Palette Home Screen-----
         self.palette_parameter_screen = QWidget()
@@ -19547,11 +19829,11 @@ class palette_button(QDialog):
         self.create_single_palette_screen()
         self.single_palette_screen.hide()
 
-        #-----Create Palette Selection Screen-----
-        self.palette_selection_screen = QWidget()
-        self.palette_selection_screen.setObjectName("palette_selection_screen")
-        self.palette_selection_screen.setStyleSheet("""
-            QWidget#palette_selection_screen{
+        #-----Create Single Palette Selection Screen-----
+        self.single_palette_selection_screen = QWidget()
+        self.single_palette_selection_screen.setObjectName("single_palette_selection_screen")
+        self.single_palette_selection_screen.setStyleSheet("""
+            QWidget#single_palette_selection_screen{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -19562,9 +19844,117 @@ class palette_button(QDialog):
                 border-radius: 16px; 
             }
         """)
-        self.create_palette_selection_screen()
-        self.palette_selection_screen.hide()
+        self.create_single_palette_selection_screen()
+        self.single_palette_selection_screen.hide()
+
+        #-----Create the List Palette-----
+        self.list_palette_screen = QWidget()
+        self.list_palette_screen.setObjectName("list_palette_screen")
+        self.list_palette_screen.setStyleSheet("""
+            QWidget#list_palette_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_list_palette_screen()
+        self.list_palette_screen.hide()
     
+        #-----Create List Palette Premade Selection Screen-----
+        self.list_palette_premade_selection_screen = QWidget()
+        self.list_palette_premade_selection_screen.setObjectName("list_palette_premade_selection_screen")
+        self.list_palette_premade_selection_screen.setStyleSheet("""
+            QWidget#list_palette_premade_selection_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_list_palette_premade_selection_screen()
+        self.list_palette_premade_selection_screen.hide()
+
+        #-----Create List Palette Custom Selection Screen-----
+        self.list_palette_custom_selection_screen = QWidget()
+        self.list_palette_custom_selection_screen.setObjectName("list_palette_custom_selection_screen")
+        self.list_palette_custom_selection_screen.setStyleSheet("""
+            QWidget#list_palette_custom_selection_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_list_palette_custom_selection_screen()
+        self.list_palette_custom_selection_screen.hide()
+
+        #-----Create List Palette Hex Selection Screen-----
+        self.list_palette_hex_selection_screen = QWidget()
+        self.list_palette_hex_selection_screen.setObjectName("list_palette_hex_selection_screen")
+        self.list_palette_hex_selection_screen.setStyleSheet("""
+            QWidget#list_palette_hex_selection_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_list_palette_hex_selection_screen()
+        self.list_palette_hex_selection_screen.hide()
+
+        #-----Create List Palette RGBA Selection Screen-----
+        self.list_palette_rgba_selection_screen = QWidget()
+        self.list_palette_rgba_selection_screen.setObjectName("list_palette_rgba_selection_screen")
+        self.list_palette_rgba_selection_screen.setStyleSheet("""
+            QWidget#list_palette_rgba_selection_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_list_palette_rgba_selection_screen()
+        self.list_palette_rgba_selection_screen.hide()
+        
+        #-----Create List Palette Grayscale Selection Screen-----
+        self.list_palette_grayscale_selection_screen = QWidget()
+        self.list_palette_grayscale_selection_screen.setObjectName("list_palette_grayscale_selection_screen")
+        self.list_palette_grayscale_selection_screen.setStyleSheet("""
+            QWidget#list_palette_grayscale_selection_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_list_palette_grayscale_selection_screen()
+        self.list_palette_grayscale_selection_screen.hide()
+
         #-----Create Palette Adjustment Section-----
         self.palette_adjustment_section = QWidget()
         self.palette_adjustment_section.setObjectName("palette_adjustment_section")
@@ -19583,12 +19973,21 @@ class palette_button(QDialog):
 
         palette_adjustment_section_layout = QVBoxLayout(self.palette_adjustment_section)
         palette_adjustment_section_layout.addWidget(self.single_palette_screen)
-        palette_adjustment_section_layout.addWidget(self.palette_selection_screen)
+        palette_adjustment_section_layout.addWidget(self.single_palette_selection_screen)
+        palette_adjustment_section_layout.addWidget(self.list_palette_screen)
+        palette_adjustment_section_layout.addWidget(self.list_palette_premade_selection_screen)
+        palette_adjustment_section_layout.addWidget(self.list_palette_custom_selection_screen)
+        palette_adjustment_section_layout.addWidget(self.list_palette_hex_selection_screen)
+        palette_adjustment_section_layout.addWidget(self.list_palette_rgba_selection_screen)
+        palette_adjustment_section_layout.addWidget(self.list_palette_grayscale_selection_screen)
         palette_adjustment_section_layout.setContentsMargins(0,0,0,0)
         palette_adjustment_section_layout.setSpacing(0)
 
         #-----Available Screens-----
-        self.available_screens = [self.single_palette_screen,self.palette_selection_screen]
+        self.available_screens = [self.single_palette_screen,self.single_palette_selection_screen,self.list_palette_screen,
+                                self.list_palette_premade_selection_screen,self.list_palette_custom_selection_screen,
+                                self.list_palette_hex_selection_screen,self.list_palette_rgba_selection_screen,
+                                self.list_palette_grayscale_selection_screen]
         self.current_screen_idx = 0
         self.previous_screen_idx = []
         self.available_screens[self.current_screen_idx].show()
@@ -19602,6 +20001,9 @@ class palette_button(QDialog):
         #-----Keyboard Shortcut-----
         close_screen_shortcut = QShortcut(QKeySequence("Esc"),self)
         close_screen_shortcut.activated.connect(self.close_dialog)
+
+        new_custom_list_palette_shortcut = QShortcut(QKeySequence("Return"),self)
+        new_custom_list_palette_shortcut.activated.connect(self.new_custom_list_palette)
         
     def create_palette_parameter_button(self):
         palette_parameter_button_layout = QVBoxLayout(self.palette_parameter_screen)
@@ -19770,21 +20172,21 @@ class palette_button(QDialog):
         self.single_palette_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.single_palette_list_view.setSpacing(3)
 
-        self.single_palette_list_view.clicked.connect(self.change_to_palette_selection_screen)
+        self.single_palette_list_view.clicked.connect(self.change_to_single_palette_selection_screen)
 
         single_palette_screen_layout.addWidget(self.single_palette_list_view)
 
         # Add margins and spacing to make it look good and push content to the top
         single_palette_screen_layout.setContentsMargins(10, 10, 10, 10)
 
-    def create_palette_selection_screen(self):
-        palette_selection_screen_layout = QVBoxLayout(self.palette_selection_screen)
+    def create_single_palette_selection_screen(self):
+        single_palette_selection_screen_layout = QVBoxLayout(self.single_palette_selection_screen)
 
-        self.palette_search_bar = QLineEdit()
-        self.palette_search_bar.setObjectName("palette_search_bar")
-        self.palette_search_bar.setPlaceholderText("Search: ")
-        self.palette_search_bar.setStyleSheet("""
-            QLineEdit#palette_search_bar{
+        self.single_palette_search_bar = QLineEdit()
+        self.single_palette_search_bar.setObjectName("single_palette_search_bar")
+        self.single_palette_search_bar.setPlaceholderText("Search: ")
+        self.single_palette_search_bar.setStyleSheet("""
+            QLineEdit#single_palette_search_bar{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -19797,24 +20199,24 @@ class palette_button(QDialog):
                 border-radius: 16px;
             }
         """)
-        self.palette_search_bar.setMinimumHeight(60)
+        self.single_palette_search_bar.setMinimumHeight(60)
 
-        palette_selection_screen_layout.addWidget(self.palette_search_bar)
-        palette_selection_screen_layout.addSpacing(15)
+        single_palette_selection_screen_layout.addWidget(self.single_palette_search_bar)
+        single_palette_selection_screen_layout.addSpacing(15)
     
-        self.palette_selection_list_view = QListView()
-        self.palette_selection_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.palette_selection_model = QStringListModel([])
+        self.single_palette_selection_list_view = QListView()
+        self.single_palette_selection_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.single_palette_selection_model = QStringListModel([])
 
-        self.filter_proxy = QSortFilterProxyModel()
-        self.filter_proxy.setSourceModel(self.palette_selection_model)
-        self.filter_proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive) 
-        self.filter_proxy.setFilterKeyColumn(0)  
+        self.single_filter_proxy = QSortFilterProxyModel()
+        self.single_filter_proxy.setSourceModel(self.single_palette_selection_model)
+        self.single_filter_proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive) 
+        self.single_filter_proxy.setFilterKeyColumn(0)  
 
-        self.palette_search_bar.textChanged.connect(self.filter_proxy.setFilterFixedString)
+        self.single_palette_search_bar.textChanged.connect(self.single_filter_proxy.setFilterFixedString)
 
-        self.palette_selection_list_view.setModel(self.filter_proxy)
-        self.palette_selection_list_view.setObjectName("palette_selection_list_view")
+        self.single_palette_selection_list_view.setModel(self.single_filter_proxy)
+        self.single_palette_selection_list_view.setObjectName("single_palette_selection_list_view")
 
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
@@ -19824,10 +20226,10 @@ class palette_button(QDialog):
                 option.font = font
                 super().paint(painter, option, index)
         
-        self.palette_selection_list_view.setItemDelegate(CustomDelegate())
+        self.single_palette_selection_list_view.setItemDelegate(CustomDelegate())
 
-        self.palette_selection_list_view.setStyleSheet("""
-            QListView#palette_selection_list_view{
+        self.single_palette_selection_list_view.setStyleSheet("""
+            QListView#single_palette_selection_list_view{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -19837,7 +20239,7 @@ class palette_button(QDialog):
                 border: transparent;
                 border-radius: 16px;
             }
-            QListView#palette_selection_list_view::item {
+            QListView#single_palette_selection_list_view::item {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -19851,7 +20253,7 @@ class palette_button(QDialog):
                 color: black;
                 min-height: 41px;
             }
-            QListView#palette_selection_list_view::item:selected {
+            QListView#single_palette_selection_list_view::item:selected {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -19864,7 +20266,7 @@ class palette_button(QDialog):
                 color: black;
                 min-height: 41px;
             }
-            QListView#palette_selection_list_view::item:hover {
+            QListView#single_palette_selection_list_view::item:hover {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -19879,25 +20281,595 @@ class palette_button(QDialog):
             }
         """)
 
-        self.palette_selection_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.palette_selection_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.palette_selection_list_view.setSpacing(3)
+        self.single_palette_selection_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.single_palette_selection_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.single_palette_selection_list_view.setSpacing(3)
 
-        self.palette_selection_list_view.clicked.connect(self.change_single_premade_palette)
+        self.single_palette_selection_list_view.clicked.connect(self.change_single_palette_selection)
 
-        palette_selection_screen_layout.addWidget(self.palette_selection_list_view)
+        single_palette_selection_screen_layout.addWidget(self.single_palette_selection_list_view)
 
         # Add margins and spacing to make it look good and push content to the top
-        palette_selection_screen_layout.setContentsMargins(10, 10, 10, 10)
+        single_palette_selection_screen_layout.setContentsMargins(10, 10, 10, 10)
 
     def create_list_palette_screen(self):
-        pass
+        list_palette_screen_layout = QVBoxLayout(self.list_palette_screen)
 
-    def create_list_premade_palette_screen(self):
-        pass
+        self.list_palette_list_view = QListView()
+        self.list_palette_model = QStringListModel(["Premade Palette","Custom Palette"])
 
-    def create_list_custom_palette_screen(self):
-        pass
+        self.list_palette_list_view.setModel(self.list_palette_model)
+        self.list_palette_list_view.setObjectName("list_palette_list_view")
+        self.list_palette_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        screen_index = self.list_palette_model.index(0)  
+        self.list_palette_list_view.setCurrentIndex(screen_index)
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.list_palette_list_view.setItemDelegate(CustomDelegate())
+
+        self.list_palette_list_view.setStyleSheet("""
+            QListView#list_palette_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#list_palette_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#list_palette_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#list_palette_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.list_palette_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.list_palette_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.list_palette_list_view.setSpacing(3)
+
+        self.list_palette_list_view.clicked.connect(self.change_list_palette_screen)
+
+        list_palette_screen_layout.addWidget(self.list_palette_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        list_palette_screen_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_list_palette_premade_selection_screen(self):
+        list_palette_premade_selection_screen_layout = QVBoxLayout(self.list_palette_premade_selection_screen)
+
+        self.list_palette_search_bar = QLineEdit()
+        self.list_palette_search_bar.setObjectName("list_palette_search_bar")
+        self.list_palette_search_bar.setPlaceholderText("Search: ")
+        self.list_palette_search_bar.setStyleSheet("""
+            QLineEdit#list_palette_search_bar{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.list_palette_search_bar.setMinimumHeight(60)
+
+        list_palette_premade_selection_screen_layout.addWidget(self.list_palette_search_bar)
+        list_palette_premade_selection_screen_layout.addSpacing(15)
+    
+        self.list_palette_premade_selection_list_view = QListView()
+        self.list_palette_premade_selection_list_view.setSelectionMode(QListView.SelectionMode.MultiSelection)
+        self.list_palette_premade_selection_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.list_palette_premade_selection_model = QStringListModel(self.available_palettes["Named Colors"])
+
+        self.list_filter_proxy = QSortFilterProxyModel()
+        self.list_filter_proxy.setSourceModel(self.list_palette_premade_selection_model)
+        self.list_filter_proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive) 
+        self.list_filter_proxy.setFilterKeyColumn(0)  
+
+        self.list_palette_search_bar.textChanged.connect(self.list_filter_proxy.setFilterFixedString)
+
+        self.list_palette_premade_selection_list_view.setModel(self.list_filter_proxy)
+        self.list_palette_premade_selection_list_view.setObjectName("list_palette_premade_selection_list_view")
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.list_palette_premade_selection_list_view.setItemDelegate(CustomDelegate())
+
+        self.list_palette_premade_selection_list_view.setStyleSheet("""
+            QListView#list_palette_premade_selection_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#list_palette_premade_selection_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#list_palette_premade_selection_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#list_palette_premade_selection_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.list_palette_premade_selection_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.list_palette_premade_selection_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.list_palette_premade_selection_list_view.setSpacing(3)
+
+        self.list_palette_premade_selection_list_view.selectionModel().selectionChanged.connect(self.change_list_palette_selection)
+
+        list_palette_premade_selection_screen_layout.addWidget(self.list_palette_premade_selection_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        list_palette_premade_selection_screen_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_list_palette_custom_selection_screen(self):
+        list_palette_custom_selection_screen_layout = QVBoxLayout(self.list_palette_custom_selection_screen) 
+
+        custom_selection_types = ["hex","rgba","grayscale"]
+
+        self.list_palette_custom_selection_list_view = QListView()
+        self.list_palette_custom_selection_model = QStringListModel(custom_selection_types)
+
+        self.list_palette_custom_selection_list_view.setModel(self.list_palette_custom_selection_model)
+        self.list_palette_custom_selection_list_view.setObjectName("list_palette_custom_selection_list_view")
+        self.list_palette_custom_selection_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        screen_index = self.list_palette_custom_selection_model.index(0)  
+        self.list_palette_custom_selection_list_view.setCurrentIndex(screen_index)
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.list_palette_custom_selection_list_view.setItemDelegate(CustomDelegate())
+
+        self.list_palette_custom_selection_list_view.setStyleSheet("""
+            QListView#list_palette_custom_selection_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#list_palette_custom_selection_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#list_palette_custom_selection_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#list_palette_custom_selection_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.list_palette_custom_selection_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.list_palette_custom_selection_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.list_palette_custom_selection_list_view.setSpacing(3)
+
+        self.list_palette_custom_selection_list_view.clicked.connect(self.change_list_palette_custom_selection_screen)
+
+        list_palette_custom_selection_screen_layout.addWidget(self.list_palette_custom_selection_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        list_palette_custom_selection_screen_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_list_palette_hex_selection_screen(self):
+        list_palette_hex_selection_screen_layout = QVBoxLayout(self.list_palette_hex_selection_screen)
+
+        list_palette_hex_code_instructions_widget = QWidget()
+        list_palette_hex_code_instructions_widget.setObjectName("list_palette_hex_code_instructions_widget")
+        list_palette_hex_code_instructions_widget.setStyleSheet("""
+            QWidget#list_palette_hex_code_instructions_widget{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        list_palette_hex_code_instructions_label = QLabel("Press Enter to enter a new value")
+        list_palette_hex_code_instructions_label.setObjectName("list_palette_hex_code_instructions_label")
+        list_palette_hex_code_instructions_label.setWordWrap(True)
+        list_palette_hex_code_instructions_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        list_palette_hex_code_instructions_label.setStyleSheet("""
+            QLabel#list_palette_hex_code_instructions_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        list_palette_hex_code_instructions_layout = QVBoxLayout(list_palette_hex_code_instructions_widget)
+        list_palette_hex_code_instructions_layout.addWidget(list_palette_hex_code_instructions_label)
+        list_palette_hex_code_instructions_layout.setSpacing(0)
+        list_palette_hex_code_instructions_layout.setContentsMargins(0,0,0,0)
+
+        self.list_palette_hex_code_input = QLineEdit()
+        self.list_palette_hex_code_input.setObjectName("list_palette_hex_code_input")
+        self.list_palette_hex_code_input.setPlaceholderText("Hex Code: ")
+        self.list_palette_hex_code_input.setStyleSheet("""
+            QLineEdit#list_palette_hex_code_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.list_palette_hex_code_input.setMinimumHeight(60)
+        self.list_palette_hex_code_input.textChanged.connect(self.change_list_palette_hex_selection)
+
+        list_palette_hex_selection_screen_layout.addWidget(list_palette_hex_code_instructions_widget)
+        list_palette_hex_selection_screen_layout.addWidget(self.list_palette_hex_code_input)
+        list_palette_hex_selection_screen_layout.addWidget(self.valid_hex_code_widget)
+        list_palette_hex_selection_screen_layout.addWidget(self.invalid_hex_code_widget)
+        list_palette_hex_selection_screen_layout.setContentsMargins(10,10,10,10)
+        list_palette_hex_selection_screen_layout.setSpacing(10)
+        list_palette_hex_selection_screen_layout.addStretch()
+    
+    def create_list_palette_rgba_selection_screen(self): 
+        list_palette_rgba_selection_screen_layout = QVBoxLayout(self.list_palette_rgba_selection_screen)
+
+        list_palette_rgba_value_instructions_widget = QWidget()
+        list_palette_rgba_value_instructions_widget.setObjectName("list_palette_rgba_value_instructions_widget")
+        list_palette_rgba_value_instructions_widget.setStyleSheet("""
+            QWidget#list_palette_rgba_value_instructions_widget{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        list_palette_rgba_value_instructions_label = QLabel("Press Enter to enter a new value")
+        list_palette_rgba_value_instructions_label.setObjectName("list_palette_rgba_value_instructions_label")
+        list_palette_rgba_value_instructions_label.setWordWrap(True)
+        list_palette_rgba_value_instructions_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        list_palette_rgba_value_instructions_label.setStyleSheet("""
+            QLabel#list_palette_rgba_value_instructions_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        list_palette_rgba_value_instructions_layout = QVBoxLayout(list_palette_rgba_value_instructions_widget)
+        list_palette_rgba_value_instructions_layout.addWidget(list_palette_rgba_value_instructions_label)
+        list_palette_rgba_value_instructions_layout.setSpacing(0)
+        list_palette_rgba_value_instructions_layout.setContentsMargins(0,0,0,0)
+
+        self.list_palette_r_value_input = QLineEdit()
+        self.list_palette_r_value_input.setObjectName("list_palette_r_value_input")
+        self.list_palette_r_value_input.setPlaceholderText("R Value: ")
+        self.list_palette_r_value_input.setStyleSheet("""
+            QLineEdit#list_palette_r_value_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.list_palette_g_value_input = QLineEdit()
+        self.list_palette_g_value_input.setObjectName("list_palette_g_value_input")
+        self.list_palette_g_value_input.setPlaceholderText("G Value: ")
+        self.list_palette_g_value_input.setStyleSheet("""
+            QLineEdit#list_palette_g_value_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.list_palette_b_value_input = QLineEdit()
+        self.list_palette_b_value_input.setObjectName("list_palette_b_value_input")
+        self.list_palette_b_value_input.setPlaceholderText("B Value: ")
+        self.list_palette_b_value_input.setStyleSheet("""
+            QLineEdit#list_palette_b_value_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.list_palette_a_value_input = QLineEdit()
+        self.list_palette_a_value_input.setObjectName("list_palette_a_value_input")
+        self.list_palette_a_value_input.setPlaceholderText("A Value: ")
+        self.list_palette_a_value_input.setStyleSheet("""
+            QLineEdit#list_palette_a_value_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.list_palette_r_value_input.setMinimumHeight(60)
+        self.list_palette_g_value_input.setMinimumHeight(60)
+        self.list_palette_b_value_input.setMinimumHeight(60)
+        self.list_palette_a_value_input.setMinimumHeight(60)
+
+        self.list_palette_r_value_input.textChanged.connect(self.change_list_palette_rgba_selection)
+        self.list_palette_g_value_input.textChanged.connect(self.change_list_palette_rgba_selection)
+        self.list_palette_b_value_input.textChanged.connect(self.change_list_palette_rgba_selection)
+        self.list_palette_a_value_input.textChanged.connect(self.change_list_palette_rgba_selection)
+
+        list_palette_rgba_selection_screen_layout.addWidget(list_palette_rgba_value_instructions_widget)
+        list_palette_rgba_selection_screen_layout.addWidget(self.list_palette_r_value_input)
+        list_palette_rgba_selection_screen_layout.addWidget(self.list_palette_g_value_input)
+        list_palette_rgba_selection_screen_layout.addWidget(self.list_palette_b_value_input)
+        list_palette_rgba_selection_screen_layout.addWidget(self.list_palette_a_value_input)
+        list_palette_rgba_selection_screen_layout.addWidget(self.valid_rgba_value_widget)
+        list_palette_rgba_selection_screen_layout.addWidget(self.invalid_rgba_value_widget)
+        list_palette_rgba_selection_screen_layout.setContentsMargins(10,10,10,10)
+        list_palette_rgba_selection_screen_layout.setSpacing(10)
+        list_palette_rgba_selection_screen_layout.addStretch()
+
+    def create_list_palette_grayscale_selection_screen(self):
+        list_palette_grayscale_selection_screen_layout = QVBoxLayout(self.list_palette_grayscale_selection_screen)
+
+        list_palette_grayscale_value_instructions_widget = QWidget()
+        list_palette_grayscale_value_instructions_widget.setObjectName("list_palette_grayscale_value_instructions_widget")
+        list_palette_grayscale_value_instructions_widget.setStyleSheet("""
+            QWidget#list_palette_grayscale_value_instructions_widget{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+
+        list_palette_grayscale_value_instructions_label = QLabel("Press Enter to enter a new value")
+        list_palette_grayscale_value_instructions_label.setObjectName("list_palette_grayscale_value_instructions_label")
+        list_palette_grayscale_value_instructions_label.setWordWrap(True)
+        list_palette_grayscale_value_instructions_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        list_palette_grayscale_value_instructions_label.setStyleSheet("""
+            QLabel#list_palette_grayscale_value_instructions_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        list_palette_grayscale_value_instructions_layout = QVBoxLayout(list_palette_grayscale_value_instructions_widget)
+        list_palette_grayscale_value_instructions_layout.addWidget(list_palette_grayscale_value_instructions_label)
+        list_palette_grayscale_value_instructions_layout.setSpacing(0)
+        list_palette_grayscale_value_instructions_layout.setContentsMargins(0,0,0,0)
+
+        self.list_palette_grayscale_value_input = QLineEdit()
+        self.list_palette_grayscale_value_input.setObjectName("list_palette_grayscale_value_input")
+        self.list_palette_grayscale_value_input.setPlaceholderText("Grayscale Value: ")
+        self.list_palette_grayscale_value_input.setStyleSheet("""
+            QLineEdit#list_palette_grayscale_value_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.list_palette_grayscale_value_input.setMinimumHeight(60)
+        self.list_palette_grayscale_value_input.textChanged.connect(self.change_list_palette_grayscale_selection)
+
+        list_palette_grayscale_selection_screen_layout.addWidget(list_palette_grayscale_value_instructions_widget)
+        list_palette_grayscale_selection_screen_layout.addWidget(self.list_palette_grayscale_value_input)
+        list_palette_grayscale_selection_screen_layout.addWidget(self.valid_grayscale_value_widget)
+        list_palette_grayscale_selection_screen_layout.addWidget(self.invalid_grayscale_value_widget)
+        list_palette_grayscale_selection_screen_layout.setContentsMargins(10,10,10,10)
+        list_palette_grayscale_selection_screen_layout.setSpacing(10)
+        list_palette_grayscale_selection_screen_layout.addStretch()
 
     def change_current_parameter_screen(self,index):
         screen_name = self.palette_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
@@ -19914,38 +20886,212 @@ class palette_button(QDialog):
         if (screen_name == "No Palette"):
             self.change_to_no_palette_screen()
 
+    def change_list_palette_screen(self,index): 
+        screen_name = self.list_palette_model.data(index,Qt.ItemDataRole.DisplayRole)
+
+        if (screen_name == "Premade Palette"):
+            self.change_to_list_palette_premade_selection_screen()
+
+        if (screen_name == "Custom Palette"):
+            self.change_to_list_palette_custom_selection_screen()
+
+    def change_list_palette_custom_selection_screen(self,index):
+        screen_name = self.list_palette_custom_selection_model.data(index,Qt.ItemDataRole.DisplayRole)
+
+        if (screen_name == "hex"):
+            self.change_to_list_palette_hex_selection_screen()
+
+        if (screen_name == "rgba"):
+            self.change_to_list_palette_rgba_selection_screen()
+
+        if (screen_name == "grayscale"):
+            self.change_to_list_palette_grayscale_selection_screen()
+
     def change_to_single_palette_screen(self):
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 0
         self.available_screens[self.current_screen_idx].show()
 
-    def change_to_palette_selection_screen(self,index):
-        palette_type = self.single_palette_model.data(index,Qt.ItemDataRole.DisplayRole)
-        palette_values = sorted(self.available_palettes[palette_type])
+        self.palette = None
 
-        self.palette_selection_model = QStringListModel(palette_values)
-        self.filter_proxy.setSourceModel(self.palette_selection_model)
+    def change_to_single_palette_selection_screen(self,index):
+        self.palette_type = self.single_palette_model.data(index,Qt.ItemDataRole.DisplayRole)
+        self.palette_values = sorted(self.available_palettes[self.palette_type])
+
+        self.single_palette_selection_model = QStringListModel(self.palette_values)
+        self.single_filter_proxy.setSourceModel(self.single_palette_selection_model)
 
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 1
         self.available_screens[self.current_screen_idx].show()
 
+        self.palette = None
+
     def change_to_list_palette_screen(self):
-        pass
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 2
+        self.available_screens[self.current_screen_idx].show()
 
-    def change_to_dictionary_palette_screen(self):
-        pass
+        self.palette = None
 
-    def change_to_no_palette_screen(self):
-        pass
+    def change_to_list_palette_premade_selection_screen(self):
+        self.list_palette_premade_selection_list_view.clearSelection()
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 3
+        self.available_screens[self.current_screen_idx].show()
 
-    def change_single_premade_palette(self,index):
-        source_index = self.filter_proxy.mapToSource(index)
-        self.palette = self.palette_selection_model.data(source_index,Qt.ItemDataRole.DisplayRole)
+    def change_to_list_palette_custom_selection_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 4
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_list_palette_hex_selection_screen(self): 
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 5
+        self.available_screens[self.current_screen_idx].show()
+
+        self.hex_code = None
+
+    def change_to_list_palette_rgba_selection_screen(self): 
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 6
+        self.available_screens[self.current_screen_idx].show()
+
+        self.rgba_value = None
+
+    def change_to_list_palette_grayscale_selection_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 7
+        self.available_screens[self.current_screen_idx].show()
+
+        self.grayscale_value = None
+
+    def change_single_palette_selection(self,index):
+        source_index = self.single_filter_proxy.mapToSource(index)
+        self.palette = self.single_palette_selection_model.data(source_index,Qt.ItemDataRole.DisplayRole)
         self.update_palette()
 
-    def change_single_custom_palette(self):
-        pass
+    def change_list_palette_selection(self):
+        indexes = self.list_palette_premade_selection_list_view.selectedIndexes()
+        
+        selected_palette_dictionary = dict()
+
+        for idx in indexes:
+            source_idx = self.list_filter_proxy.mapToSource(idx)
+            value = self.list_palette_premade_selection_model.data(source_idx,Qt.ItemDataRole.DisplayRole)
+
+            if (value in self.xkcd_colors):
+                value = "xkcd:" + value
+            if (value in self.tableau_colors):
+                value = "tab:" + value
+
+            selected_palette_dictionary[idx] = value
+
+        if (len(list(selected_palette_dictionary.values())) <= self.hue_value_count):
+            self.palette = list(selected_palette_dictionary.values())
+            if (len(self.palette) == 3):
+                self.update_palette()
+        else: 
+            old_palette = self.palette[0]
+            old_palette_key = [key for key,value in selected_palette_dictionary.items() if (value == old_palette)][0]
+            selected_palette_dictionary.pop(old_palette_key)
+
+            self.list_palette_premade_selection_list_view.selectionModel().select(old_palette_key, 
+               self.list_palette_premade_selection_list_view.selectionModel().SelectionFlag.Deselect
+            )
+
+            self.palette = list(selected_palette_dictionary.values())
+            self.update_palette()
+        
+    def change_list_palette_hex_selection(self):
+        hex_code = self.list_palette_hex_code_input.text().strip()
+
+        if (hex_code == ""):
+            self.valid_hex_code_widget.hide()
+            self.invalid_hex_code_widget.hide()
+            self.hex_code = None
+            return
+
+        def check_valid_hex_code(hex_code):
+            if (hex_code[0] != "#"):
+                new_hex_code = "#" + hex_code
+                return check_valid_hex_code(new_hex_code)
+            hex_code = hex_code[1:]
+            if (len(hex_code) not in [3,6,8]):
+                return False
+            try:
+                int(hex_code,16)
+                return True
+            except:
+                return False
+        
+        if (hex_code != ""):
+            validity = check_valid_hex_code(hex_code)
+            if (validity):
+                self.valid_hex_code_widget.show()
+                self.invalid_hex_code_widget.hide()
+                self.hex_code = hex_code if hex_code[0] == "#" else "#" + hex_code
+            else:
+                self.valid_hex_code_widget.hide()
+                self.invalid_hex_code_widget.show()
+
+    def change_list_palette_rgba_selection(self):
+        r_value = self.list_palette_r_value_input.text().strip()
+        g_value = self.list_palette_g_value_input.text().strip()
+        b_value = self.list_palette_b_value_input.text().strip()
+        a_value = self.list_palette_a_value_input.text().strip()
+
+        if (not(r_value or g_value or b_value or a_value)):
+            self.valid_rgba_value_widget.hide()
+            self.invalid_rgba_value_widget.hide()
+            self.rgba_value = None
+            return 
+
+        valid = None
+
+        try:
+            r_value = int(r_value) if r_value != "" else self.initial_rgba[0]
+            g_value = int(g_value) if g_value != "" else self.initial_rgba[1]
+            b_value = int(b_value) if b_value != "" else self.initial_rgba[2]
+            a_value = int(a_value) if a_value != "" else self.initial_rgba[3]
+            valid = True
+        except:
+            valid = False
+
+        if (valid):
+            self.initial_rgba[0] = r_value 
+            self.initial_rgba[1] = g_value
+            self.initial_rgba[2] = b_value 
+            self.initial_rgba[3] = a_value
+
+            self.valid_rgba_value_widget.show()
+            self.invalid_rgba_value_widget.hide()
+
+            self.rgba_value = self.initial_rgba
+        else:
+            self.valid_rgba_value_widget.hide()
+            self.invalid_rgba_value_widget.show()
+
+    def change_list_palette_grayscale_selection(self):
+        grayscale_value = self.list_palette_grayscale_value_input.text().strip()
+
+        if (grayscale_value == ""): 
+            self.valid_grayscale_value_widget.hide() 
+            self.invalid_grayscale_value_widget.hide()
+            self.grayscale_value = None
+            return
+
+        try: 
+            grayscale_value = float(grayscale_value)
+            if (0 > grayscale_value or grayscale_value > 1):
+                raise Exception
+            self.valid_grayscale_value_widget.show()
+            self.invalid_grayscale_value_widget.hide()
+        except:
+            self.valid_grayscale_value_widget.hide()
+            self.invalid_grayscale_value_widget.show()
+
+        self.grayscale_value = grayscale_value
 
     def update_palette(self):
         db = self.plot_manager.get_db()
@@ -19965,11 +21111,73 @@ class palette_button(QDialog):
 
     def showEvent(self, event):
         super().showEvent(event)
+        self.palette_idx = 0
 
     def mousePressEvent(self, event):
-        if not self.palette_search_bar.geometry().contains(event.position().toPoint()):
-            self.palette_search_bar.clearFocus()
+        if not self.single_palette_search_bar.geometry().contains(event.position().toPoint()):
+            self.single_palette_search_bar.clearFocus()
         super().mousePressEvent(event)
+
+    def new_custom_list_palette(self):
+        if (isinstance(self.palette,list)):
+            if (self.current_screen_idx == 5):
+                self.palette.append(self.hex_code)
+            if (self.current_screen_idx == 6):
+                self.palette.append(self.rgba_value)
+            if (self.current_screen_idx == 7):
+                self.palette.append(self.grayscale_value)
+        else:
+            if (self.current_screen_idx == 5):
+                self.palette = [self.hex_code]
+            if (self.current_screen_idx == 6):
+                self.palette = [self.rgba_value]
+            if (self.current_screen_idx == 7):
+                self.palette = [self.grayscale_value]
+            
+        if (len(self.palette) > 3):
+            self.palette.pop(0)
+
+        self.list_palette_hex_code_input.clear()
+
+        self.list_palette_r_value_input.clear()
+        self.list_palette_g_value_input.clear()
+        self.list_palette_b_value_input.clear()
+        self.list_palette_a_value_input.clear() 
+
+        self.list_palette_grayscale_value_input.clear()
+
+        self.update_palette()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+
+        self.change_to_single_palette_screen()
+
+        self.list_palette_hex_code_input.clear()
+
+        self.list_palette_r_value_input.clear()
+        self.list_palette_g_value_input.clear()
+        self.list_palette_b_value_input.clear()
+        self.list_palette_a_value_input.clear() 
+
+        self.list_palette_grayscale_value_input.clear()
+
+        self.palette = None
+        self.hex_code = None
+        self.rgba_value = None
+        self.grayscale_value = None
+
+        self.list_palette_list_view.clearSelection()
+        self.list_palette_custom_selection_list_view.clearSelection()
+        self.list_palette_premade_selection_list_view.clearSelection()
+
+        self.valid_grayscale_value_widget.hide()
+        self.valid_hex_code_widget.hide()
+        self.valid_rgba_value_widget.hide()
+
+        self.invalid_grayscale_value_widget.hide()
+        self.invalid_hex_code_widget.hide()
+        self.invalid_rgba_value_widget.hide()
 
     def close_dialog(self):
         self.close()
