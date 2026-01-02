@@ -1,18 +1,12 @@
-from math import e
-from re import S
-import select
 from PyQt6.QtCore import QItemSelectionModel, QSortFilterProxyModel, QStringListModel, Qt
 from PyQt6.QtGui import QFont, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QListWidget, QListWidgetItem, QPushButton, 
     QSizePolicy, QTableView, QWidget, QVBoxLayout, QStyledItemDelegate, QSizePolicy, QWidgetAction
 )
-from matplotlib import markers
-from pandas.core.ops.docstrings import key
 from sections import plot_manager
 from sections.dataset import PrepareDataset
 from sections.plot_manager import PlotManager
-import seaborn as sns
 import matplotlib.colors as mcolors
 import pandas as pd
 import os
@@ -9458,7 +9452,11 @@ class seaborn_legend_markers_adjustment_section(QWidget):
 
     def showEvent(self,event):
         super().showEvent(event)
-        self.style_value = pd.read_csv("./dataset/user_dataset.csv")[self.plot_manager.get_db()["style"]].unique()
+
+        try:
+            self.style_value = pd.read_csv("./dataset/user_dataset.csv")[self.plot_manager.get_db()["style"]].unique()
+        except:
+            self.style_value = []
         self.style_value_count = len(self.style_value)
         self.multiple_select_markers_list_widget.clearSelection()
         self.reset_marker_selection()
@@ -19465,6 +19463,12 @@ class palette_button(QDialog):
         self.rgba_value = None
         self.grayscale_value = None
 
+        self.dictionary_palette = dict()
+        self.dictionary_palette_key = None
+        self.dictionary_palette_value = None
+
+        self.palette_state = True
+
         self.initial_rgba = [0,0,0,1]
 
         self.available_palettes = {
@@ -19955,11 +19959,16 @@ class palette_button(QDialog):
         self.create_list_palette_grayscale_selection_screen()
         self.list_palette_grayscale_selection_screen.hide()
 
-        #-----Create Palette Adjustment Section-----
-        self.palette_adjustment_section = QWidget()
-        self.palette_adjustment_section.setObjectName("palette_adjustment_section")
-        self.palette_adjustment_section.setStyleSheet("""
-            QWidget#palette_adjustment_section{
+        #-----Create Dictionary Palette Screen-----
+        self.dictionary_palette_adjustment_screen = QWidget()
+        self.create_dictionary_palette_screen()
+        self.dictionary_palette_adjustment_screen.hide()
+
+        #-----Create None Palette Screen-----
+        self.none_palette_adjustment_screen = QWidget()
+        self.none_palette_adjustment_screen.setObjectName("none_palette_adjustment_screen")
+        self.none_palette_adjustment_screen.setStyleSheet("""
+            QWidget#none_palette_adjustment_screen{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -19970,6 +19979,11 @@ class palette_button(QDialog):
                 border-radius: 16px; 
             }
         """)
+        self.create_none_palette_adjustment_screen()
+        self.none_palette_adjustment_screen.hide()
+
+        #-----Create Palette Adjustment Section-----
+        self.palette_adjustment_section = QWidget()
 
         palette_adjustment_section_layout = QVBoxLayout(self.palette_adjustment_section)
         palette_adjustment_section_layout.addWidget(self.single_palette_screen)
@@ -19980,6 +19994,8 @@ class palette_button(QDialog):
         palette_adjustment_section_layout.addWidget(self.list_palette_hex_selection_screen)
         palette_adjustment_section_layout.addWidget(self.list_palette_rgba_selection_screen)
         palette_adjustment_section_layout.addWidget(self.list_palette_grayscale_selection_screen)
+        palette_adjustment_section_layout.addWidget(self.dictionary_palette_adjustment_screen)
+        palette_adjustment_section_layout.addWidget(self.none_palette_adjustment_screen)
         palette_adjustment_section_layout.setContentsMargins(0,0,0,0)
         palette_adjustment_section_layout.setSpacing(0)
 
@@ -19987,7 +20003,8 @@ class palette_button(QDialog):
         self.available_screens = [self.single_palette_screen,self.single_palette_selection_screen,self.list_palette_screen,
                                 self.list_palette_premade_selection_screen,self.list_palette_custom_selection_screen,
                                 self.list_palette_hex_selection_screen,self.list_palette_rgba_selection_screen,
-                                self.list_palette_grayscale_selection_screen]
+                                self.list_palette_grayscale_selection_screen,self.dictionary_palette_adjustment_screen,
+                                self.none_palette_adjustment_screen]
         self.current_screen_idx = 0
         self.previous_screen_idx = []
         self.available_screens[self.current_screen_idx].show()
@@ -20871,6 +20888,285 @@ class palette_button(QDialog):
         list_palette_grayscale_selection_screen_layout.setSpacing(10)
         list_palette_grayscale_selection_screen_layout.addStretch()
 
+    def create_dictionary_palette_screen(self):
+        dictionary_palette_screen_layout = QVBoxLayout(self.dictionary_palette_adjustment_screen)  
+
+        self.dictionary_palette_key_section = QWidget()
+        self.dictionary_palette_key_section.setObjectName("dictionary_palette_key_section")
+        self.dictionary_palette_key_section.setStyleSheet("""
+            QWidget#dictionary_palette_key_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.create_dictionary_palette_key_section()
+
+        self.dictionary_palette_value_section = QWidget()
+        self.dictionary_palette_value_section.setObjectName("dictionary_palette_value_section")
+        self.dictionary_palette_value_section.setStyleSheet("""
+            QWidget#dictionary_palette_value_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.create_dictionary_palette_value_section()
+
+        dictionary_palette_screen_layout.addWidget(self.dictionary_palette_key_section,stretch=1)
+        dictionary_palette_screen_layout.addWidget(self.dictionary_palette_value_section,stretch=1)
+        dictionary_palette_screen_layout.setSpacing(10)
+        dictionary_palette_screen_layout.setContentsMargins(0,0,0,0)
+
+    def create_dictionary_palette_key_section(self):
+        dictionary_palette_key_section_layout = QVBoxLayout(self.dictionary_palette_key_section)
+
+        self.dictionary_palette_key_list_view = QListView()
+        self.dictionary_palette_key_model = QStringListModel(self.hue_value)
+        
+        self.dictionary_palette_key_list_view.setModel(self.dictionary_palette_key_model)
+        self.dictionary_palette_key_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.dictionary_palette_key_list_view.setObjectName("dictionary_hue_key_list_view")
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.dictionary_palette_key_list_view.setItemDelegate(CustomDelegate())
+
+        self.dictionary_palette_key_list_view.setStyleSheet("""
+            QListView#dictionary_hue_key_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#dictionary_hue_key_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#dictionary_hue_key_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#dictionary_hue_key_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.dictionary_palette_key_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.dictionary_palette_key_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.dictionary_palette_key_list_view.setSpacing(3)
+
+        self.dictionary_palette_key_list_view.clicked.connect(self.change_dictionary_palette_key)
+
+        dictionary_palette_key_section_layout.addWidget(self.dictionary_palette_key_list_view)
+        dictionary_palette_key_section_layout.setContentsMargins(10,10,10,10)
+        dictionary_palette_key_section_layout.setSpacing(10)
+        dictionary_palette_key_section_layout.addStretch()
+
+    def create_dictionary_palette_value_section(self):
+        dictionary_palette_value_section_layout = QVBoxLayout(self.dictionary_palette_value_section)
+
+        self.dictionary_palette_value_list_view = QListView()
+        self.dictionary_palette_value_model = QStringListModel(self.named_colors)
+        
+        self.dictionary_palette_value_list_view.setModel(self.dictionary_palette_value_model)
+        self.dictionary_palette_value_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.dictionary_palette_value_list_view.setObjectName("dictionary_palette_value_list_view")
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.dictionary_palette_value_list_view.setItemDelegate(CustomDelegate())
+
+        self.dictionary_palette_value_list_view.setStyleSheet("""
+            QListView#dictionary_palette_value_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#dictionary_palette_value_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#dictionary_palette_value_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#dictionary_palette_value_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.dictionary_palette_value_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.dictionary_palette_value_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.dictionary_palette_value_list_view.setSpacing(3)
+
+        self.dictionary_palette_value_list_view.clicked.connect(self.change_dictionary_palette_value)
+
+        dictionary_palette_value_section_layout.addWidget(self.dictionary_palette_value_list_view)
+        dictionary_palette_value_section_layout.setContentsMargins(10,10,10,10)
+        dictionary_palette_value_section_layout.setSpacing(10)
+        dictionary_palette_value_section_layout.addStretch()
+
+    def create_none_palette_adjustment_screen(self):
+        none_palette_adjustment_screen_layout = QVBoxLayout(self.none_palette_adjustment_screen)
+        
+        self.none_palette_label = QLabel("Disable Palette")
+        self.none_palette_label.setObjectName("none_palette_label")
+        self.none_palette_label.setStyleSheet("""
+            QLabel#none_palette_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.none_palette_label.setWordWrap(True)
+        self.none_palette_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.none_palette_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+        self.none_palette_button = QPushButton()
+        self.none_palette_button.setObjectName("none_palette_button")
+        self.none_palette_button.setStyleSheet("""
+            QPushButton#none_palette_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#none_palette_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.none_palette_button.setMinimumHeight(50)
+
+        self.none_palette_button.clicked.connect(self.change_palette_state)
+
+        none_palette_button_layout = QVBoxLayout(self.none_palette_button)
+        none_palette_button_layout.addWidget(self.none_palette_label)
+        none_palette_button_layout.setContentsMargins(0,0,0,0)
+        none_palette_button_layout.setSpacing(0)
+        
+        none_palette_adjustment_screen_layout.addWidget(self.none_palette_button)
+        none_palette_adjustment_screen_layout.setContentsMargins(10,10,10,10)
+        none_palette_adjustment_screen_layout.setSpacing(10)
+        none_palette_adjustment_screen_layout.addStretch()
+
     def change_current_parameter_screen(self,index):
         screen_name = self.palette_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
         
@@ -20965,6 +21261,20 @@ class palette_button(QDialog):
         self.available_screens[self.current_screen_idx].show()
 
         self.grayscale_value = None
+
+    def change_to_dictionary_palette_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 8
+        self.available_screens[self.current_screen_idx].show()
+
+        self.dictionary_palette = dict()
+        self.dictionary_palette_key = None
+        self.dictionary_palette_value = None
+
+    def change_to_no_palette_screen(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 9
+        self.available_screens[self.current_screen_idx].show()
 
     def change_single_palette_selection(self,index):
         source_index = self.single_filter_proxy.mapToSource(index)
@@ -21093,13 +21403,44 @@ class palette_button(QDialog):
 
         self.grayscale_value = grayscale_value
 
+    def change_dictionary_palette_key(self,index):
+        self.dictionary_palette_key = self.dictionary_palette_key_model.data(index,Qt.ItemDataRole.DisplayRole)
+        self.dictionary_palette_value_list_view.clearSelection()
+        self.dictionary_palette_value = None
+        self.change_dictionary_palette()
+
+    def change_dictionary_palette_value(self,index):
+        self.dictionary_palette_value = self.dictionary_palette_value_model.data(index,Qt.ItemDataRole.DisplayRole)
+        self.change_dictionary_palette()
+
+    def change_dictionary_palette(self):
+        if (self.dictionary_palette_key is not None and self.dictionary_palette_value is not None):
+            self.dictionary_palette[self.dictionary_palette_key] = self.dictionary_palette_value
+
+            dictionary_keys = list(self.dictionary_palette.keys())
+
+            if (len(dictionary_keys) == self.hue_value_count):
+                self.palette = self.dictionary_palette
+                self.update_palette()
+
+    def change_palette_state(self):
+        self.palette_state = not self.palette_state
+        if (self.palette_state == True):
+            self.none_palette_label.setText("Disable Palette")
+        else:
+            self.none_palette_label.setText("Enable Palette")
+
+        self.update_palette()
+
     def update_palette(self):
         db = self.plot_manager.get_db()
-        if (db != []):
+        if (db != [] and self.palette_state):
             if (self.palette in list(mcolors.CSS4_COLORS.keys())):
                 self.plot_manager.update_palette([self.palette])
             else:
                 self.plot_manager.update_palette(self.palette)
+        elif (self.palette_state == False):
+            self.plot_manager.update_palette(None)
         else:
             plot_parameter = plot_json[self.selected_graph].copy()
             if (self.palette in list(mcolors.CSS4_COLORS.keys())):
@@ -21151,6 +21492,13 @@ class palette_button(QDialog):
     def showEvent(self, event):
         super().showEvent(event)
 
+        try:
+            self.hue_value = pd.read_csv("./dataset/user_dataset.csv")[self.plot_manager.get_db()["hue"][0]].unique()
+        except:
+            self.hue_value = []
+
+        self.hue_value_count = len(self.hue_value)
+
         self.change_to_single_palette_screen()
 
         self.list_palette_hex_code_input.clear()
@@ -21167,9 +21515,18 @@ class palette_button(QDialog):
         self.rgba_value = None
         self.grayscale_value = None
 
+        self.dictionary_palette = dict()
+        self.dictionary_palette_key = None
+        self.dictionary_palette_value = None
+
+        self.single_palette_selection_list_view.clearSelection()
+
         self.list_palette_list_view.clearSelection()
         self.list_palette_custom_selection_list_view.clearSelection()
         self.list_palette_premade_selection_list_view.clearSelection()
+
+        self.dictionary_palette_key_list_view.clearSelection()
+        self.dictionary_palette_value_list_view.clearSelection()    
 
         self.valid_grayscale_value_widget.hide()
         self.valid_hex_code_widget.hide()
