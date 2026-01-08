@@ -20006,7 +20006,6 @@ class palette_button(QDialog):
                                 self.list_palette_grayscale_selection_screen,self.dictionary_palette_adjustment_screen,
                                 self.none_palette_adjustment_screen]
         self.current_screen_idx = 0
-        self.previous_screen_idx = []
         self.available_screens[self.current_screen_idx].show()
 
         main_layout = QHBoxLayout(self)
@@ -21457,6 +21456,18 @@ class palette_button(QDialog):
     def mousePressEvent(self, event):
         if not self.single_palette_search_bar.geometry().contains(event.position().toPoint()):
             self.single_palette_search_bar.clearFocus()
+        if not self.list_palette_hex_code_input.geometry().contains(event.position().toPoint()):
+            self.list_palette_hex_code_input.clearFocus()
+        if not self.list_palette_r_value_input.geometry().contains(event.position().toPoint()):
+            self.list_palette_r_value_input.clearFocus()
+        if not self.list_palette_g_value_input.geometry().contain(event.position().toPoint()):
+            self.list_palette_g_value_input.clear()
+        if not self.list_palette_b_value_input.geometry().contains(event.position().toPoint()):
+            self.list_palette_b_value_input.clear()
+        if not self.list_palette_a_value_input.geometry().contains(event.position().toPoint()):
+            self.list_palette_a_value_input.clear()
+        if not self.list_palette_grayscale_value_input.geometry().contains(event.position().toPoint()):
+            self.list_palette_grayscale_value_input.clear()
         super().mousePressEvent(event)
 
     def new_custom_list_palette(self):
@@ -21535,6 +21546,453 @@ class palette_button(QDialog):
         self.invalid_grayscale_value_widget.hide()
         self.invalid_hex_code_widget.hide()
         self.invalid_rgba_value_widget.hide()
+
+    def close_dialog(self):
+        self.close()
+
+class alpha_button(QDialog):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        self.alpha = None
+        self.alpha_parameters = ["Float","None"]
+
+        #-----Initialize the QDialog Window-----
+        self.setStyleSheet("""
+            QDialog{
+               background: qlineargradient(
+                    x1: 0, y1: 1, 
+                    x2: 0, y2: 0,
+                    stop: 0 rgba(25, 191, 188, 1),
+                    stop: 0.28 rgba(27, 154, 166, 1),
+                    stop: 0.65 rgba(78, 160, 242, 1),
+                    stop: 0.89 rgba(33, 218, 255, 1)
+                );
+            }
+        """)
+        self.setFixedWidth(600)
+        self.setFixedHeight(500)
+
+        #-----Float Alpha Validiity Check Widgets-----
+        self.valid_float_alpha_widget = QWidget()
+        self.valid_float_alpha_widget.setObjectName("valid_float_alpha_widget")
+        self.valid_float_alpha_widget.setStyleSheet("""
+            QWidget#valid_float_alpha_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_float_alpha_label = QLabel("Valid Float Alpha")
+        self.valid_float_alpha_label.setObjectName("valid_float_alpha_label")
+        self.valid_float_alpha_label.setStyleSheet("""
+            QLabel#valid_float_alpha_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.valid_float_alpha_label.setWordWrap(True)
+        self.valid_float_alpha_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        self.invalid_float_alpha_widget = QWidget()
+        self.invalid_float_alpha_widget.setObjectName("invalid_float_alpha_widget")
+        self.invalid_float_alpha_widget.setStyleSheet("""
+            QWidget#invalid_float_alpha_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_float_alpha_label = QLabel("Invalid Float Alpha")
+        self.invalid_float_alpha_label.setObjectName("invalid_float_alpha_label")
+        self.invalid_float_alpha_label.setWordWrap(True)
+        self.invalid_float_alpha_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_float_alpha_label.setStyleSheet("""
+            QLabel#invalid_float_alpha_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_float_alpha_widget_layout = QVBoxLayout(self.valid_float_alpha_widget)
+        valid_float_alpha_widget_layout.addWidget(self.valid_float_alpha_label)
+        valid_float_alpha_widget_layout.setContentsMargins(0,0,0,0)
+        valid_float_alpha_widget_layout.setSpacing(0)
+
+        invalid_float_alpha_widget_layout = QVBoxLayout(self.invalid_float_alpha_widget)
+        invalid_float_alpha_widget_layout.addWidget(self.invalid_float_alpha_label)
+        invalid_float_alpha_widget_layout.setContentsMargins(0,0,0,0)
+        invalid_float_alpha_widget_layout.setSpacing(0)
+
+        self.valid_float_alpha_widget.setMinimumHeight(50)
+        self.invalid_float_alpha_widget.setMinimumHeight(50)
+        
+        self.valid_float_alpha_widget.hide()
+        self.invalid_float_alpha_widget.hide()
+        
+        #-----Create Alpha Adjustment Homescreen-----
+        self.alpha_parameter_section = QWidget()
+        self.alpha_parameter_section.setObjectName("alpha_parameter_section")
+        self.alpha_parameter_section.setStyleSheet("""
+            QWidget#alpha_parameter_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_alpha_parameter_button()
+
+        #-----Create Float Alpha Adjustment Section-----
+        self.float_alpha_adjustment_section = QWidget()
+        self.float_alpha_adjustment_section.setObjectName("float_alpha_adjustment_section")
+        self.float_alpha_adjustment_section.setStyleSheet("""
+            QWidget#float_alpha_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_float_alpha_adjustment_section()
+        self.float_alpha_adjustment_section.hide()
+
+        #-----Create Reset Alpha Section-----
+        self.none_alpha_adjustment_section = QWidget()
+        self.none_alpha_adjustment_section.setObjectName("none_alpha_adjustment_section")
+        self.none_alpha_adjustment_section.setStyleSheet("""
+            QWidget#none_alpha_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_none_alpha_adjustment_section()
+        self.none_alpha_adjustment_section.hide()
+
+        #-----Available Screens-----
+        self.available_screens = [self.float_alpha_adjustment_section,self.none_alpha_adjustment_section]
+        self.current_screen_index = 0
+        self.available_screens[self.current_screen_index].show()
+
+        #-----Create Alpha Adjustment Section-----
+        self.alpha_adjustment_section = QWidget()
+        
+        alpha_adjustment_section_layout = QVBoxLayout(self.alpha_adjustment_section)
+        alpha_adjustment_section_layout.addWidget(self.float_alpha_adjustment_section)
+        alpha_adjustment_section_layout.addWidget(self.none_alpha_adjustment_section)
+        alpha_adjustment_section_layout.setContentsMargins(0,0,0,0)
+        alpha_adjustment_section_layout.setSpacing(0)
+
+        #-----Create Main Screen-----
+        main_layout = QHBoxLayout(self)
+        main_layout.addWidget(self.alpha_parameter_section,stretch=1)
+        main_layout.addWidget(self.alpha_adjustment_section,stretch=1)
+        main_layout.setContentsMargins(15,15,15,15)
+        main_layout.setSpacing(10)
+
+        #-----Keyboard Shortcut-----
+        self.esc_shortcut = QShortcut(QKeySequence("esc"),self)
+        self.esc_shortcut.activated.connect(self.close_dialog)
+
+    def create_alpha_parameter_button(self):
+        alpha_parameter_button_layout = QVBoxLayout(self.alpha_parameter_section)
+        
+        self.alpha_parameter_list_view = QListView()
+        self.alpha_parameter_model = QStringListModel(self.alpha_parameters)
+
+        self.alpha_parameter_list_view.setModel(self.alpha_parameter_model)
+        self.alpha_parameter_list_view.setObjectName("alpha_parameter_list_view")
+        self.alpha_parameter_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        screen_index = self.alpha_parameter_model.index(0)  
+        self.alpha_parameter_list_view.setCurrentIndex(screen_index)
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.alpha_parameter_list_view.setItemDelegate(CustomDelegate())
+
+        self.alpha_parameter_list_view.setStyleSheet("""
+            QListView#alpha_parameter_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#alpha_parameter_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#alpha_parameter_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#alpha_parameter_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.alpha_parameter_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.alpha_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.alpha_parameter_list_view.setSpacing(3)
+
+        self.alpha_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+
+        alpha_parameter_button_layout.addWidget(self.alpha_parameter_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        alpha_parameter_button_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_float_alpha_adjustment_section(self):
+        float_alpha_adjustment_section_layout = QVBoxLayout(self.float_alpha_adjustment_section)
+
+        self.float_alpha_value_input = QLineEdit()
+        self.float_alpha_value_input.setObjectName("float_alpha_value_input")
+        self.float_alpha_value_input.setPlaceholderText("Alpha: ")
+        self.float_alpha_value_input.setStyleSheet("""
+            QLineEdit#float_alpha_value_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.float_alpha_value_input.setMinimumHeight(60)
+        self.float_alpha_value_input.textChanged.connect(self.change_float_alpha_value)
+
+        float_alpha_adjustment_section_layout.addWidget(self.float_alpha_value_input)
+        float_alpha_adjustment_section_layout.addWidget(self.valid_float_alpha_widget)
+        float_alpha_adjustment_section_layout.addWidget(self.invalid_float_alpha_widget)
+        float_alpha_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        float_alpha_adjustment_section_layout.setSpacing(10)
+        float_alpha_adjustment_section_layout.addStretch()
+
+    def create_none_alpha_adjustment_section(self):
+        none_alpha_adjustment_section_layout = QVBoxLayout(self.none_alpha_adjustment_section)
+        
+        self.none_alpha_label = QLabel("Reset Alpha")
+        self.none_alpha_label.setObjectName("none_alpha_label")
+        self.none_alpha_label.setStyleSheet("""
+            QLabel#none_alpha_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.none_alpha_label.setWordWrap(True)
+        self.none_alpha_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.none_alpha_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+        self.none_alpha_button = QPushButton()
+        self.none_alpha_button.setObjectName("none_alpha_button")
+        self.none_alpha_button.setStyleSheet("""
+            QPushButton#none_alpha_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#none_alpha_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.none_alpha_button.setMinimumHeight(60)
+
+        self.none_alpha_button.clicked.connect(self.change_none_alpha_value)
+
+        none_alpha_button_layout = QVBoxLayout(self.none_alpha_button)
+        none_alpha_button_layout.addWidget(self.none_alpha_label)
+        none_alpha_button_layout.setContentsMargins(0,0,0,0)
+        none_alpha_button_layout.setSpacing(0)
+        
+        none_alpha_adjustment_section_layout.addWidget(self.none_alpha_button)
+        none_alpha_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        none_alpha_adjustment_section_layout.setSpacing(10)
+        none_alpha_adjustment_section_layout.addStretch()
+
+    def change_current_parameter_screen(self,index):
+        screen_name = self.alpha_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
+        
+        if (screen_name == "Float"):
+            self.change_to_float_alpha_adjustment_section()
+
+        if (screen_name == "None"):
+            self.change_to_none_alpha_adjustment_section()
+
+    def change_to_float_alpha_adjustment_section(self):
+        self.available_screens[self.current_screen_index].hide()
+        self.current_screen_index = 0
+        self.available_screens[self.current_screen_index].show()
+
+    def change_to_none_alpha_adjustment_section(self):
+        self.available_screens[self.current_screen_index].hide()
+        self.current_screen_index = 1
+        self.available_screens[self.current_screen_index].show()
+
+    def change_float_alpha_value(self):
+        float_alpha_value = self.float_alpha_value_input.text().strip()
+        
+        if (float_alpha_value == ""):
+            self.valid_float_alpha_widget.hide()
+            self.invalid_float_alpha_widget.hide()
+            return
+
+        try:
+            float_alpha_value = float(float_alpha_value)
+            if (0 > float_alpha_value or float_alpha_value > 1):
+                raise Exception
+
+            self.valid_float_alpha_widget.show()
+            self.invalid_float_alpha_widget.hide()
+
+            self.alpha = float_alpha_value 
+            self.update_alpha()
+        except:
+            self.valid_float_alpha_widget.hide()
+            self.invalid_float_alpha_widget.show()
+
+    def change_none_alpha_value(self): 
+        self.alpha = None
+        self.float_alpha_value_input.clear()
+        self.update_alpha()
+
+    def update_alpha(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_alpha(self.alpha)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["alpha"] = self.alpha
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
+        
+    def showEvent(self, event):
+        super().showEvent(event)
+        
+        self.valid_float_alpha_widget.hide()
+        self.invalid_float_alpha_widget.hide()
+        
+        self.float_alpha_value_input.clear()
+
+    def mousePressEvent(self, event):
+        if not self.float_alpha_value_input.geometry().contains(event.position().toPoint()):
+            self.float_alpha_value_input.clearFocus()
+        super().mousePressEvent(event)
 
     def close_dialog(self):
         self.close()
