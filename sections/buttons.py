@@ -21996,3 +21996,397 @@ class alpha_button(QDialog):
 
     def close_dialog(self):
         self.close()
+
+class marker_button(QDialog):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        self.marker = None
+        self.marker_parameters = ["Marker","None"]
+        self.available_markers = ["o", "s", "^", "v", "D", "x", "+", ".", ","]
+        if (self.selected_graph != "Line Plot"):
+            self.available_markers.extend(["|", "_", "1", "2", "3", "4", "p", "h", "H", "8", "<", ">", "d"])
+
+        #-----Initialize the QDialog Window-----
+        self.setStyleSheet("""
+            QDialog{
+               background: qlineargradient(
+                    x1: 0, y1: 1, 
+                    x2: 0, y2: 0,
+                    stop: 0 rgba(25, 191, 188, 1),
+                    stop: 0.28 rgba(27, 154, 166, 1),
+                    stop: 0.65 rgba(78, 160, 242, 1),
+                    stop: 0.89 rgba(33, 218, 255, 1)
+                );
+            }
+        """)
+        self.setFixedWidth(600)
+        self.setFixedHeight(500)
+        
+        #-----Create Alpha Adjustment Homescreen-----
+        self.marker_parameter_section = QWidget()
+        self.marker_parameter_section.setObjectName("marker_parameter_section")
+        self.marker_parameter_section.setStyleSheet("""
+            QWidget#marker_parameter_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_marker_parameter_button()
+
+        #-----Create Float Alpha Adjustment Section-----
+        self.marker_selection_section = QWidget()
+        self.marker_selection_section.setObjectName("marker_selection_section")
+        self.marker_selection_section.setStyleSheet("""
+            QWidget#marker_selection_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_marker_selection_section()
+        self.marker_selection_section.hide()
+
+        #-----Create Reset Alpha Section-----
+        self.none_marker_adjustment_section = QWidget()
+        self.none_marker_adjustment_section.setObjectName("none_marker_adjustment_section")
+        self.none_marker_adjustment_section.setStyleSheet("""
+            QWidget#none_marker_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_none_marker_adjustment_section()
+        self.none_marker_adjustment_section.hide()
+
+        #-----Available Screens-----
+        self.available_screens = [self.marker_selection_section,self.none_marker_adjustment_section]
+        self.current_screen_index = 0
+        self.available_screens[self.current_screen_index].show()
+
+        #-----Create Alpha Adjustment Section-----
+        self.marker_adjustment_section = QWidget()
+        
+        marker_adjustment_section_layout = QVBoxLayout(self.marker_adjustment_section)
+        marker_adjustment_section_layout.addWidget(self.marker_selection_section)
+        marker_adjustment_section_layout.addWidget(self.none_marker_adjustment_section)
+        marker_adjustment_section_layout.setContentsMargins(0,0,0,0)
+        marker_adjustment_section_layout.setSpacing(0)
+
+        #-----Create Main Screen-----
+        main_layout = QHBoxLayout(self)
+        main_layout.addWidget(self.marker_parameter_section,stretch=1)
+        main_layout.addWidget(self.marker_adjustment_section,stretch=1)
+        main_layout.setContentsMargins(15,15,15,15)
+        main_layout.setSpacing(10)
+
+        #-----Keyboard Shortcut-----
+        self.esc_shortcut = QShortcut(QKeySequence("esc"),self)
+        self.esc_shortcut.activated.connect(self.close_dialog)
+
+    def create_marker_parameter_button(self):
+        marker_parameter_button_layout = QVBoxLayout(self.marker_parameter_section)
+        
+        self.marker_parameter_list_view = QListView()
+        self.marker_parameter_model = QStringListModel(self.marker_parameters)
+
+        self.marker_parameter_list_view.setModel(self.marker_parameter_model)
+        self.marker_parameter_list_view.setObjectName("marker_parameter_list_view")
+        self.marker_parameter_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        screen_index = self.marker_parameter_model.index(0)  
+        self.marker_parameter_list_view.setCurrentIndex(screen_index)
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.marker_parameter_list_view.setItemDelegate(CustomDelegate())
+
+        self.marker_parameter_list_view.setStyleSheet("""
+            QListView#marker_parameter_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#marker_parameter_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#marker_parameter_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#marker_parameter_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.marker_parameter_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.marker_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.marker_parameter_list_view.setSpacing(3)
+
+        self.marker_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+
+        marker_parameter_button_layout.addWidget(self.marker_parameter_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        marker_parameter_button_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_marker_selection_section(self):
+        marker_selection_section_layout = QVBoxLayout(self.marker_selection_section)
+        
+        self.marker_selection_list_view = QListView()
+        self.marker_selection_model = QStringListModel(self.available_markers)
+
+        self.marker_selection_list_view.setModel(self.marker_selection_model)
+        self.marker_selection_list_view.setObjectName("marker_selection_list_view")
+        self.marker_selection_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        screen_index = self.marker_selection_model.index(0)  
+        self.marker_selection_list_view.setCurrentIndex(screen_index)
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.marker_selection_list_view.setItemDelegate(CustomDelegate())
+
+        self.marker_selection_list_view.setStyleSheet("""
+            QListView#marker_selection_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#marker_selection_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#marker_selection_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#marker_selection_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.marker_selection_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.marker_selection_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.marker_selection_list_view.setSpacing(3)
+
+        self.marker_selection_list_view.clicked.connect(self.change_selected_marker_value)
+
+        marker_selection_section_layout.addWidget(self.marker_selection_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        marker_selection_section_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_none_marker_adjustment_section(self):
+        none_marker_adjustment_section_layout = QVBoxLayout(self.none_marker_adjustment_section)
+        
+        self.none_marker_label = QLabel("Reset Marker")
+        self.none_marker_label.setObjectName("none_marker_label")
+        self.none_marker_label.setStyleSheet("""
+            QLabel#none_marker_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.none_marker_label.setWordWrap(True)
+        self.none_marker_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.none_marker_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+        self.none_marker_button = QPushButton()
+        self.none_marker_button.setObjectName("none_marker_button")
+        self.none_marker_button.setStyleSheet("""
+            QPushButton#none_marker_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#none_marker_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.none_marker_button.setMinimumHeight(50)
+
+        self.none_marker_button.clicked.connect(self.change_none_marker_value)
+
+        none_marker_button_layout = QVBoxLayout(self.none_marker_button)
+        none_marker_button_layout.addWidget(self.none_marker_label)
+        none_marker_button_layout.setContentsMargins(0,0,0,0)
+        none_marker_button_layout.setSpacing(0)
+        
+        none_marker_adjustment_section_layout.addWidget(self.none_marker_button)
+        none_marker_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        none_marker_adjustment_section_layout.setSpacing(10)
+        none_marker_adjustment_section_layout.addStretch()
+
+    def change_current_parameter_screen(self,index):
+        screen_name = self.marker_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
+        
+        if (screen_name == "Marker"):
+            self.change_to_marker_selection_section()
+
+        if (screen_name == "None"):
+            self.change_to_none_marker_adjustment_section()
+
+    def change_to_marker_selection_section(self):
+        self.available_screens[self.current_screen_index].hide()
+        self.current_screen_index = 0
+        self.available_screens[self.current_screen_index].show()
+
+    def change_to_none_marker_adjustment_section(self):
+        self.available_screens[self.current_screen_index].hide()
+        self.current_screen_index = 1
+        self.available_screens[self.current_screen_index].show()
+
+    def change_selected_marker_value(self,index):
+        self.marker = self.marker_selection_model.data(index,Qt.ItemDataRole.DisplayRole)
+        self.update_marker()
+
+    def change_none_marker_value(self): 
+        self.marker = "o"
+        self.update_marker()
+
+    def update_marker(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_marker(self.marker)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["marker"] = self.marker
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
+
+    def close_dialog(self):
+        self.close()
+
