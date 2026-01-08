@@ -1,5 +1,6 @@
 import copy
 import inspect
+import matplotlib.axes as maxes
 from io import BytesIO
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QImage, QPainter, QPainterPath, QPixmap
@@ -42,7 +43,7 @@ class graph_generator(QWidget):
 
         self.graph_type = self.current_graph_parameters["type"]
         self.available_graphs = {
-            "Scatter Plot":sns.scatterplot
+            "Scatter Plot":[sns.scatterplot,maxes.Axes.scatter]
         }
 
         self.graph_axis_titles = self.current_graph_parameters.get("axis-title")
@@ -114,19 +115,26 @@ class graph_generator(QWidget):
         ax.set_zorder(1)
 
     def get_usable_graph_params(self):
-        graph_func = self.available_graphs.get(self.graph_type)
+        graph_func = self.available_graphs.get(self.graph_type)[0]
+        graph_kwargs = self.available_graphs.get(self.graph_type)[1]
         if graph_func is None:
             return {}
+    
+        seaborn_parameters = inspect.signature(graph_func)
+        matplotlib_parameters = inspect.signature(graph_kwargs)
 
-        sig = inspect.signature(graph_func)
-        valid_params = set(sig.parameters.keys())
+        seaborn_parameters = list(seaborn_parameters.parameters.keys())
+        matplotlib_parameters = list(matplotlib_parameters.parameters.keys())
 
-        graph_params = {
-            k: v for k, v in {**self.graph_parameters, **self.graph_seaborn_legend_parameters}.items()
+        valid_params = set(seaborn_parameters + matplotlib_parameters)
+
+        graph_parameters = {
+            k: v
+            for k, v in {**self.graph_parameters, **self.graph_seaborn_legend_parameters}.items()
             if k in valid_params
         }
 
-        return graph_params
+        return graph_parameters
 
     def convert_hue(self):
         hue_argument = self.graph_parameters["hue"]
@@ -230,7 +238,7 @@ class graph_generator(QWidget):
         widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         # make the matplotlib figure
-        graph = self.available_graphs.get(self.graph_type)(**usable_graph_parameters)
+        graph = self.available_graphs.get(self.graph_type)[0](**usable_graph_parameters)
 
         fig = graph.get_figure()
         self.apply_gradient_background(fig, graph)
