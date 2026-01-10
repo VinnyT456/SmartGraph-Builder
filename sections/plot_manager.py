@@ -77,6 +77,9 @@ class PlotManager:
     def update_marker(self,marker):
         self.db.update({"marker":marker},Query().version == self.current_version)
 
+    def update_s(self,s):
+        self.db.update({"s":s},Query().version == self.current_version)
+
     def insert_plot_parameter(self, plot_data):
         plot_copy = plot_data.copy()
         plot_copy["version"] = self.current_version + 1
