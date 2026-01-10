@@ -165,6 +165,7 @@ class graph_parameter_table(QWidget):
             "palette":palette_button,
             "alpha":alpha_button,
             "marker":marker_button,
+            "s":s_button,
         }
 
         #Customize the parameter table
