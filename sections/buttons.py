@@ -18650,7 +18650,81 @@ class size_button(QDialog):
         self.setFixedWidth(600)
         self.setFixedHeight(500)
 
-        #-----Valid Interval Size Widget-----
+        #-----Validity Check Widget-----
+        self.valid_list_size_widget = QWidget()
+        self.valid_list_size_widget.setObjectName("valid_list_size_widget")
+        self.valid_list_size_widget.setStyleSheet("""
+            QWidget#valid_list_size_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_list_size_label = QLabel("Valid List Size")
+        self.valid_list_size_label.setObjectName("valid_list_size_label")
+        self.valid_list_size_label.setWordWrap(True)
+        self.valid_list_size_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_list_size_label.setStyleSheet("""
+            QLabel#valid_list_size_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_list_size_widget_layout = QVBoxLayout(self.valid_list_size_widget)
+        valid_list_size_widget_layout.addWidget(self.valid_list_size_label)
+        valid_list_size_widget_layout.setContentsMargins(0,0,0,0)
+        valid_list_size_widget_layout.setSpacing(0)
+
+        self.invalid_list_size_widget = QWidget()
+        self.invalid_list_size_widget.setObjectName("invalid_list_size_widget")
+        self.invalid_list_size_widget.setStyleSheet("""
+            QWidget#invalid_list_size_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_list_size_label = QLabel("Invalid List Size")
+        self.invalid_list_size_label.setObjectName("invalid_list_size_label")
+        self.invalid_list_size_label.setWordWrap(True)
+        self.invalid_list_size_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_list_size_label.setStyleSheet("""
+            QLabel#invalid_list_size_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        invalid_list_size_widget_layout = QVBoxLayout(self.invalid_list_size_widget)
+        invalid_list_size_widget_layout.addWidget(self.invalid_list_size_label)
+        invalid_list_size_widget_layout.setContentsMargins(0,0,0,0)
+        invalid_list_size_widget_layout.setSpacing(0)
+
         self.valid_interval_size_widget = QWidget()
         self.valid_interval_size_widget.setObjectName("valid_interval_size_widget")
         self.valid_interval_size_widget.setStyleSheet("""
@@ -18688,7 +18762,6 @@ class size_button(QDialog):
         valid_interval_size_widget_layout.setContentsMargins(0,0,0,0)
         valid_interval_size_widget_layout.setSpacing(0)
 
-        #-----Invalid Interval Size Widget-----
         self.invalid_interval_size_widget = QWidget()
         self.invalid_interval_size_widget.setObjectName("invalid_interval_size_widget")
         self.invalid_interval_size_widget.setStyleSheet("""
@@ -18726,11 +18799,11 @@ class size_button(QDialog):
         invalid_interval_size_widget_layout.setContentsMargins(0,0,0,0)
         invalid_interval_size_widget_layout.setSpacing(0)
 
-        #-----Hide Both Validity Check Widgets-----
+        #-----Hide Validity Check Widgets-----
         self.valid_interval_size_widget.hide()
         self.invalid_interval_size_widget.hide()
 
-        #-----Set the size for both Validitiy Check Widgets-----
+        #-----Set the size for Validitiy Check Widgets-----
         self.valid_interval_size_widget.setMinimumHeight(50)
         self.invalid_interval_size_widget.setMinimumHeight(50)
 
@@ -19128,6 +19201,8 @@ class size_button(QDialog):
         
         list_size_screen_layout.addWidget(self.element_left_widget)
         list_size_screen_layout.addWidget(self.list_size_input)
+        list_size_screen_layout.addWidget(self.valid_list_size_widget)
+        list_size_screen_layout.addWidget(self.invalid_list_size_widget)
         list_size_screen_layout.setContentsMargins(10,10,10,10)
         list_size_screen_layout.setSpacing(10)
         list_size_screen_layout.addStretch()
@@ -19307,9 +19382,15 @@ class size_button(QDialog):
         list_size_input_values = self.list_size_input.text().strip().split()
         list_size_input_values = list(filter(lambda x:x != "",list_size_input_values))
 
-        remaining_element = max(self.y_axis_size-len(list_size_input_values),0)
-
-        self.element_left_label.setText(f"Element Left: {remaining_element}")
+        try:
+            if (float(list_size_input_values[-1])):
+                remaining_element = max(self.y_axis_size-len(list_size_input_values),0)
+                self.element_left_label.setText(f"Element Left: {remaining_element}")
+            self.valid_list_size_widget.show()
+            self.invalid_list_size_widget.hide()
+        except:
+            self.valid_list_size_widget.hide()
+            self.invalid_list_size_widget.show()
 
         if (remaining_element == 0):
             self.size = list_size_input_values[:self.y_axis_size]
@@ -21558,8 +21639,8 @@ class alpha_button(QDialog):
         self.graph_display = graph_display
         self.plot_manager = PlotManager()
 
-        self.alpha = None
-        self.alpha_parameters = ["Float","None"]
+        self.alpha = 1.0
+        self.alpha_parameters = ["Float","Reset Alpha"]
 
         #-----Initialize the QDialog Window-----
         self.setStyleSheet("""
@@ -21577,7 +21658,7 @@ class alpha_button(QDialog):
         self.setFixedWidth(600)
         self.setFixedHeight(500)
 
-        #-----Float Alpha Validiity Check Widgets-----
+        #-----Float Alpha Validity Check Widgets-----
         self.valid_float_alpha_widget = QWidget()
         self.valid_float_alpha_widget.setObjectName("valid_float_alpha_widget")
         self.valid_float_alpha_widget.setStyleSheet("""
@@ -21931,7 +22012,7 @@ class alpha_button(QDialog):
         if (screen_name == "Float"):
             self.change_to_float_alpha_adjustment_section()
 
-        if (screen_name == "None"):
+        if (screen_name == "Reset Alpha"):
             self.change_to_none_alpha_adjustment_section()
 
     def change_to_float_alpha_adjustment_section(self):
@@ -22006,7 +22087,7 @@ class marker_button(QDialog):
         self.plot_manager = PlotManager()
 
         self.marker = None
-        self.marker_parameters = ["Marker","None"]
+        self.marker_parameters = ["Marker","Reset Marker"]
         self.available_markers = ["o", "s", "^", "v", "D", "x", "+", ".", ","]
         if (self.selected_graph != "Line Plot"):
             self.available_markers.extend(["|", "_", "1", "2", "3", "4", "p", "h", "H", "8", "<", ">", "d"])
@@ -22356,7 +22437,7 @@ class marker_button(QDialog):
         if (screen_name == "Marker"):
             self.change_to_marker_selection_section()
 
-        if (screen_name == "None"):
+        if (screen_name == "Reset Marker"):
             self.change_to_none_marker_adjustment_section()
 
     def change_to_marker_selection_section(self):
@@ -22390,3 +22471,657 @@ class marker_button(QDialog):
     def close_dialog(self):
         self.close()
 
+class s_button(QDialog):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        self.dataset = pd.read_csv("./dataset/user_dataset.csv")
+        self.y_axis_size = self.get_y_axis_size()
+
+        self.s = None
+        self.s_parameters = ["Single s Value","List s Value","Reset s Value"]
+
+        #-----Initialize the QDialog Window-----
+        self.setStyleSheet("""
+            QDialog{
+               background: qlineargradient(
+                    x1: 0, y1: 1, 
+                    x2: 0, y2: 0,
+                    stop: 0 rgba(25, 191, 188, 1),
+                    stop: 0.28 rgba(27, 154, 166, 1),
+                    stop: 0.65 rgba(78, 160, 242, 1),
+                    stop: 0.89 rgba(33, 218, 255, 1)
+                );
+            }
+        """)
+        self.setFixedWidth(600)
+        self.setFixedHeight(500)
+
+        #-----Validity Check Widgets-----
+        self.valid_single_s_value_widget = QWidget()
+        self.valid_single_s_value_widget.setObjectName("valid_single_s_value_widget")
+        self.valid_single_s_value_widget.setStyleSheet("""
+            QWidget#valid_single_s_value_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_single_s_value_label = QLabel("Valid s Value")
+        self.valid_single_s_value_label.setObjectName("valid_single_s_value_label")
+        self.valid_single_s_value_label.setStyleSheet("""
+            QLabel#valid_single_s_value_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.valid_single_s_value_label.setWordWrap(True)
+        self.valid_single_s_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        self.invalid_single_s_value_widget = QWidget()
+        self.invalid_single_s_value_widget.setObjectName("invalid_single_s_value_widget")
+        self.invalid_single_s_value_widget.setStyleSheet("""
+            QWidget#invalid_single_s_value_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_single_s_value_label = QLabel("Invalid s Value")
+        self.invalid_single_s_value_label.setObjectName("invalid_single_s_value_label")
+        self.invalid_single_s_value_label.setWordWrap(True)
+        self.invalid_single_s_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_single_s_value_label.setStyleSheet("""
+            QLabel#invalid_single_s_value_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        self.valid_list_s_value_widget = QWidget()
+        self.valid_list_s_value_widget.setObjectName("valid_list_s_value_widget")
+        self.valid_list_s_value_widget.setStyleSheet("""
+            QWidget#valid_list_s_value_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_list_s_value_label = QLabel("Valid s Value")
+        self.valid_list_s_value_label.setObjectName("valid_list_s_value_label")
+        self.valid_list_s_value_label.setStyleSheet("""
+            QLabel#valid_list_s_value_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.valid_list_s_value_label.setWordWrap(True)
+        self.valid_list_s_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.invalid_list_s_value_widget = QWidget()
+        self.invalid_list_s_value_widget.setObjectName("invalid_list_s_value_widget")
+        self.invalid_list_s_value_widget.setStyleSheet("""
+            QWidget#invalid_list_s_value_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_list_s_value_label = QLabel("Invalid s Value")
+        self.invalid_list_s_value_label.setObjectName("invalid_list_s_value_label")
+        self.invalid_list_s_value_label.setWordWrap(True)
+        self.invalid_list_s_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_list_s_value_label.setStyleSheet("""
+            QLabel#invalid_list_s_value_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_single_s_value_widget_layout = QVBoxLayout(self.valid_single_s_value_widget)
+        valid_single_s_value_widget_layout.addWidget(self.valid_single_s_value_label)
+        valid_single_s_value_widget_layout.setContentsMargins(0,0,0,0)
+        valid_single_s_value_widget_layout.setSpacing(0)
+
+        invalid_single_s_value_widget_layout = QVBoxLayout(self.invalid_single_s_value_widget)
+        invalid_single_s_value_widget_layout.addWidget(self.invalid_single_s_value_label)
+        invalid_single_s_value_widget_layout.setContentsMargins(0,0,0,0)
+        invalid_single_s_value_widget_layout.setSpacing(0)
+
+        valid_list_s_value_widget_layout = QVBoxLayout(self.valid_list_s_value_widget)
+        valid_list_s_value_widget_layout.addWidget(self.valid_list_s_value_label)
+        valid_list_s_value_widget_layout.setContentsMargins(0,0,0,0)
+        valid_list_s_value_widget_layout.setSpacing(0)
+
+        invalid_list_s_value_widget_layout = QVBoxLayout(self.invalid_list_s_value_widget)
+        invalid_list_s_value_widget_layout.addWidget(self.invalid_list_s_value_label)
+        invalid_list_s_value_widget_layout.setContentsMargins(0,0,0,0)
+        invalid_list_s_value_widget_layout.setSpacing(0)
+
+        self.valid_single_s_value_widget.setMinimumHeight(50)
+        self.invalid_single_s_value_widget.setMinimumHeight(50)
+
+        self.valid_list_s_value_widget.setMinimumHeight(50)
+        self.invalid_list_s_value_widget.setMinimumHeight(50)
+        
+        self.valid_single_s_value_widget.hide()
+        self.invalid_single_s_value_widget.hide()
+        
+        self.valid_list_s_value_widget.hide()
+        self.invalid_list_s_value_widget.hide()
+        
+        #-----Create S Adjustment Homescreen-----
+        self.s_parameter_section = QWidget()
+        self.s_parameter_section.setObjectName("s_parameter_section")
+        self.s_parameter_section.setStyleSheet("""
+            QWidget#s_parameter_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_s_parameter_button()
+
+        #-----Create Single S Value Adjustment Section-----
+        self.single_s_value_adjustment_section = QWidget()
+        self.single_s_value_adjustment_section.setObjectName("single_s_value_adjustment_section")
+        self.single_s_value_adjustment_section.setStyleSheet("""
+            QWidget#single_s_value_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_single_s_value_adjustment_section()
+        self.single_s_value_adjustment_section.hide()
+
+        #-----Create List S Value Adjustment-----
+        self.list_s_value_adjustment_section = QWidget()
+        self.list_s_value_adjustment_section.setObjectName("list_s_value_adjustment_section")
+        self.list_s_value_adjustment_section.setStyleSheet("""
+            QWidget#list_s_value_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_list_s_value_adjustment_section()
+        self.list_s_value_adjustment_section.hide()
+
+        #-----Create Reset S Section-----
+        self.none_s_value_adjustment_section = QWidget()
+        self.none_s_value_adjustment_section.setObjectName("none_s_value_adjustment_section")
+        self.none_s_value_adjustment_section.setStyleSheet("""
+            QWidget#none_s_value_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_none_s_value_adjustment_section()
+        self.none_s_value_adjustment_section.hide()
+
+        #-----Available Screens-----
+        self.available_screens = [self.single_s_value_adjustment_section,self.list_s_value_adjustment_section,
+                                  self.none_s_value_adjustment_section]
+        self.current_screen_index = 0
+        self.available_screens[self.current_screen_index].show()
+
+        #-----Create Alpha Adjustment Section-----
+        self.s_adjustment_section = QWidget()
+        
+        s_adjustment_section_layout = QVBoxLayout(self.s_adjustment_section)
+        s_adjustment_section_layout.addWidget(self.single_s_value_adjustment_section)
+        s_adjustment_section_layout.addWidget(self.list_s_value_adjustment_section)
+        s_adjustment_section_layout.addWidget(self.none_s_value_adjustment_section)
+        s_adjustment_section_layout.setContentsMargins(0,0,0,0)
+        s_adjustment_section_layout.setSpacing(0)
+
+        #-----Create Main Screen-----
+        main_layout = QHBoxLayout(self)
+        main_layout.addWidget(self.s_parameter_section,stretch=1)
+        main_layout.addWidget(self.s_adjustment_section,stretch=1)
+        main_layout.setContentsMargins(15,15,15,15)
+        main_layout.setSpacing(10)
+
+        #-----Keyboard Shortcut-----
+        self.esc_shortcut = QShortcut(QKeySequence("esc"),self)
+        self.esc_shortcut.activated.connect(self.close_dialog)
+
+    def create_s_parameter_button(self):
+        s_parameter_button_layout = QVBoxLayout(self.s_parameter_section)
+
+        self.s_parameter_list_view = QListView()
+        self.s_parameter_model = QStringListModel(self.s_parameters)
+
+        self.s_parameter_list_view.setModel(self.s_parameter_model)
+        self.s_parameter_list_view.setObjectName("s_parameter_list_view")
+        self.s_parameter_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        screen_index = self.s_parameter_model.index(0)  
+        self.s_parameter_list_view.setCurrentIndex(screen_index)
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.s_parameter_list_view.setItemDelegate(CustomDelegate())
+
+        self.s_parameter_list_view.setStyleSheet("""
+            QListView#s_parameter_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#s_parameter_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#s_parameter_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#s_parameter_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.s_parameter_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.s_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.s_parameter_list_view.setSpacing(3)
+
+        self.s_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+
+        s_parameter_button_layout.addWidget(self.s_parameter_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        s_parameter_button_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_single_s_value_adjustment_section(self):
+        single_s_value_adjustment_section_layout = QVBoxLayout(self.single_s_value_adjustment_section)
+
+        self.single_s_value_input = QLineEdit()
+        self.single_s_value_input.setObjectName("single_s_value_input")
+        self.single_s_value_input.setPlaceholderText("s: ")
+        self.single_s_value_input.setStyleSheet("""
+            QLineEdit#single_s_value_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.single_s_value_input.setMinimumHeight(60)
+        self.single_s_value_input.textChanged.connect(self.change_single_s_value)
+
+        single_s_value_adjustment_section_layout.addWidget(self.single_s_value_input)
+        single_s_value_adjustment_section_layout.addWidget(self.valid_single_s_value_widget)
+        single_s_value_adjustment_section_layout.addWidget(self.invalid_single_s_value_widget)
+        single_s_value_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        single_s_value_adjustment_section_layout.setSpacing(10)
+        single_s_value_adjustment_section_layout.addStretch()
+
+    def create_list_s_value_adjustment_section(self):
+        list_s_value_adjustment_section_layout = QVBoxLayout(self.list_s_value_adjustment_section)
+
+        self.element_left_label = QLabel(f"Element Left: {self.y_axis_size}")
+        self.element_left_label.setWordWrap(True)
+        self.element_left_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.element_left_label.setObjectName("element_left_label")
+        self.element_left_label.setStyleSheet("""
+            QLabel#element_left_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        self.element_left_widget = QWidget()
+        self.element_left_widget.setObjectName("element_left_widget")
+        self.element_left_widget.setStyleSheet("""
+            QWidget#element_left_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        element_left_widget_layout = QVBoxLayout(self.element_left_widget)
+        element_left_widget_layout.addWidget(self.element_left_label)
+        element_left_widget_layout.setContentsMargins(0,0,0,0)
+        element_left_widget_layout.setSpacing(0)
+        
+        self.list_s_value_input = QLineEdit()
+        self.list_s_value_input.setPlaceholderText("s: ")
+        self.list_s_value_input.setObjectName("list_s_value_input")
+        self.list_s_value_input.setStyleSheet("""
+            QLineEdit#list_s_value_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.list_s_value_input.setMinimumHeight(60)
+
+        self.list_s_value_input.textChanged.connect(self.change_list_s_value)
+        
+        list_s_value_adjustment_section_layout.addWidget(self.element_left_widget)
+        list_s_value_adjustment_section_layout.addWidget(self.list_s_value_input)
+        list_s_value_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        list_s_value_adjustment_section_layout.setSpacing(10)
+        list_s_value_adjustment_section_layout.addStretch()
+
+    def create_none_s_value_adjustment_section(self):
+        none_s_value_adjustment_section_layout = QVBoxLayout(self.none_s_value_adjustment_section)
+        
+        self.none_s_label = QLabel("Reset s")
+        self.none_s_label.setObjectName("none_s_label")
+        self.none_s_label.setStyleSheet("""
+            QLabel#none_s_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.none_s_label.setWordWrap(True)
+        self.none_s_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.none_s_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+        self.none_s_button = QPushButton()
+        self.none_s_button.setObjectName("none_s_button")
+        self.none_s_button.setStyleSheet("""
+            QPushButton#none_s_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#none_s_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.none_s_button.setMinimumHeight(60)
+
+        self.none_s_button.clicked.connect(self.change_none_s_value)
+
+        none_s_button_layout = QVBoxLayout(self.none_s_button)
+        none_s_button_layout.addWidget(self.none_s_label)
+        none_s_button_layout.setContentsMargins(0,0,0,0)
+        none_s_button_layout.setSpacing(0)
+        
+        none_s_value_adjustment_section_layout.addWidget(self.none_s_button)
+        none_s_value_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        none_s_value_adjustment_section_layout.setSpacing(10)
+        none_s_value_adjustment_section_layout.addStretch()
+
+    def change_current_parameter_screen(self,index):
+        screen_name = self.s_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
+        
+        if (screen_name == "Single s Value"):
+            self.change_to_single_s_value_adjustment_section()
+
+        if (screen_name == "List s Value"):
+            self.change_to_list_s_value_adjustment_section()
+
+        if (screen_name == "Reset s Value"):
+            self.change_to_none_s_value_adjustment_section()
+
+    def change_to_single_s_value_adjustment_section(self):
+        self.available_screens[self.current_screen_index].hide()
+        self.current_screen_index = 0
+        self.available_screens[self.current_screen_index].show()
+
+    def change_to_list_s_value_adjustment_section(self):
+        self.available_screens[self.current_screen_index].hide()
+        self.current_screen_index = 1
+        self.available_screens[self.current_screen_index].show()
+
+    def change_to_none_s_value_adjustment_section(self):
+        self.available_screens[self.current_screen_index].hide()
+        self.current_screen_index = 2
+        self.available_screens[self.current_screen_index].show()
+
+    def change_single_s_value(self):
+        single_s_value = self.single_s_value_input.text().strip()
+        
+        if (single_s_value == ""):
+            self.valid_single_s_value_widget.hide()
+            self.invalid_single_s_value_widget.hide()
+            self.s = 30
+            self.update_s()
+            return
+
+        try:
+            single_s_value = float(single_s_value)
+            if (single_s_value < 0):
+                raise Exception()
+
+            self.valid_single_s_value_widget.show()
+            self.invalid_single_s_value_widget.hide()
+
+            self.s = single_s_value 
+            self.update_s()
+        except:
+            self.valid_single_s_value_widget.hide()
+            self.invalid_single_s_value_widget.show()
+
+    def change_list_s_value(self):
+        list_s_input_values = self.list_s_value_input.text().strip().split()
+        list_s_input_values = list(filter(lambda x:x != "",list_s_input_values))
+
+        try:
+            if (float(list_s_input_values[-1])):
+                remaining_element = max(self.y_axis_size-len(list_s_input_values),0)
+                self.element_left_label.setText(f"Element Left: {remaining_element}")
+            self.valid_list_s_value_widget.show()
+            self.invalid_list_s_value_widget.hide()
+        except:
+            self.valid_list_s_value_widget.hide()
+            self.invalid_list_s_value_widget.show()
+
+        if (remaining_element == 0):
+            self.s = list_s_input_values[:self.y_axis_size]
+            self.update_size()
+
+    def change_none_s_value(self): 
+        self.s = 30
+        self.single_s_value_input.clear()
+        self.update_s()
+
+    def update_s(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_s(self.s)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["s"] = self.s
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        self.graph_display.show_graph()
+        
+    def showEvent(self, event):
+        super().showEvent(event)
+    
+        self.single_s_value_input.clear()
+        self.list_s_value_input.clear()
+
+    def mousePressEvent(self, event):
+        if (not self.single_s_value_input.geometry().contains(event.position().toPoint())):
+            self.single_s_value_input.clearFocus()
+        if (not self.list_s_value_input.geometry().contains(event.position().toPoint())):
+            self.list_s_value_input.clearFocus()
+        super().mousePressEvent(event)
+
+    def get_y_axis_size(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            y_axis = db["y"]
+            y_axis_size = self.dataset[y_axis].shape[0]
+        else:
+            y_axis_size = 0
+        return y_axis_size
+
+    def close_dialog(self):
+        self.close()
+       
