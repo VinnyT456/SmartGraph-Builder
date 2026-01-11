@@ -79,7 +79,7 @@ plot_json = {
         "alpha":1.0,
         "marker":"o",
         "s":36,
-        "edgecolor":"w"
+        "edgecolors":"w"
     }
 }
 
@@ -18800,10 +18800,16 @@ class size_button(QDialog):
         invalid_interval_size_widget_layout.setSpacing(0)
 
         #-----Hide Validity Check Widgets-----
+        self.valid_list_size_widget.hide()
+        self.invalid_list_size_widget.hide()
+
         self.valid_interval_size_widget.hide()
         self.invalid_interval_size_widget.hide()
 
         #-----Set the size for Validitiy Check Widgets-----
+        self.valid_list_size_widget.setMinimumHeight(50)
+        self.invalid_list_size_widget.setMinimumHeight(50)
+
         self.valid_interval_size_widget.setMinimumHeight(50)
         self.invalid_interval_size_widget.setMinimumHeight(50)
 
@@ -22483,7 +22489,7 @@ class s_button(QDialog):
         self.y_axis_size = self.get_y_axis_size()
 
         self.s = None
-        self.s_parameters = ["Single s Value","List s Value","Reset s Value"]
+        self.s_parameters = ["Single S Value","List S Value","Reset S Value"]
 
         #-----Initialize the QDialog Window-----
         self.setStyleSheet("""
@@ -23002,7 +23008,7 @@ class s_button(QDialog):
                 color: black;
             }
         """)
-        self.none_s_button.setMinimumHeight(60)
+        self.none_s_button.setMinimumHeight(50)
 
         self.none_s_button.clicked.connect(self.change_none_s_value)
 
@@ -23049,13 +23055,11 @@ class s_button(QDialog):
         if (single_s_value == ""):
             self.valid_single_s_value_widget.hide()
             self.invalid_single_s_value_widget.hide()
-            self.s = 30
-            self.update_s()
             return
 
         try:
             single_s_value = float(single_s_value)
-            if (single_s_value < 0):
+            if (single_s_value < 0 or single_s_value > 5000):
                 raise Exception()
 
             self.valid_single_s_value_widget.show()
@@ -23124,4 +23128,1219 @@ class s_button(QDialog):
 
     def close_dialog(self):
         self.close()
-       
+
+class edgecolor_button(QDialog):
+    def __init__(self, selected_graph, graph_display):
+        super().__init__()
+        
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        self.edgecolor = None
+
+        self.edgecolor_state = True
+
+        self.initial_rgba = [0,0,0,1]
+
+        self.named_colors = sorted(list(mcolors.get_named_colors_mapping().keys())[:-8])
+        self.named_colors = [c.replace("xkcd:","") for c in self.named_colors]
+        self.named_colors = [c.replace("tab:","") for c in self.named_colors]
+
+        self.xkcd_colors = [c.replace("xkcd:","") for c in list(mcolors.XKCD_COLORS)]
+        self.tableau_colors = [c.replace("xkcd:","") for c in list(mcolors.TABLEAU_COLORS)]
+
+        self.short_code_colors = sorted(list(mcolors.get_named_colors_mapping().keys())[-8:])
+
+        self.edgecolor_parameters = ["Named Color","Short Code Color","Hex Code Color","RGBA Color",
+                                    "Face Edgecolor","None Edgecolor","Reset Edgecolor"]
+
+        #-----Initialize the QDialog Window-----
+        self.setStyleSheet("""
+            QDialog{
+               background: qlineargradient(
+                    x1: 0, y1: 1, 
+                    x2: 0, y2: 0,
+                    stop: 0 rgba(25, 191, 188, 1),
+                    stop: 0.28 rgba(27, 154, 166, 1),
+                    stop: 0.65 rgba(78, 160, 242, 1),
+                    stop: 0.89 rgba(33, 218, 255, 1)
+                );
+            }
+        """)
+        self.setFixedWidth(600)
+        self.setFixedHeight(500)
+
+        #-----Valid Hex Code Widget-----
+        self.valid_hex_code_widget = QWidget()
+        self.valid_hex_code_widget.setObjectName("valid_hex_code_widget")
+        self.valid_hex_code_widget.setStyleSheet("""
+            QWidget#valid_hex_code_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_hex_code_label = QLabel("Valid Hex Code")
+        self.valid_hex_code_label.setObjectName("valid_hex_code_label")
+        self.valid_hex_code_label.setWordWrap(True)
+        self.valid_hex_code_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_hex_code_label.setStyleSheet("""
+            QLabel#valid_hex_code_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        valid_hex_code_widget_layout = QVBoxLayout(self.valid_hex_code_widget)
+        valid_hex_code_widget_layout.addWidget(self.valid_hex_code_label)
+        valid_hex_code_widget_layout.setContentsMargins(0,0,0,0)
+        valid_hex_code_widget_layout.setSpacing(0)
+
+        #-----Invalid Hex Code Widget-----
+        self.invalid_hex_code_widget = QWidget()
+        self.invalid_hex_code_widget.setObjectName("invalid_hex_code_widget")
+        self.invalid_hex_code_widget.setStyleSheet("""
+            QWidget#invalid_hex_code_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_hex_code_label = QLabel("Invalid Hex Code")
+        self.invalid_hex_code_label.setObjectName("invalid_hex_code_label")
+        self.invalid_hex_code_label.setWordWrap(True)
+        self.invalid_hex_code_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_hex_code_label.setStyleSheet("""
+            QLabel#invalid_hex_code_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        invalid_hex_code_widget_layout = QVBoxLayout(self.invalid_hex_code_widget)
+        invalid_hex_code_widget_layout.addWidget(self.invalid_hex_code_label)
+        invalid_hex_code_widget_layout.setContentsMargins(0,0,0,0)
+        invalid_hex_code_widget_layout.setSpacing(0)
+
+        #-----Valid RGBA Value Widget-----
+        self.valid_rgba_value_widget = QWidget()
+        self.valid_rgba_value_widget.setObjectName("valid_rgba_value_widget")
+        self.valid_rgba_value_widget.setStyleSheet("""
+            QWidget#valid_rgba_value_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1),  
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_rgba_value_label = QLabel("Valid RGBA Value")
+        self.valid_rgba_value_label.setObjectName("valid_rgba_value_label")
+        self.valid_rgba_value_label.setWordWrap(True)
+        self.valid_rgba_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_rgba_value_label.setStyleSheet("""
+            QLabel#valid_rgba_value_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        valid_rgba_value_widget_layout = QVBoxLayout(self.valid_rgba_value_widget)
+        valid_rgba_value_widget_layout.addWidget(self.valid_rgba_value_label)
+        valid_rgba_value_widget_layout.setContentsMargins(0,0,0,0)
+        valid_rgba_value_widget_layout.setSpacing(0)
+
+        #-----Invalid RGBA Value Widget-----
+        self.invalid_rgba_value_widget = QWidget()
+        self.invalid_rgba_value_widget.setObjectName("invalid_rgba_value_widget")
+        self.invalid_rgba_value_widget.setStyleSheet("""
+            QWidget#invalid_rgba_value_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_rgba_value_label = QLabel("Invalid RGBA Value")
+        self.invalid_rgba_value_label.setObjectName("invalid_rgba_value_label")
+        self.invalid_rgba_value_label.setWordWrap(True)
+        self.invalid_rgba_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_rgba_value_label.setStyleSheet("""
+            QLabel#invalid_rgba_value_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        invalid_rgba_value_widget_layout = QVBoxLayout(self.invalid_rgba_value_widget)
+        invalid_rgba_value_widget_layout.addWidget(self.invalid_rgba_value_label)
+        invalid_rgba_value_widget_layout.setContentsMargins(0,0,0,0)
+        invalid_rgba_value_widget_layout.setSpacing(0)
+
+        #-----Hide All Validity Check Widgets-----
+        self.valid_hex_code_widget.hide()
+        self.invalid_hex_code_widget.hide()
+
+        self.valid_rgba_value_widget.hide()
+        self.invalid_rgba_value_widget.hide()
+
+        #-----Set the size for All Validitiy Check Widgets-----
+        self.valid_hex_code_widget.setMinimumHeight(50)
+        self.invalid_hex_code_widget.setMinimumHeight(50)
+
+        self.valid_rgba_value_widget.setMinimumHeight(50)
+        self.invalid_rgba_value_widget.setMinimumHeight(50)
+
+        #-----Create the Parameter Home Screen-----
+        self.edgecolor_parameter_section = QWidget()
+        self.edgecolor_parameter_section.setObjectName("edgecolor_parameter_section")
+        self.edgecolor_parameter_section.setStyleSheet("""
+            QWidget#edgecolor_parameter_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.create_edgecolor_parameter_section()
+
+        #-----Create the Named Color Adjustment Section-----
+        self.named_color_adjustment_section = QWidget()
+        self.named_color_adjustment_section.setObjectName("name_color_adjustment_section")
+        self.named_color_adjustment_section.setStyleSheet("""
+            QWidget#name_color_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_named_color_adjustment_section()
+        self.named_color_adjustment_section.hide()
+
+        #-----Create the Short Code Color Adjustment Section-----
+        self.short_code_color_adjustment_section = QWidget()
+        self.short_code_color_adjustment_section.setObjectName("short_code_color_adjustment_section")
+        self.short_code_color_adjustment_section.setStyleSheet("""
+            QWidget#short_code_color_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_short_code_color_adjustment_section()
+        self.short_code_color_adjustment_section.hide()
+
+        #-----Create Hex Code Adjustment Section-----
+        self.hex_code_adjustment_section = QWidget()
+        self.hex_code_adjustment_section.setObjectName("hex_code_adjustment_section")
+        self.hex_code_adjustment_section.setStyleSheet("""
+            QWidget#hex_code_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_hex_code_adjustment_section()
+        self.hex_code_adjustment_section.hide()
+
+        #-----Create RGBA Value Adjustment Section-----
+        self.rgba_value_adjustment_section = QWidget()
+        self.rgba_value_adjustment_section.setObjectName("rgba_value_adjustment_section")
+        self.rgba_value_adjustment_section.setStyleSheet("""
+            QWidget#rgba_value_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_rgba_value_adjustment_section()
+        self.rgba_value_adjustment_section.hide()
+
+        #-----Create Face Edgecolor Adjustment Section-----
+        self.face_edgecolor_adjustment_section = QWidget()
+        self.face_edgecolor_adjustment_section.setObjectName("face_edgecolor_adjustment_section")
+        self.face_edgecolor_adjustment_section.setStyleSheet("""
+            QWidget#face_edgecolor_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_face_edgecolor_adjustment_section()
+        self.face_edgecolor_adjustment_section.hide()
+
+        #-----Create None Edgecolor Adjustment Section-----
+        self.none_edgecolor_adjustment_section = QWidget()
+        self.none_edgecolor_adjustment_section.setObjectName("none_edgecolor_adjustment_screen")
+        self.none_edgecolor_adjustment_section.setStyleSheet("""
+            QWidget#none_edgecolor_adjustment_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_none_edgecolor_adjustment_section()
+        self.none_edgecolor_adjustment_section.hide()
+
+        #-----Create Reset Edgecolor Adjustment Section-----
+        self.reset_edgecolor_adjustment_section = QWidget()
+        self.reset_edgecolor_adjustment_section.setObjectName("reset_edgecolor_adjustment_section")
+        self.reset_edgecolor_adjustment_section.setStyleSheet("""
+            QWidget#reset_edgecolor_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px; 
+            }
+        """)
+        self.create_reset_edgecolor_adjustment_section()
+        self.reset_edgecolor_adjustment_section.hide()
+
+        #-----Create Palette Adjustment Section-----
+        self.edgecolor_adjustment_section = QWidget()
+
+        edgecolor_adjustment_section = QVBoxLayout(self.edgecolor_adjustment_section)
+        edgecolor_adjustment_section.addWidget(self.edgecolor_parameter_section)
+        edgecolor_adjustment_section.addWidget(self.named_color_adjustment_section)
+        edgecolor_adjustment_section.addWidget(self.short_code_color_adjustment_section)
+        edgecolor_adjustment_section.addWidget(self.hex_code_adjustment_section)
+        edgecolor_adjustment_section.addWidget(self.rgba_value_adjustment_section)
+        edgecolor_adjustment_section.addWidget(self.face_edgecolor_adjustment_section)
+        edgecolor_adjustment_section.addWidget(self.none_edgecolor_adjustment_section)
+        edgecolor_adjustment_section.addWidget(self.reset_edgecolor_adjustment_section)
+        edgecolor_adjustment_section.setContentsMargins(0,0,0,0)
+        edgecolor_adjustment_section.setSpacing(0)
+
+        #-----Available Screens-----
+        self.available_screens = [self.named_color_adjustment_section,self.short_code_color_adjustment_section,
+                                  self.hex_code_adjustment_section,self.rgba_value_adjustment_section,
+                                  self.face_edgecolor_adjustment_section,self.none_edgecolor_adjustment_section,
+                                  self.reset_edgecolor_adjustment_section]
+        self.current_screen_idx = 0
+        self.available_screens[self.current_screen_idx].show()
+
+        main_layout = QHBoxLayout(self)
+        main_layout.addWidget(self.edgecolor_parameter_section,stretch=1)
+        main_layout.addWidget(self.edgecolor_adjustment_section,stretch=1)
+        main_layout.setContentsMargins(15,15,15,15)
+        main_layout.setSpacing(10)
+
+        #-----Keyboard Shortcut-----
+        close_screen_shortcut = QShortcut(QKeySequence("Esc"),self)
+        close_screen_shortcut.activated.connect(self.close_dialog)
+        
+    def create_edgecolor_parameter_section(self):
+        edgecolor_parameter_section_layout = QVBoxLayout(self.edgecolor_parameter_section)
+        
+        self.edgecolor_parameter_list_view = QListView()
+        self.edgecolor_parameter_model = QStringListModel(self.edgecolor_parameters)
+
+        self.edgecolor_parameter_list_view.setModel(self.edgecolor_parameter_model)
+        self.edgecolor_parameter_list_view.setObjectName("edgecolor_parameter_list_view")
+        self.edgecolor_parameter_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        screen_index = self.edgecolor_parameter_model.index(0)  
+        self.edgecolor_parameter_list_view.setCurrentIndex(screen_index)
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.edgecolor_parameter_list_view.setItemDelegate(CustomDelegate())
+
+        self.edgecolor_parameter_list_view.setStyleSheet("""
+            QListView#edgecolor_parameter_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#edgecolor_parameter_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#edgecolor_parameter_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#edgecolor_parameter_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.edgecolor_parameter_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.edgecolor_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.edgecolor_parameter_list_view.setSpacing(3)
+
+        self.edgecolor_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+
+        edgecolor_parameter_section_layout.addWidget(self.edgecolor_parameter_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        edgecolor_parameter_section_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_named_color_adjustment_section(self):
+        named_color_adjustment_section_layout = QVBoxLayout(self.named_color_adjustment_section)
+
+        self.named_color_search_bar = QLineEdit()
+        self.named_color_search_bar.setObjectName("named_color_search_bar")
+        self.named_color_search_bar.setPlaceholderText("Search: ")
+        self.named_color_search_bar.setStyleSheet("""
+            QLineEdit#named_color_search_bar{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.named_color_search_bar.setMinimumHeight(60)
+
+        named_color_adjustment_section_layout.addWidget(self.named_color_search_bar)
+        named_color_adjustment_section_layout.addSpacing(15)
+    
+        self.named_color_selection_list_view = QListView()
+        self.named_color_selection_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.named_color_selection_model = QStringListModel(self.named_colors)
+
+        self.filter_proxy = QSortFilterProxyModel()
+        self.filter_proxy.setSourceModel(self.named_color_selection_model)
+        self.filter_proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive) 
+        self.filter_proxy.setFilterKeyColumn(0)  
+
+        self.named_color_search_bar.textChanged.connect(self.filter_proxy.setFilterFixedString)
+
+        self.named_color_selection_list_view.setModel(self.filter_proxy)
+        self.named_color_selection_list_view.setObjectName("named_color_selection_list_view")
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.named_color_selection_list_view.setItemDelegate(CustomDelegate())
+
+        self.named_color_selection_list_view.setStyleSheet("""
+            QListView#named_color_selection_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#named_color_selection_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#named_color_selection_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#named_color_selection_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.named_color_selection_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.named_color_selection_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.named_color_selection_list_view.setSpacing(3)
+
+        self.named_color_selection_list_view.clicked.connect(self.change_named_color_selection)
+
+        named_color_adjustment_section_layout.addWidget(self.named_color_selection_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        named_color_adjustment_section_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_short_code_color_adjustment_section(self):
+        short_code_color_adjustment_section_layout = QVBoxLayout(self.short_code_color_adjustment_section)
+    
+        self.short_code_color_selection_list_view = QListView()
+        self.short_code_color_selection_list_view.setSelectionMode(QListView.SelectionMode.MultiSelection)
+        self.short_code_color_selection_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.short_code_color_selection_model = QStringListModel(self.short_code_colors)
+
+        self.short_code_color_selection_list_view.setModel(self.short_code_color_selection_model)
+        self.short_code_color_selection_list_view.setObjectName("short_code_color_selection_list_view")
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        self.short_code_color_selection_list_view.setItemDelegate(CustomDelegate())
+
+        self.short_code_color_selection_list_view.setStyleSheet("""
+            QListView#short_code_color_selection_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#short_code_color_selection_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#short_code_color_selection_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#short_code_color_selection_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        self.short_code_color_selection_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.short_code_color_selection_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.short_code_color_selection_list_view.setSpacing(3)
+
+        self.short_code_color_selection_list_view.clicked.connect(self.change_short_code_color_selection)
+
+        short_code_color_adjustment_section_layout.addWidget(self.short_code_color_selection_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        short_code_color_adjustment_section_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_hex_code_adjustment_section(self):
+        hex_code_adjustment_section_layout = QVBoxLayout(self.hex_code_adjustment_section)
+
+        self.hex_code_input = QLineEdit()
+        self.hex_code_input.setObjectName("hex_code_input")
+        self.hex_code_input.setPlaceholderText("Hex Code: ")
+        self.hex_code_input.setStyleSheet("""
+            QLineEdit#hex_code_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.hex_code_input.setMinimumHeight(60)
+        self.hex_code_input.textChanged.connect(self.change_hex_code)
+
+        hex_code_adjustment_section_layout.addWidget(self.hex_code_input)
+        hex_code_adjustment_section_layout.addWidget(self.valid_hex_code_widget)
+        hex_code_adjustment_section_layout.addWidget(self.invalid_hex_code_widget)
+        hex_code_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        hex_code_adjustment_section_layout.setSpacing(10)
+        hex_code_adjustment_section_layout.addStretch()
+    
+    def create_rgba_value_adjustment_section(self): 
+        rgba_value_adjustment_section_layout = QVBoxLayout(self.rgba_value_adjustment_section)
+
+        self.r_value_input = QLineEdit()
+        self.r_value_input.setObjectName("r_value_input")
+        self.r_value_input.setPlaceholderText("R Value: ")
+        self.r_value_input.setStyleSheet("""
+            QLineEdit#r_value_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.g_value_input = QLineEdit()
+        self.g_value_input.setObjectName("g_value_input")
+        self.g_value_input.setPlaceholderText("G Value: ")
+        self.g_value_input.setStyleSheet("""
+            QLineEdit#g_value_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.b_value_input = QLineEdit()
+        self.b_value_input.setObjectName("b_value_input")
+        self.b_value_input.setPlaceholderText("B Value: ")
+        self.b_value_input.setStyleSheet("""
+            QLineEdit#b_value_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.a_value_input = QLineEdit()
+        self.a_value_input.setObjectName("a_value_input")
+        self.a_value_input.setPlaceholderText("A Value: ")
+        self.a_value_input.setStyleSheet("""
+            QLineEdit#a_value_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.r_value_input.setMinimumHeight(60)
+        self.g_value_input.setMinimumHeight(60)
+        self.b_value_input.setMinimumHeight(60)
+        self.a_value_input.setMinimumHeight(60)
+
+        self.r_value_input.textChanged.connect(self.change_rgba_value)
+        self.g_value_input.textChanged.connect(self.change_rgba_value)
+        self.b_value_input.textChanged.connect(self.change_rgba_value)
+        self.a_value_input.textChanged.connect(self.change_rgba_value)
+
+        rgba_value_adjustment_section_layout.addWidget(self.r_value_input)
+        rgba_value_adjustment_section_layout.addWidget(self.g_value_input)
+        rgba_value_adjustment_section_layout.addWidget(self.b_value_input)
+        rgba_value_adjustment_section_layout.addWidget(self.a_value_input)
+        rgba_value_adjustment_section_layout.addWidget(self.valid_rgba_value_widget)
+        rgba_value_adjustment_section_layout.addWidget(self.invalid_rgba_value_widget)
+        rgba_value_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        rgba_value_adjustment_section_layout.setSpacing(10)
+        rgba_value_adjustment_section_layout.addStretch()
+
+    def create_face_edgecolor_adjustment_section(self):
+        face_edgecolor_adjustment_section_layout = QVBoxLayout(self.face_edgecolor_adjustment_section)
+        
+        self.face_edgecolor_label = QLabel("Set Edgecolor As Face")
+        self.face_edgecolor_label.setObjectName("face_edgecolor_label")
+        self.face_edgecolor_label.setStyleSheet("""
+            QLabel#face_edgecolor_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.face_edgecolor_label.setWordWrap(True)
+        self.face_edgecolor_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.face_edgecolor_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+        self.face_edgecolor_button = QPushButton()
+        self.face_edgecolor_button.setObjectName("face_edgecolor_button")
+        self.face_edgecolor_button.setStyleSheet("""
+            QPushButton#face_edgecolor_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#face_edgecolor_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.face_edgecolor_button.setMinimumHeight(50)
+
+        self.face_edgecolor_button.clicked.connect(self.change_face_edgecolor)
+
+        face_edgecolor_button_layout = QVBoxLayout(self.face_edgecolor_button)
+        face_edgecolor_button_layout.addWidget(self.face_edgecolor_label)
+        face_edgecolor_button_layout.setContentsMargins(0,0,0,0)
+        face_edgecolor_button_layout.setSpacing(0)
+        
+        face_edgecolor_adjustment_section_layout.addWidget(self.face_edgecolor_button)
+        face_edgecolor_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        face_edgecolor_adjustment_section_layout.setSpacing(10)
+        face_edgecolor_adjustment_section_layout.addStretch()
+
+    def create_none_edgecolor_adjustment_section(self):
+        none_edgecolor_adjustment_section_layout = QVBoxLayout(self.none_edgecolor_adjustment_section)
+        
+        self.none_edgecolor_label = QLabel("Set Edgecolor As None")
+        self.none_edgecolor_label.setObjectName("none_edgecolor_label")
+        self.none_edgecolor_label.setStyleSheet("""
+            QLabel#none_edgecolor_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.none_edgecolor_label.setWordWrap(True)
+        self.none_edgecolor_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.none_edgecolor_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+        self.none_edgecolor_button = QPushButton()
+        self.none_edgecolor_button.setObjectName("none_edgecolor_button")
+        self.none_edgecolor_button.setStyleSheet("""
+            QPushButton#none_edgecolor_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#none_edgecolor_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.none_edgecolor_button.setMinimumHeight(50)
+
+        self.none_edgecolor_button.clicked.connect(self.change_none_edgecolor)
+
+        none_edgecolor_button_layout = QVBoxLayout(self.none_edgecolor_button)
+        none_edgecolor_button_layout.addWidget(self.none_edgecolor_label)
+        none_edgecolor_button_layout.setContentsMargins(0,0,0,0)
+        none_edgecolor_button_layout.setSpacing(0)
+        
+        none_edgecolor_adjustment_section_layout.addWidget(self.none_edgecolor_button)
+        none_edgecolor_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        none_edgecolor_adjustment_section_layout.setSpacing(10)
+        none_edgecolor_adjustment_section_layout.addStretch()
+
+    def create_reset_edgecolor_adjustment_section(self):
+        reset_edgecolor_adjustment_section_layout = QVBoxLayout(self.reset_edgecolor_adjustment_section)
+        
+        self.reset_edgecolor_label = QLabel("Set Edgecolor As None")
+        self.reset_edgecolor_label.setObjectName("reset_edgecolor_label")
+        self.reset_edgecolor_label.setStyleSheet("""
+            QLabel#reset_edgecolor_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.reset_edgecolor_label.setWordWrap(True)
+        self.reset_edgecolor_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_edgecolor_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+        self.reset_edgecolor_button = QPushButton()
+        self.reset_edgecolor_button.setObjectName("reset_edgecolor_button")
+        self.reset_edgecolor_button.setStyleSheet("""
+            QPushButton#reset_edgecolor_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#reset_edgecolor_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.reset_edgecolor_button.setMinimumHeight(50)
+
+        self.reset_edgecolor_button.clicked.connect(self.reset_edgecolor)
+
+        reset_edgecolor_button_layout = QVBoxLayout(self.reset_edgecolor_button)
+        reset_edgecolor_button_layout.addWidget(self.reset_edgecolor_label)
+        reset_edgecolor_button_layout.setContentsMargins(0,0,0,0)
+        reset_edgecolor_button_layout.setSpacing(0)
+        
+        reset_edgecolor_adjustment_section_layout.addWidget(self.reset_edgecolor_button)
+        reset_edgecolor_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        reset_edgecolor_adjustment_section_layout.setSpacing(10)
+        reset_edgecolor_adjustment_section_layout.addStretch()
+
+    def change_current_parameter_screen(self,index):
+        screen_name = self.edgecolor_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
+        
+        if (screen_name == "Named Color"):
+            self.change_to_named_color_adjustment_section()
+
+        if (screen_name == "Short Code Color"):
+            self.change_to_short_code_color_adjustment_section()
+            
+        if (screen_name == "Hex Code Color"):
+            self.change_to_hex_code_adjustment_section()
+    
+        if (screen_name == "RGBA Color"):
+            self.change_to_rgba_value_adjustment_section()
+
+        if (screen_name == "Face Edgecolor"):
+            self.change_to_face_edgecolor_adjustment_section()
+
+        if (screen_name == "None Edgecolor"):
+            self.change_to_none_edgecolor_adjustment_section()
+
+        if (screen_name == "Reset Edgecolor"):
+            self.change_to_reset_edgecolor_adjustment_section()
+
+    def change_to_named_color_adjustment_section(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 0
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_short_code_color_adjustment_section(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 1
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_hex_code_color_adjustment_section(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.available_screens = 2
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_rgba_value_adjustment_section(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 3
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_face_edgecolor_adjustment_section(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 4
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_none_edgecolor_adjustment_section(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 5
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_reset_edgecolor_adjustment_section(self):
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 6
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_named_color_selection(self,index):
+        source_index = self.filter_proxy.mapToSource(index)
+        named_color = self.named_color_selection_model.data(source_index,Qt.ItemDataRole.DisplayRole)
+        
+        if (named_color in self.xkcd_colors):
+            named_color = "xkcd:" + named_color
+        if (named_color in self.tableau_colors):
+            named_color = "tab:" + named_color
+
+        self.edgecolor = named_color
+        self.update_edgecolor()
+
+    def change_short_code_color_selection(self,index):
+        self.egdecolor = self.short_code_color_selection_model.data(index,Qt.ItemDataRole.DisplayRole)
+        self.update_edgecolor()
+        
+    def change_hex_code(self):
+        hex_code = self.hex_code_input.text().strip()
+
+        if (hex_code == ""):
+            self.valid_hex_code_widget.hide()
+            self.invalid_hex_code_widget.hide()
+            self.edgecolor = "w"
+            self.update_edgecolor()
+            return
+
+        def check_valid_hex_code(hex_code):
+            if (hex_code[0] != "#"):
+                new_hex_code = "#" + hex_code
+                return check_valid_hex_code(new_hex_code)
+            hex_code = hex_code[1:]
+            if (len(hex_code) not in [3,6,8]):
+                return False
+            try:
+                int(hex_code,16)
+                return True
+            except:
+                return False
+        
+        if (hex_code != ""):
+            validity = check_valid_hex_code(hex_code)
+            if (validity):
+                self.valid_hex_code_widget.show()
+                self.invalid_hex_code_widget.hide()
+                self.edgecolor = hex_code if hex_code[0] == "#" else "#" + hex_code
+                self.update_edgecolor()
+            else:
+                self.valid_hex_code_widget.hide()
+                self.invalid_hex_code_widget.show()
+
+    def change_rgba_value(self):
+        r_value = self.r_value_input.text().strip()
+        g_value = self.g_value_input.text().strip()
+        b_value = self.b_value_input.text().strip()
+        a_value = self.a_value_input.text().strip()
+
+        if (not(r_value or g_value or b_value or a_value)):
+            self.valid_rgba_value_widget.hide()
+            self.invalid_rgba_value_widget.hide()
+            self.edgecolor = "w"
+            self.update_edgecolor()
+            return 
+
+        valid = None
+
+        try:
+            r_value = int(r_value) if r_value != "" else self.initial_rgba[0]
+            g_value = int(g_value) if g_value != "" else self.initial_rgba[1]
+            b_value = int(b_value) if b_value != "" else self.initial_rgba[2]
+            a_value = int(a_value) if a_value != "" else self.initial_rgba[3]
+            valid = True
+        except:
+            valid = False
+
+        if (valid):
+            self.valid_rgba_value_widget.show()
+            self.invalid_rgba_value_widget.hide()
+            self.edgecolor = [r_value,g_value,b_value,a_value]
+            self.update_edgecolor()
+        else:
+            self.valid_rgba_value_widget.hide()
+            self.invalid_rgba_value_widget.show()
+
+    def change_face_edgecolor(self):
+        self.edgecolor = "face"
+
+    def change_none_edgecolor(self):
+        self.edgecolor = "none"
+        self.update_edgecolor()
+
+    def reset_edgecolor(self):
+        self.edgecolor = "w"
+        self.update_edgecolor()
+
+    def update_edgecolor(self):
+        db = self.plot_manager.get_db()
+        if (db != []):
+            self.plot_manager.update_edgecolors(self.edgecolor)
+        else:
+            plot_parameter = plot_json[self.selected_graph].copy()
+            plot_parameter["edgecolors"] = self.edgecolor
+            self.plot_manager.insert_plot_parameter(plot_parameter)
+        self.graph_display.show_graph()
+
+    def mousePressEvent(self, event):
+        if not self.named_color_search_bar.geometry().contains(event.position().toPoint()):
+            self.named_color_search_bar.clearFocus()
+        if not self.hex_code_input.geometry().contains(event.position().toPoint()):
+            self.hex_code_input.clearFocus()
+        if not self.r_value_input.geometry().contains(event.position().toPoint()):
+            self.r_value_input.clearFocus()
+        if not self.g_value_input.geometry().contain(event.position().toPoint()):
+            self.g_value_input.clear()
+        if not self.b_value_input.geometry().contains(event.position().toPoint()):
+            self.b_value_input.clear()
+        if not self.a_value_input.geometry().contains(event.position().toPoint()):
+            self.a_value_input.clear()
+        super().mousePressEvent(event)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+
+        self.change_to_named_color_adjustment_section()
+
+        self.hex_code_input.clear()
+
+        self.r_value_input.clear()
+        self.g_value_input.clear()
+        self.b_value_input.clear()
+        self.a_value_input.clear() 
+
+        self.named_color_search_bar.clear()
+
+        self.edgecolor = "w"
+        self.hex_code = None
+        self.rgba_value = None
+
+        self.named_color_selection_list_view.clearSelection()
+        self.short_code_color_selection_list_view.clearSelection()
+
+        self.valid_hex_code_widget.hide()
+        self.valid_rgba_value_widget.hide()
+
+        self.invalid_hex_code_widget.hide()
+        self.invalid_rgba_value_widget.hide()
+
+    def close_dialog(self):
+        self.close()
