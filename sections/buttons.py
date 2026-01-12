@@ -211,36 +211,33 @@ class x_axis_button(QDialog):
         down_shortcut = QShortcut(QKeySequence("down"), self) 
         down_shortcut.activated.connect(self.columns_go_down)
 
-        return_shortcut = QShortcut(QKeySequence("Return"),self)
-        return_shortcut.activated.connect(self.exit_dialog)
+        return_shortcut = QShortcut(QKeySequence("return"),self)
+        return_shortcut.activated.connect(self.close_dialog)
+
+        esc_shortcut = QShortcut(QKeySequence("esc"),self)
+        esc_shortcut.activated.connect(self.close_dialog)
 
         #Make sure this gets drawn.
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
-    def find_usable_columns(self):
-        #Get the needed data type from the dictionary
-        x_axis_data_type = self.plot_parameters[self.selected_graph].get("x-axis_data_type")
-        if (x_axis_data_type):
-            #Return the columns in the dataset that match the data type and set the column name with the first column
-            columns = self.dataset.select_dtypes(include=x_axis_data_type).columns
-            if (not columns.empty):
-                self.column_name = columns[0]
-                return columns.tolist()
-        return []
-
     def create_button_section(self):  
+        #Create the button layout for the columns 
         column_button_layout = QVBoxLayout(self.button_section)
     
+        #Create the list view and model that displays the columns available
         self.column_button_list_view = QListView()
         self.column_button_model = QStringListModel(self.usable_columns)
 
+        #Set the columns that will be displayed and block editting the column names
         self.column_button_list_view.setModel(self.column_button_model)
         self.column_button_list_view.setObjectName("column_button_list_view")
         self.column_button_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
+        #Get the first column in list view and display it
         column_index = self.column_button_model.index(self.current_column_index)  
         self.column_button_list_view.setCurrentIndex(column_index)
 
+        #Modification to make the list view look better
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -249,8 +246,10 @@ class x_axis_button(QDialog):
                 option.font = font
                 super().paint(painter, option, index)
         
+        #Apply the modifications to the list view
         self.column_button_list_view.setItemDelegate(CustomDelegate())
 
+        #Style the list view with the looks of the item, selected, and hover
         self.column_button_list_view.setStyleSheet("""
             QListView#column_button_list_view{
                 background: qlineargradient(
@@ -304,75 +303,123 @@ class x_axis_button(QDialog):
             }
         """)
 
+        #Control what the scroll bar looks like and spacing between items
         self.column_button_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.column_button_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.column_button_list_view.setSpacing(3)
 
+        #Connect the list view to automatically update the displayed column when clicked on 
         self.column_button_list_view.clicked.connect(self.change_current_column)
 
+        #Add the customized list view to the column button screen
         column_button_layout.addWidget(self.column_button_list_view)
 
         # Add margins and spacing to make it look good and push content to the top
         column_button_layout.setContentsMargins(10, 10, 10, 10)
+        column_button_layout.setSpacing(10)
+        column_button_layout.addStretch()
+
+    def change_current_column(self,index):
+        #Get the column name selected by the user
+        self.column_name = self.column_button_model.data(index, Qt.ItemDataRole.DisplayRole)
+        #Get the index of that column name
+        self.current_column_index = index.row()
+        #Display the column selected by the user
+        self.display_dataset()
+        #Update the plot config with the selected column for the x-axis
+        self.update_x_axis()
+
+    def update_x_axis(self):
+        #Grab the newest plot config from the json
+        db = self.plot_manager.get_db()
+
+        #Check if there is already a config
+        if (db != []):
+            #If yes, copy the config and update the x-axis
+            plot_parameters = db.copy()
+            plot_parameters["x"] = self.column_name
+        else:
+            #If no, copy the default config and update the x-axis
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["x"] = self.column_name
+        #Apply the updated config
+        self.plot_manager.insert_x_axis_data(plot_parameters)
+        #Display the new graph generated
+        self.graph_display.show_graph()
 
     def get_dataset(self):
+        #Grab the dataset the user inputs
         self.dataset = pd.read_csv("./dataset/user_dataset.csv")
 
     def display_dataset(self):
+        #Check if there is usable columsn for the x-axis first
         if (self.usable_columns == []):
             return
+
+        #If there is usable columns display the column and store it in dataset table
         self.model = PrepareDataset(self.dataset[[self.column_name]])
         self.dataset_table.setModel(self.model)
         self.dataset_table.verticalHeader().setVisible(False)
         self.dataset_table.setShowGrid(True)
         self.dataset_table.setSortingEnabled(False)
 
-    def change_current_column(self,index):
-        self.column_name = self.column_button_model.data(index, Qt.ItemDataRole.DisplayRole)
-        self.current_column_index = index.row()
-        self.display_dataset()
-        self.update_x_axis()
-
     def columns_go_down(self):
+        #Add one from the column index 
+        #Divide the index by the total amount to ensure it goes in a loop
         self.current_column_index += 1
         self.current_column_index %= len(self.usable_columns)
+        
+        #Set the new column index with the one just calculated
+        #Scroll to that column and update the selected column
         new_screen_index = self.column_button_model.index(self.current_column_index)
         self.column_button_list_view.setCurrentIndex(new_screen_index)
         self.column_button_list_view.scrollTo(new_screen_index,QAbstractItemView.ScrollHint.PositionAtCenter)
         self.column_name = self.usable_columns[self.current_column_index]
+        
+        #Display the dataset and update it in the plot config
         self.display_dataset()
         self.update_x_axis()
 
     def columns_go_up(self):
+        #Subtract one from the column index 
+        #Divide the index by the total amount to ensure it goes in a loop
         self.current_column_index -= 1
         self.current_column_index %= len(self.usable_columns)
+
+        #Set the new column index with the one just calculated
+        #Scroll to that column and update the selected column
         new_screen_index = self.column_button_model.index(self.current_column_index)
         self.column_button_list_view.setCurrentIndex(new_screen_index)
         self.column_button_list_view.scrollTo(new_screen_index,QAbstractItemView.ScrollHint.PositionAtCenter)
         self.column_name = self.usable_columns[self.current_column_index]
+
+        #Display the dataset and update it in the plot config
         self.display_dataset()
         self.update_x_axis()
 
-    def update_x_axis(self):
-        db = self.plot_manager.get_db()
-        if (db != []):
-            plot_parameters = db.copy()
-            plot_parameters["x"] = self.column_name
-        else:
-            plot_parameters = plot_json[self.selected_graph].copy()
-            plot_parameters["x"] = self.column_name
-        self.plot_manager.insert_x_axis_data(plot_parameters)
-        self.graph_display.show_graph()
-
-    def exit_dialog(self):
-        self.close()
+    def find_usable_columns(self):
+        #Get the needed data type from the dictionary
+        x_axis_data_type = self.plot_parameters[self.selected_graph].get("x-axis_data_type")
+        if (x_axis_data_type):
+            #Return the columns in the dataset that match the data type and set the column name with the first column
+            columns = self.dataset.select_dtypes(include=x_axis_data_type).columns
+            #IF there is columns available set that as the initial column selected and return the list of columns
+            if (not columns.empty):
+                self.column_name = columns[0]
+                return columns.tolist()
+        return []
 
     def showEvent(self, event):
         super().showEvent(event)
+
+        #Get the new dataset in case there is a change
         self.get_dataset()
+
+        #Get the new usable columns and reset the column index
         self.usable_columns = self.find_usable_columns()
         self.current_column_index = 0
 
+        #In the case that there are usable columns display the first one and update the model
         if self.usable_columns:
             self.display_dataset()
 
@@ -380,8 +427,12 @@ class x_axis_button(QDialog):
             column_index = self.column_button_model.index(self.current_column_index)  
             self.column_button_list_view.setCurrentIndex(column_index)
 
+        #Update the plot config with the new x-axis
         self.update_x_axis()
-        
+
+    def close_dialog(self):
+        self.close()
+
 class y_axis_button(QDialog):
     def __init__(self,plot_parameters,selected_graph,graph_display):
         super().__init__()
@@ -484,6 +535,7 @@ class y_axis_button(QDialog):
             }
         """)
 
+        #Display the first column in the usable columns
         self.display_dataset()
 
         #Place the dataset table on top of the dataset section
@@ -509,36 +561,30 @@ class y_axis_button(QDialog):
         down_shortcut = QShortcut(QKeySequence("down"), self) 
         down_shortcut.activated.connect(self.columns_go_down)
 
-        return_shortcut = QShortcut(QKeySequence("Return"),self)
-        return_shortcut.activated.connect(self.exit_dialog)
+        return_shortcut = QShortcut(QKeySequence("return"),self)
+        return_shortcut.activated.connect(self.close_dialog)
 
-        #Make sure this gets drawn.
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-
-    def find_usable_columns(self):
-        #Get the needed data type from the dictionary
-        y_axis_data_type = self.plot_parameters[self.selected_graph].get("y-axis_data_type")
-        if (y_axis_data_type):
-            #Return the columns in the dataset that match the data type and set the column name with the first column
-            columns = self.dataset.select_dtypes(include=y_axis_data_type).columns
-            if (not columns.empty):
-                self.column_name = columns[0]
-                return columns.tolist()
-        return []
+        esc_shortcut = QShortcut(QKeySequence("esc"),self)
+        esc_shortcut.activated.connect(self.close_dialog)
 
     def create_button_section(self):  
+        #Create the button layout for the columns
         column_button_layout = QVBoxLayout(self.button_section)
 
+        #Create the list view and model that displays the columns available    
         self.column_button_list_view = QListView()
         self.column_button_model = QStringListModel(self.usable_columns)
 
+        #Set the columns that will be displayed and block editting the column names
         self.column_button_list_view.setModel(self.column_button_model)
         self.column_button_list_view.setObjectName("column_button_list_view")
         self.column_button_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
+        #Get the column of the current column selected or first column and select it on the list view
         column_index = self.column_button_model.index(self.current_column_index)  
         self.column_button_list_view.setCurrentIndex(column_index)
 
+        #Customization for the list view
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -547,8 +593,10 @@ class y_axis_button(QDialog):
                 option.font = font
                 super().paint(painter, option, index)
         
+        #Apply the customizations to the list view
         self.column_button_list_view.setItemDelegate(CustomDelegate())
 
+        #Style the list view's background, items, selected and hover effects
         self.column_button_list_view.setStyleSheet("""
             QListView#column_button_list_view{
                 background: qlineargradient(
@@ -602,28 +650,21 @@ class y_axis_button(QDialog):
             }
         """)
 
+        #Hide the scrollbars on the list view and control the spacing of each item on the list view
         self.column_button_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.column_button_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.column_button_list_view.setSpacing(3)
 
+        #Connect the list view with a function to enable automatic updating with the column when clicked on
         self.column_button_list_view.clicked.connect(self.change_current_column)
 
+        #Add the list view to the button layout to display the columns
         column_button_layout.addWidget(self.column_button_list_view)
 
         # Add margins and spacing to make it look good and push content to the top
         column_button_layout.setContentsMargins(10, 10, 10, 10)
-
-    def get_dataset(self):
-        self.dataset = pd.read_csv("./dataset/user_dataset.csv")
-
-    def display_dataset(self):
-        if (self.usable_columns == []):
-            return
-        self.model = PrepareDataset(self.dataset[[self.column_name]])
-        self.dataset_table.setModel(self.model)
-        self.dataset_table.verticalHeader().setVisible(False)
-        self.dataset_table.setShowGrid(True)
-        self.dataset_table.setSortingEnabled(False)
+        column_button_layout.setSpacing(10)
+        column_button_layout.addStretch()
 
     def change_current_column(self,index):
         self.column_name = self.column_button_model.data(index, Qt.ItemDataRole.DisplayRole)
@@ -631,53 +672,108 @@ class y_axis_button(QDialog):
         self.display_dataset()
         self.update_y_axis()
 
+    def update_y_axis(self):
+        #Grab the latest plot config and store it in db
+        db = self.plot_manager.get_db()
+
+        #Check if there is already a config created
+        if (db != []):
+            #If yes, copy the config and update the y-axis with the selected column
+            plot_parameters = db.copy()
+            plot_parameters["y"] = self.column_name
+        else:
+            #If no, copy the default config and update the y-axis with the selected column
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["y"] = self.column_name
+        #Add the new config to plot config and show the graph generated if applicable
+        self.plot_manager.insert_y_axis_data(plot_parameters)
+        self.graph_display.show_graph()
+
+    def get_dataset(self):
+        #Grab the dataset that the user inputs
+        self.dataset = pd.read_csv("./dataset/user_dataset.csv")
+
+    def display_dataset(self):
+        #Check if there is any usable columns
+        if (self.usable_columns == []):
+            return
+
+        #Display the selected column on the dataset section
+        self.model = PrepareDataset(self.dataset[[self.column_name]])
+        self.dataset_table.setModel(self.model)
+        self.dataset_table.verticalHeader().setVisible(False)
+        self.dataset_table.setShowGrid(True)
+        self.dataset_table.setSortingEnabled(False)
+
     def columns_go_down(self):
+        #Increase the current index by 1 to simulate doing down
+        #Divide the column by the number of columns and get the remainder for looping
         self.current_column_index += 1
         self.current_column_index %= len(self.usable_columns)
+
+        #Grab the new index from the model and set the new index on the list view
+        #Scroll to the selected column and update the selected column
         new_screen_index = self.column_button_model.index(self.current_column_index)
         self.column_button_list_view.setCurrentIndex(new_screen_index)
         self.column_button_list_view.scrollTo(new_screen_index,QAbstractItemView.ScrollHint.PositionAtCenter)
         self.column_name = self.usable_columns[self.current_column_index]
+
+        #Display the new column and update it in plot config
         self.display_dataset()
         self.update_y_axis()
 
     def columns_go_up(self):
+        #Decrease the current index by 1 to simulate doing down
+        #Divide the column by the number of columns and get the remainder for looping
         self.current_column_index -= 1
         self.current_column_index %= len(self.usable_columns)
+
+        #Grab the new index from the model and set the new index on the list view
+        #Scroll to the selected column and update the selected column
         new_screen_index = self.column_button_model.index(self.current_column_index)
         self.column_button_list_view.setCurrentIndex(new_screen_index)
         self.column_button_list_view.scrollTo(new_screen_index,QAbstractItemView.ScrollHint.PositionAtCenter)
         self.column_name = self.usable_columns[self.current_column_index]
+
+        #Display the new column and update it in plot config
         self.display_dataset()
         self.update_y_axis()
 
-    def update_y_axis(self):
-        db = self.plot_manager.get_db()
-        if (db != []):
-            plot_parameters = db.copy()
-            plot_parameters["y"] = self.column_name
-        else:
-            plot_parameters = plot_json[self.selected_graph].copy()
-            plot_parameters["y"] = self.column_name
-        self.plot_manager.insert_y_axis_data(plot_parameters)
-        self.graph_display.show_graph()
-
-    def exit_dialog(self):
-        self.close()
+    def find_usable_columns(self):
+        #Get the needed data type from the dictionary
+        y_axis_data_type = self.plot_parameters[self.selected_graph].get("y-axis_data_type")
+        if (y_axis_data_type):
+            #Return the columns in the dataset that match the data type and set the column name with the first column
+            columns = self.dataset.select_dtypes(include=y_axis_data_type).columns
+            if (not columns.empty):
+                #Set the column name to be the first column in the list and return the list
+                self.column_name = columns[0]
+                return columns.tolist()
+        return []
 
     def showEvent(self, event):
         super().showEvent(event)
-        self.get_dataset()
-        self.usable_columns = self.find_usable_columns()
 
+        #Get the new dataset in case there is a change
+        self.get_dataset()
+
+        #Get the new usable columns and reset the column index
+        self.usable_columns = self.find_usable_columns()
+        self.current_column_index = 0
+
+        #In the case that there are usable columns display the first one and update the model
         if self.usable_columns:
-            self.column_name = self.usable_columns[0]
-            self.current_column_index = 0
             self.display_dataset()
 
             self.column_button_model.setStringList(self.usable_columns)
             column_index = self.column_button_model.index(self.current_column_index)  
             self.column_button_list_view.setCurrentIndex(column_index)
+
+        #Update the plot config with the new y-axis
+        self.update_y_axis()
+
+    def close_dialog(self):
+        self.close()
 
 class axis_title_button(QDialog):
     def __init__(self,selected_graph,graph_display):
