@@ -1225,6 +1225,18 @@ class legend_visible_adjustment_section(QWidget):
             }
         """)
 
+        #Create a layout for the main widget and store the legend visibility adjustment section in
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.legend_visibility_adjustment_section)
+
+        #Add the spacing and margins to make sure that the section fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+    def create_legend_visibility_adjustment_section(self):
+        #Create a layout for the legend visibility adjustment section
+        legend_visibility_adjustment_section_layout = QVBoxLayout(self.legend_visibility_adjustment_section)
+
         #-----Create the legend visibility used for the button-----
         self.legend_visibility_label = QLabel("Legend On")
         self.legend_visibility_label.setWordWrap(True)
@@ -1242,7 +1254,7 @@ class legend_visible_adjustment_section(QWidget):
             }
         """)
         self.legend_visibility_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-    
+
         #-----Create the legend visibility button-----
         self.legend_visibility_button = QPushButton()
         self.legend_visibility_button.setObjectName("legend_visibility_button")
@@ -1282,35 +1294,22 @@ class legend_visible_adjustment_section(QWidget):
             }
         """)
         self.legend_visibility_button.setMinimumHeight(50)
-        
+
+        #-----Connect the button to automatically change the visibility state-----
+        self.legend_visibility_button.clicked.connect(self.change_legend_visibility)
+
         #-----Apply the label onto the button-----
         legend_visibility_button_layout = QVBoxLayout(self.legend_visibility_button)
         legend_visibility_button_layout.addWidget(self.legend_visibility_label)
         legend_visibility_button_layout.setContentsMargins(0,0,0,0)
         legend_visibility_button_layout.setSpacing(0)
 
-        #-----Connect the button to automatically change the visibility state-----
-        self.legend_visibility_button.clicked.connect(self.switch_legend_visibility)
+        #Add the button created to the legend visibility adjustment section
+        legend_visibility_adjustment_section_layout.addWidget(self.legend_visibility_button)
+        legend_visibility_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        legend_visibility_adjustment_section_layout.addStretch()
 
-        #Create a button layout for the grid visibility adjustment section
-        button_layout = QVBoxLayout(self.legend_visibility_adjustment_section)
-
-        #Add the grid visibility button to the layout
-        button_layout.addWidget(self.legend_visibility_button)
-
-        #Set the spacing, margins, and stretch to make it look good
-        button_layout.setContentsMargins(10,10,10,10)
-        button_layout.addStretch()
-
-        #Create a layout for the main widget and store the frameon adjustment section in
-        main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.legend_visibility_adjustment_section)
-
-        #Add the spacing and margins to make sure that the section fits nicely
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0,0,0,0)
-
-    def switch_legend_visibility(self):
+    def change_legend_visibility(self):
         #Change the legend visible state to be the opposite of what it was
         self.legend_visible_state = not self.legend_visible_state
         #Change the label displayed on the button to match the visibility state
@@ -1345,7 +1344,10 @@ class legend_label_adjustment_section(QWidget):
         self.selected_graph = selected_graph
         self.graph_display = graph_display
 
-        #Create a section to display the ncol section and style it
+        #Initialize the ncol value to be 0
+        self.label_value = "__nolegend__"
+
+        #-----Create the legend label adjustment section-----
         self.legend_label_adjustment_section = QWidget()
         self.legend_label_adjustment_section.setObjectName("legend_label_adjustment_section")
         self.legend_label_adjustment_section.setStyleSheet("""
@@ -1360,10 +1362,17 @@ class legend_label_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
+        self.create_legend_label_adjustment_section()
 
-        #Initialize the ncol value to be 0
-        self.label_value = "__nolegend__"
-
+        #Add the label adjustment section to the main widget
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.legend_label_adjustment_section)
+        
+        #Set both the spacing and margins for the main widget to make sure it fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+    
+    def create_legend_label_adjustment_section(self):
         #Create a line edit object for the user to input the ncol
         self.label_input = QLineEdit()
         self.label_input.setObjectName("label_input")
@@ -1387,35 +1396,24 @@ class legend_label_adjustment_section(QWidget):
         self.label_input.setFixedHeight(60)
 
         #Connect any changes with the text to an update function
-        self.label_input.textChanged.connect(self.change_label)
+        self.label_input.textChanged.connect(self.change_legend_label)
 
-        #Create a layout for the label adjustment section and add the line edit object to it
-        legend_label_section_layout = QVBoxLayout(self.legend_label_adjustment_section)
-        legend_label_section_layout.addWidget(self.label_input)
+        #Add the label input to the legend label adjustment section layout
+        legend_label_adjustment_section_layout = QVBoxLayout(self.legend_label_adjustment_section)
+        legend_label_adjustment_section_layout.addWidget(self.label_input)
     
         #Add the margins, spacing, and stretch to the layout to make it look good
-        legend_label_section_layout.setContentsMargins(10,10,10,10)
-        legend_label_section_layout.setSpacing(10)
-        legend_label_section_layout.addStretch()
+        legend_label_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        legend_label_adjustment_section_layout.addStretch()
 
-        #Add the label adjustment section to the main widget
-        main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.legend_label_adjustment_section)
-        
-        #Set both the spacing and margins for the main widget to make sure it fits nicely
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0,0,0,0)
-
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-    
-    def change_label(self):
+    def change_legend_label(self):
         #Extract the ncol input from the user and remove any excess text from it
         self.label_value = self.label_input.text().strip()
         if (self.label_value == ""):
             self.label_value = "__nolegend__"
-        self.update_label()
+        self.update_legend_label()
 
-    def update_label(self):
+    def update_legend_label(self):
         #Get the newest json entries from the plot manager
         db = self.plot_manager.get_db()
 
