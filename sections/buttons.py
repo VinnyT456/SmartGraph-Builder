@@ -1436,16 +1436,23 @@ class legend_loc_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
 
-        self.plot_manager = PlotManager()
-
         self.selected_graph = selected_graph
         self.graph_display = graph_display
+        self.plot_manager = PlotManager()
 
-        #Create a section to display the loc section and style it
-        self.loc_adjustment_section = QWidget()
-        self.loc_adjustment_section.setObjectName("adjust_loc_section")
-        self.loc_adjustment_section.setStyleSheet("""
-            QWidget#adjust_loc_section{
+        #Initialize the legend loc as best
+        self.legend_loc = "best"
+
+        #Store the loc buttons created in a list and list out the possible positions
+        self.available_loc_arguments = ["best","upper right","upper left","lower left",
+                                    "lower right","right","center left","center right",
+                                    "lower center","upper center","center"]
+
+        #-----Create the legend loc adjustment section-----
+        self.legend_loc_adjustment_section = QWidget()
+        self.legend_loc_adjustment_section.setObjectName("legend_loc_adjustment_section")
+        self.legend_loc_adjustment_section.setStyleSheet("""
+            QWidget#legend_loc_adjustment_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -1456,17 +1463,7 @@ class legend_loc_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-
-        #Store the loc buttons created in a list and list out the possible positions
-        self.available_loc_arguments = ["best","upper right","upper left","lower left",
-                                    "lower right","right","center left","center right",
-                                    "lower center","upper center","center"]
-
-        #Use a index to control the current location of the legend
-        self.loc_argument_name = self.available_loc_arguments[0]
-
-        #Create the loc parameter section
-        self.create_loc_parameter_section()
+        self.create_legend_loc_adjustment_section()
 
         #Add the legend loc adjustment section to the main widget to display on the other QDialog
         main_layout = QVBoxLayout(self)
@@ -1474,16 +1471,16 @@ class legend_loc_adjustment_section(QWidget):
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0,0,0,0)
 
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+    def create_legend_loc_adjustment_section(self):
+        #Create the legend loc adjustment section layout
+        legend_loc_adjustment_section_layout = QVBoxLayout(self.legend_loc_adjustment_section)
 
-    def create_loc_parameter_section(self):
-        loc_parameter_layout = QVBoxLayout(self.loc_adjustment_section)
-
-        self.loc_search_bar = QLineEdit()
-        self.loc_search_bar.setObjectName("search_bar")
-        self.loc_search_bar.setPlaceholderText("Search: ")
-        self.loc_search_bar.setStyleSheet("""
-            QLineEdit#search_bar{
+        #Create the legend loc search bar
+        self.legend_loc_search_bar = QLineEdit()
+        self.legend_loc_search_bar.setObjectName("legend_loc_search_bar")
+        self.legend_loc_search_bar.setPlaceholderText("Search: ")
+        self.legend_loc_search_bar.setStyleSheet("""
+            QLineEdit#legend_loc_search_bar{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -1496,24 +1493,31 @@ class legend_loc_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-        self.loc_search_bar.setMinimumHeight(60)
-        loc_parameter_layout.addWidget(self.loc_search_bar)
-        loc_parameter_layout.addSpacing(15)
-    
-        self.loc_list_view = QListView()
-        self.loc_position_model = QStringListModel(self.available_loc_arguments)
+        self.legend_loc_search_bar.setMinimumHeight(60)
 
+        #Add the search bar to the layout and add spacing to it
+        legend_loc_adjustment_section_layout.addWidget(self.legend_loc_search_bar)
+        legend_loc_adjustment_section_layout.addSpacing(15)
+    
+        #Create the legend list view and model to display the available loc arguements
+        self.legend_loc_list_view = QListView()
+        self.legend_loc_model = QStringListModel(self.available_loc_arguments)
+
+        #Setup a filter that only shows results that match what the user types based on the loc model
         self.filter_proxy = QSortFilterProxyModel()
         self.filter_proxy.setSourceModel(self.loc_position_model)
         self.filter_proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive) 
         self.filter_proxy.setFilterKeyColumn(0)  
 
-        self.loc_search_bar.textChanged.connect(self.filter_proxy.setFilterFixedString)
+        #Make the legend loc search bar respond to any changes
+        self.legend_loc_search_bar.textChanged.connect(self.filter_proxy.setFilterFixedString)
 
-        self.loc_list_view.setModel(self.filter_proxy)
-        self.loc_list_view.setObjectName("loc_list_view")
-        self.loc_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        #Initialize the model that the list view will use and disable editting
+        self.legend_loc_list_view.setModel(self.filter_proxy)
+        self.legend_loc_list_view.setObjectName("legend_loc_list_view")
+        self.legend_loc_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
+        #Customization for the list view
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -1522,10 +1526,12 @@ class legend_loc_adjustment_section(QWidget):
                 option.font = font
                 super().paint(painter, option, index)
         
-        self.loc_list_view.setItemDelegate(CustomDelegate())
+        #Apply the customizations to the list view
+        self.legend_loc_list_view.setItemDelegate(CustomDelegate())
 
-        self.loc_list_view.setStyleSheet("""
-            QListView#loc_list_view{
+        #Style the list view's background, item, selected and hover effects
+        self.legend_loc_list_view.setStyleSheet("""
+            QListView#legend_loc_list_view{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -1535,7 +1541,7 @@ class legend_loc_adjustment_section(QWidget):
                 border: transparent;
                 border-radius: 16px;
             }
-            QListView#loc_list_view::item {
+            QListView#legend_loc_list_view::item {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -1549,7 +1555,7 @@ class legend_loc_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#loc_list_view::item:selected {
+            QListView#legend_loc_list_view::item:selected {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -1562,7 +1568,7 @@ class legend_loc_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#loc_list_view::item:hover {
+            QListView#legend_loc_list_view::item:hover {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -1577,32 +1583,44 @@ class legend_loc_adjustment_section(QWidget):
             }
         """)
 
-        self.loc_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.loc_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.loc_list_view.setSpacing(3)
+        #Hide the list view's scroll bar and control the spacing between each element
+        self.legend_loc_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.legend_loc_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.legend_loc_list_view.setSpacing(3)
 
-        self.loc_list_view.clicked.connect(self.change_loc_position)
+        #Make the list view automatically switch the legend loc based on what's clicked on
+        self.legend_loc_list_view.clicked.connect(self.change_legend_loc)
 
-        loc_parameter_layout.addWidget(self.loc_list_view)
+        #Add the finished list view to the layout
+        legend_loc_adjustment_section_layout.addWidget(self.legend_loc_list_view)
 
         # Add margins and spacing to make it look good and push content to the top
-        loc_parameter_layout.setContentsMargins(10, 10, 10, 10)
+        legend_loc_adjustment_section_layout.setContentsMargins(10, 10, 10, 10)
 
-    def change_loc_position(self,index):
-        self.loc_argument_name = self.loc_position_model.data(index,Qt.ItemDataRole.DisplayRole)
-        self.update_parameter_argument()
+    def change_legend_loc(self,index):
+        #Get the index that matches the actual model
+        source_index = self.filter_proxy.mapToSource(index)
+        #With that index get the name of the item pressed on
+        self.legend_loc = self.legend_loc_model.data(source_index,Qt.ItemDataRole.DisplayRole)
+        #Update the legend loc with the new loc selected
+        self.update_legend_loc()
 
-    def update_parameter_argument(self):
+    def update_legend_loc(self):
+        #Check if the newest plot config exist or not
         db = self.plot_manager.get_db()
         if (db != []):
+            #If it does exist, then update the loc in the newest plot config
             self.plot_manager.update_legend("loc",self.loc_argument_name)
         else:
+            #If it doesn't exitst, copy the default plot config and update the loc there then add it to the plot config
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["loc"] = self.loc_argument_name
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        #Show the changes made to the graph
         self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
+        #Make the search bar lose focus when clicking somewhere else
         if not self.loc_search_bar.geometry().contains(event.position().toPoint()):
             self.loc_search_bar.clearFocus()
         super().mousePressEvent(event)
