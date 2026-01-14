@@ -779,78 +779,308 @@ class axis_title_button(QDialog):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
 
-        self.plot_manager = PlotManager()
         self.selected_graph = selected_graph
         self.graph_display = graph_display
         self.axis_title_created = False
+        self.current_axis = "x-axis"
 
+        #Available axis for customization
+        self.available_axis = ["x-axis","y-axis"]
+        
+        #Label parameters for customization
+        self.label_parameters = [
+            "label", "labelpad", "loc", "fontsize", "fontweight",
+            "fontstyle", "fontfamily", "fontname", "family", "style",
+            "weight", "size", "stretch", "variant", "color",
+            "backgroundcolor", "alpha", "horizontalalignment", "verticalalignment",
+            "multialignment", "rotation", "rotation_mode", "linespacing",
+            "in_layout", "bbox", "visible", "zorder", "clip_on",
+            "clip_box", "clip_path"
+        ]
+
+        #Available label parameter adjustment sections  
+        self.available_label_parameter_adjustment_sections = []
+
+        #Set the title for the window
         self.setWindowTitle("Enter the x/y axis titles")
-        self.setFixedHeight(150)
-        self.setFixedWidth(500)
+        
+        #Initialize the width and height of the window
+        self.setFixedWidth(900)
+        self.setFixedHeight(500)
 
+        #Customize the window with a background color
         self.setStyleSheet("""
             QDialog{
                background: qlineargradient(
-                    x1:0, y1:1,
-                    x2:0, y2:0,
-                    stop:0.02 rgba(131, 125, 255, 1),
-                    stop:0.36 rgba(97, 97, 255, 1),
-                    stop:0.66 rgba(31, 162, 255, 1),
-                    stop:1 rgba(0, 212, 255, 1)
+                    x1: 0, y1: 1, 
+                    x2: 0, y2: 0,
+                    stop: 0 rgba(25, 191, 188, 1),
+                    stop: 0.28 rgba(27, 154, 166, 1),
+                    stop: 0.65 rgba(78, 160, 242, 1),
+                    stop: 0.89 rgba(33, 218, 255, 1)
                 );
             }
         """)
 
-        self.x_axis_title_section = QLineEdit()
-        self.x_axis_title_section.setPlaceholderText("X-Axis Title")
-        self.x_axis_title_section.setObjectName("x_axis_title")
-        self.x_axis_title_section.setStyleSheet("""
-            QLineEdit#x_axis_title{
+        #-----Create the (x,y) axis button section-----
+        self.axis_button_section = QWidget()
+        self.axis_button_section.setObjectName("axis_button_section")
+        self.axis_button_section.setStyleSheet("""
+            QWidget#axis_button_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
                     stop:0.5 #f7f5fc,
                     stop:1 #f0f0ff
                 );
-                color: black;
-                font-size: 24pt;
                 border: 2px solid black;
                 border-radius: 16px;
             }
         """)
+        self.create_axis_button_section()
 
-        self.y_axis_title_section = QLineEdit() 
-        self.y_axis_title_section.setPlaceholderText("Y-Axis Title")
-        self.y_axis_title_section.setObjectName("y_axis_title")
-        self.y_axis_title_section.setStyleSheet("""
-            QLineEdit#y_axis_title{
+        #-----Create the (x,y) axis label parameter section-----
+        self.axis_label_parameter_section = QWidget()
+        self.axis_label_parameter_section.setObjectName("axis_label_parameter_section")
+        self.axis_label_parameter_section.setStyleSheet("""
+            QWidget#axis_label_parameter_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
                     stop:0.5 #f7f5fc,
                     stop:1 #f0f0ff
                 );
-                color: black;
-                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.create_axis_label_parameter_section()
+
+        #-----Adjustment section-----
+        self.axis_label_adjustment_section = QWidget()
+        self.axis_label_adjustment_section.setObjectName("axis_label_parameter_section")
+        self.axis_label_adjustment_section.setStyleSheet("""
+            QWidget#axis_label_parameter_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
                 border: 2px solid black;
                 border-radius: 16px;
             }
         """)
 
-        self.x_axis_title_section.setFixedHeight(60)
-        self.y_axis_title_section.setFixedHeight(60)
+        #-----Main Layout for the window-----
+        main_layout = QHBoxLayout(self)
+        main_layout.addWidget(self.axis_button_section,stretch=1)
+        main_layout.addWidget(self.axis_label_parameter_section,stretch=1)
+        main_layout.addWidget(self.axis_label_adjustment_section,stretch=1)
+        main_layout.setSpacing(20)
 
-        self.x_axis_title_section.textChanged.connect(self.x_axis_update_text)
-        self.y_axis_title_section.textChanged.connect(self.y_axis_update_text)
+        esc_shortcut = QShortcut(QKeySequence("esc"), self) 
+        esc_shortcut.activated.connect(self.close_dialog)
 
-        layout = QVBoxLayout(self)
-        layout.addWidget(self.x_axis_title_section)
-        layout.addWidget(self.y_axis_title_section)
-        layout.setContentsMargins(10,10,10,10)
-        layout.setSpacing(10)
+    def create_axis_button_section(self):
+        #Create the button layout for the axis
+        axis_button_section_layout = QVBoxLayout(self.axis_button_section)
 
-        close_shortcut = QShortcut(QKeySequence("Return"), self) 
-        close_shortcut.activated.connect(self.close_application)
+        #Create the list view and model that will be used to display the x and y axis
+        self.axis_button_list_view = QListView()
+        self.axis_button_model = QStringListModel(self.available_axis)
+
+        #Put the model onto the list view and ensure you can edit the items
+        self.axis_button_list_view.setModel(self.axis_button_model)
+        self.axis_button_list_view.setObjectName("axis_button_list_view")
+        self.axis_button_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        #Locate the first element in the model and select it on the list view
+        screen_index = self.axis_button_model.index(0)  
+        self.axis_button_list_view.setCurrentIndex(screen_index)
+
+        #Customizations for the list view
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        #Apply the customization to the list view
+        self.axis_button_list_view.setItemDelegate(CustomDelegate())
+
+        #Style the list view's background, item, selected item, and hovered item
+        self.axis_button_list_view.setStyleSheet("""
+            QListView#axis_button_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#axis_button_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#axis_button_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#axis_button_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        #Hide the scroll bars on the list view and control the spacing between each item
+        self.axis_button_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.axis_button_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.axis_button_list_view.setSpacing(3)
+
+        #Connect the list view to automatically update the axis choosen when clicked on 
+        self.axis_button_list_view.clicked.connect(self.change_axis)
+
+        #Add the list view to the layout
+        axis_button_section_layout.addWidget(self.axis_button_list_view)
+
+        # Add margins to make it look good
+        axis_button_section_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_axis_label_parameter_section(self):
+        #Create the axis label parameter layout
+        axis_label_parameter_section_layout = QVBoxLayout(self.axis_label_parameter_section)
+
+        #Create the list view and model that will be used to display the label parameters
+        self.axis_label_parameter_list_view = QListView()
+        self.axis_label_parameter_model = QStringListModel(self.label_parameters)
+
+        #Put the model onto the list view and ensure you can edit the items
+        self.axis_label_parameter_list_view.setModel(self.axis_label_parameter_model)
+        self.axis_label_parameter_list_view.setObjectName("axis_label_parameter_list_view")
+        self.axis_label_parameter_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        #Locate the first element in the model and select it on the list view
+        screen_index = self.axis_label_parameter_model.index(0)  
+        self.axis_label_parameter_list_view.setCurrentIndex(screen_index)
+
+        #Customizations for the list view
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        #Apply the customization to the list view
+        self.axis_label_parameter_list_view.setItemDelegate(CustomDelegate())
+
+        #Style the list view's background, item, selected item, and hovered item
+        self.axis_label_parameter_list_view.setStyleSheet("""
+            QListView#axis_label_parameter_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#axis_label_parameter_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#axis_label_parameter_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#axis_label_parameter_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        #Hide the scroll bars on the list view and control the spacing between each item
+        self.axis_label_parameter_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.axis_label_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.axis_label_parameter_list_view.setSpacing(3)
+
+        #Connect the list view to automatically update the axis choosen when clicked on 
+        self.axis_label_parameter_list_view.clicked.connect(self.change_parameter_screen)
+
+        #Add the list view to the layout
+        axis_label_parameter_section_layout.addWidget(self.axis_label_parameter_list_view)
+
+        # Add margins to make it look good
+        axis_label_parameter_section_layout.setContentsMargins(10, 10, 10, 10)
+
+    def change_axis(self,index):
+        self.current_axis = self.axis_button_model.data(index,Qt.ItemDataRole.DisplayRole)
+
+    def change_parameter_screen(self,index):
+        pass
 
     def x_axis_update_text(self):
         x_axis_title = self.x_axis_title_section.text().strip()
@@ -887,9 +1117,8 @@ class axis_title_button(QDialog):
             self.axis_title_created = True
         self.graph_display.show_graph()
 
-    def close_application(self):
+    def close_dialog(self):
         self.axis_title_created = False
-        self.close()
 
 class title_button(QDialog):
     def __init__(self,selected_graph,graph_display):
@@ -977,9 +1206,10 @@ class legend_visible_adjustment_section(QWidget):
         self.graph_display = graph_display
         self.plot_manager = PlotManager()
 
+        #Initialize the visible state so it can be adjusted later
         self.legend_visible_state = False
 
-        #Create a widget to display the grid visibility adjustment section and style it for consistency
+        #-----Create the legend visibility adjustment section-----
         self.legend_visibility_adjustment_section = QWidget()
         self.legend_visibility_adjustment_section.setObjectName("legend_visibility_adjustment_section")
         self.legend_visibility_adjustment_section.setStyleSheet("""
@@ -995,7 +1225,7 @@ class legend_visible_adjustment_section(QWidget):
             }
         """)
 
-        #Create a label to put on top of the QPushButton
+        #-----Create the legend visibility used for the button-----
         self.legend_visibility_label = QLabel("Legend On")
         self.legend_visibility_label.setWordWrap(True)
         self.legend_visibility_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -1013,7 +1243,7 @@ class legend_visible_adjustment_section(QWidget):
         """)
         self.legend_visibility_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
     
-        #Create a button to allow the user to switch grid visibility
+        #-----Create the legend visibility button-----
         self.legend_visibility_button = QPushButton()
         self.legend_visibility_button.setObjectName("legend_visibility_button")
         self.legend_visibility_button.setStyleSheet("""
@@ -1053,13 +1283,13 @@ class legend_visible_adjustment_section(QWidget):
         """)
         self.legend_visibility_button.setMinimumHeight(50)
         
-        #Put the label on top of the button we created for control grid visibility
+        #-----Apply the label onto the button-----
         legend_visibility_button_layout = QVBoxLayout(self.legend_visibility_button)
         legend_visibility_button_layout.addWidget(self.legend_visibility_label)
         legend_visibility_button_layout.setContentsMargins(0,0,0,0)
         legend_visibility_button_layout.setSpacing(0)
 
-        #Connect the grid visibility button to a function to switch between the two states
+        #-----Connect the button to automatically change the visibility state-----
         self.legend_visibility_button.clicked.connect(self.switch_legend_visibility)
 
         #Create a button layout for the grid visibility adjustment section
@@ -1080,25 +1310,30 @@ class legend_visible_adjustment_section(QWidget):
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0,0,0,0)
 
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-
     def switch_legend_visibility(self):
+        #Change the legend visible state to be the opposite of what it was
         self.legend_visible_state = not self.legend_visible_state
+        #Change the label displayed on the button to match the visibility state
         if (self.legend_visible_state == False):
             self.legend_visibility_label.setText("Legend On")
         else:
             self.legend_visibility_label.setText("Legend Off")
 
+        #Update the changes made to the plot config
         self.update_legend_visibility()
 
     def update_legend_visibility(self):
+        #Get the newest version of the plot config if it exist
         db = self.plot_manager.get_db()
         if (db != []):
+            #If it does exist, update the legend visibility state for the newest config
             self.plot_manager.update_legend("visible",self.legend_visible_state)
         else:
+            #If it doesn't exist, copy a default plot config and update it there then add it
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["visible"] = self.legend_visible_state
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        #Update the graph display so it displays the new changes
         self.graph_display.show_graph()
 
 class legend_label_adjustment_section(QWidget):
@@ -12052,6 +12287,7 @@ class legend_button(QDialog):
         #Place the buttons and the dataset next to each other side by side
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.legend_parameters_section,stretch=1)
+        self.layout.setContentsMargins(15,15,15,15)
         self.layout.addSpacing(10)
         
         #Add the parameters screen to the layout
@@ -15497,6 +15733,7 @@ class grid_button(QDialog):
         #Place the buttons and the dataset next to each other side by side
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.grid_parameters_section,stretch=1)
+        self.layout.setContentsMargins(15,15,15,15)
         self.layout.addSpacing(10)
         
         #Add the parameters screen to the layout
@@ -16580,7 +16817,7 @@ class hue_button(QDialog):
         main_layout.addWidget(self.hue_parameter_section,stretch=1)
         main_layout.addWidget(self.hue_adjustment_section,stretch=1)
         main_layout.setContentsMargins(15,15,15,15)
-        main_layout.setSpacing(10)
+        main_layout.setSpacing(20)
 
         #-----Shortcuts-----
         previous_screen_shortcut = QShortcut(QKeySequence("left"),self)
@@ -18251,7 +18488,7 @@ class style_button(QDialog):
         main_layout = QHBoxLayout(self)
         main_layout.addWidget(self.style_parameter_section,stretch=1)
         main_layout.addWidget(self.style_adjustment_section,stretch=1)
-        main_layout.setSpacing(10)
+        main_layout.setSpacing(20)
         main_layout.setContentsMargins(15,15,15,15)
 
         #-----Keyboard Shortcut-----
@@ -19032,7 +19269,7 @@ class size_button(QDialog):
         main_layout = QHBoxLayout(self)
         main_layout.addWidget(self.size_parameter_section,stretch=1)
         main_layout.addWidget(self.size_adjustment_section,stretch=1)
-        main_layout.setSpacing(10)
+        main_layout.setSpacing(20)
         main_layout.setContentsMargins(15,15,15,15)
 
         #-----Keyboard Shortcut-----
@@ -20195,7 +20432,7 @@ class palette_button(QDialog):
         main_layout.addWidget(self.palette_parameter_screen,stretch=1)
         main_layout.addWidget(self.palette_adjustment_section,stretch=1)
         main_layout.setContentsMargins(15,15,15,15)
-        main_layout.setSpacing(10)
+        main_layout.setSpacing(20)
 
         #-----Keyboard Shortcut-----
         close_screen_shortcut = QShortcut(QKeySequence("Esc"),self)
@@ -21913,7 +22150,7 @@ class alpha_button(QDialog):
         main_layout.addWidget(self.alpha_parameter_section,stretch=1)
         main_layout.addWidget(self.alpha_adjustment_section,stretch=1)
         main_layout.setContentsMargins(15,15,15,15)
-        main_layout.setSpacing(10)
+        main_layout.setSpacing(20)
 
         #-----Keyboard Shortcut-----
         self.esc_shortcut = QShortcut(QKeySequence("esc"),self)
@@ -22133,6 +22370,8 @@ class alpha_button(QDialog):
         if (float_alpha_value == ""):
             self.valid_float_alpha_widget.hide()
             self.invalid_float_alpha_widget.hide()
+            self.alpha = 1
+            self.update_alpha()
             return
 
         try:
@@ -22282,7 +22521,7 @@ class marker_button(QDialog):
         main_layout.addWidget(self.marker_parameter_section,stretch=1)
         main_layout.addWidget(self.marker_adjustment_section,stretch=1)
         main_layout.setContentsMargins(15,15,15,15)
-        main_layout.setSpacing(10)
+        main_layout.setSpacing(20)
 
         #-----Keyboard Shortcut-----
         self.esc_shortcut = QShortcut(QKeySequence("esc"),self)
@@ -22856,7 +23095,7 @@ class s_button(QDialog):
         main_layout.addWidget(self.s_parameter_section,stretch=1)
         main_layout.addWidget(self.s_adjustment_section,stretch=1)
         main_layout.setContentsMargins(15,15,15,15)
-        main_layout.setSpacing(10)
+        main_layout.setSpacing(20)
 
         #-----Keyboard Shortcut-----
         self.esc_shortcut = QShortcut(QKeySequence("esc"),self)
@@ -23603,7 +23842,7 @@ class edgecolor_button(QDialog):
         main_layout.addWidget(self.edgecolor_parameter_section,stretch=1)
         main_layout.addWidget(self.edgecolor_adjustment_section,stretch=1)
         main_layout.setContentsMargins(15,15,15,15)
-        main_layout.setSpacing(10)
+        main_layout.setSpacing(20)
 
         #-----Keyboard Shortcut-----
         close_screen_shortcut = QShortcut(QKeySequence("Esc"),self)
