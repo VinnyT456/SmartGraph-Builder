@@ -1629,16 +1629,105 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
         
-        self.plot_manager = PlotManager()
-        
         self.selected_graph = selected_graph
         self.graph_display = graph_display
+        self.plot_manager = PlotManager()
 
-        #Create a section to display the bbox section and style it
-        self.bbox_adjustment_section = QWidget()
-        self.bbox_adjustment_section.setObjectName("adjust_bbox_section")
-        self.bbox_adjustment_section.setStyleSheet("""
-            QWidget#adjust_bbox_section{
+        #Initialize the values for the bbox anchor parameter
+        self.x_value = 0
+        self.y_value = 0
+        self.width_value = 1
+        self.height_value = 1
+
+        #-----Create the Valid Input Widget-----
+        self.valid_bbox_input_widget = QWidget()
+        self.valid_bbox_input_widget.setObjectName("valid_bbox_input_widget")
+        self.valid_bbox_input_widget.setStyleSheet("""
+            QWidget#valid_bbox_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_bbox_input_label = QLabel("Valid Input")
+        self.valid_bbox_input_label.setWordWrap(True)
+        self.valid_bbox_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_bbox_input_label.setObjectName("valid_bbox_input_label")
+        self.valid_bbox_input_label.setStyleSheet("""
+            QLabel#valid_bbox_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_bbox_input_widget_layout = QVBoxLayout(self.valid_bbox_input_widget)
+        valid_bbox_input_widget_layout.addWidget(self.valid_bbox_input_label)
+        valid_bbox_input_widget_layout.setSpacing(0)
+        valid_bbox_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        #-----Create the Invalid Input Widget-----
+        self.invalid_bbox_input_widget = QWidget()
+        self.invalid_bbox_input_widget.setObjectName("invalid_bbox_input_widget")
+        self.invalid_bbox_input_widget.setStyleSheet("""
+            QWidget#invalid_bbox_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_bbox_input_label = QLabel("Invalid Input")
+        self.invalid_bbox_input_label.setWordWrap(True)
+        self.invalid_bbox_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_bbox_input_label.setObjectName("invalid_bbox_input_label")
+        self.invalid_bbox_input_label.setStyleSheet("""
+            QLabel#invalid_bbox_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        invalid_bbox_input_widget_layout = QVBoxLayout(self.invalid_bbox_input_widget_layout)
+        invalid_bbox_input_widget_layout.addWidget(self.invalid_bbox_input_label)
+        invalid_bbox_input_widget_layout.setSpacing(0)
+        invalid_bbox_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        #-----Set the height for both Validity Check Widgets-----
+        self.valid_input_widget.setMaximumHeight(50)
+        self.invalid_input_widget.setMaximumHeight(50)
+
+        #-----Hide both Validity Check Widgets-----
+        self.valid_input_widget.hide()
+        self.invalid_input_widget.hide()
+
+        #-----Create the legend bbox adjustment section-----
+        self.legend_bbox_adjustment_section = QWidget()
+        self.legend_bbox_adjustment_section.setObjectName("legend_bbox_adjustment_section")
+        self.legend_bbox_adjustment_section.setStyleSheet("""
+            QWidget#legend_bbox_adjustment_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -1661,14 +1750,22 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
+        self.create_legend_bbox_adjustment_section()
 
-        #Initialize the values for the bbox anchor parameter
-        self.x_value = 0
-        self.y_value = 0
-        self.width_value = 0
-        self.height_value = 0
+        #Add the bbox adjustment sections onto the main widget
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.bbox_adjustment_section)
+        
+        #Add the margins and spacings to make sure that it fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+    
+    def create_legend_bbox_adjustment_section(self):
+        #Initialize the bbox adjustment layout for storing the widgets
+        legend_bbox_adjustment_section_layout = QVBoxLayout(self.legend_bbox_adjustment_section)
 
-        #Create a line edit widget for each of the parameters
+        #Create a line edit widget for each parameter of bbox
+        #Initialize the placeholder text for the user
         self.x_input = QLineEdit()
         self.x_input.setPlaceholderText("X: ")
 
@@ -1681,92 +1778,11 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
         self.height_input = QLineEdit()
         self.height_input.setPlaceholderText("Height: ")
 
-        #Set the sizes of each line edit widget for consistency
+        #Set the size of each bbox parameter line edit
         self.x_input.setFixedHeight(60)
         self.y_input.setFixedHeight(60)
         self.width_input.setFixedHeight(60)
         self.height_input.setFixedHeight(60)
-
-        #Create two widget to display valid and invalid inputs
-        self.valid_input_widget = QWidget()
-        self.valid_input_widget.setObjectName("valid_input")
-        self.valid_input_widget.setStyleSheet("""
-            QWidget#valid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),   
-                    stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1)
-                    stop:1 rgba(180, 200, 255, 1)  
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.valid_input_label = QLabel("Valid Input")
-        self.valid_input_label.setWordWrap(True)
-        self.valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.valid_input_label.setObjectName("valid_input_label")
-        self.valid_input_label.setStyleSheet("""
-            QLabel#valid_input_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        valid_input_layout = QVBoxLayout(self.valid_input_widget)
-        valid_input_layout.addWidget(self.valid_input_label)
-        valid_input_layout.setSpacing(0)
-        valid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.invalid_input_widget = QWidget()
-        self.invalid_input_widget.setObjectName("invalid_input")
-        self.invalid_input_widget.setStyleSheet("""
-            QWidget#invalid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 100, 100, 1),   
-                    stop:0.4 rgba(255, 130, 120, 1), 
-                    stop:0.7 rgba(200, 90, 150, 1), 
-                    stop:1 rgba(180, 60, 140, 1)     
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.invalid_input_label = QLabel("Invalid Input")
-        self.invalid_input_label.setWordWrap(True)
-        self.invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.invalid_input_label.setObjectName("invalid_input_label")
-        self.invalid_input_label.setStyleSheet("""
-            QLabel#invalid_input_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        invalid_input_layout = QVBoxLayout(self.invalid_input_widget)
-        invalid_input_layout.addWidget(self.invalid_input_label)
-        invalid_input_layout.setSpacing(0)
-        invalid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.valid_input_widget.setMaximumHeight(50)
-        self.invalid_input_widget.setMaximumHeight(50)
-
-        self.valid_input_widget.hide()
-        self.invalid_input_widget.hide()
 
         #Connect each line edit to update whenever the user inputs something
         self.x_input.textChanged.connect(self.update_x)
@@ -1774,40 +1790,28 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
         self.width_input.textChanged.connect(self.update_width)
         self.height_input.textChanged.connect(self.update_height)
 
-        #Create a layout on the bbox adjustment section
-        bbox_section_layout = QVBoxLayout(self.bbox_adjustment_section)
-
         #Add the 4 line edit widgets to the layout and the 2 valid/invalid widgets
-        bbox_section_layout.addWidget(self.x_input)
-        bbox_section_layout.addWidget(self.y_input)
-        bbox_section_layout.addWidget(self.width_input)
-        bbox_section_layout.addWidget(self.height_input)
-        bbox_section_layout.addWidget(self.valid_input_widget)
-        bbox_section_layout.addWidget(self.invalid_input_widget)
+        legend_bbox_adjustment_section_layout.addWidget(self.x_input)
+        legend_bbox_adjustment_section_layout.addWidget(self.y_input)
+        legend_bbox_adjustment_section_layout.addWidget(self.width_input)
+        legend_bbox_adjustment_section_layout.addWidget(self.height_input)
+        legend_bbox_adjustment_section_layout.addWidget(self.valid_input_widget)
+        legend_bbox_adjustment_section_layout.addWidget(self.invalid_input_widget)
 
         #Add margins, spacing, and stretch to make it look good
-        bbox_section_layout.setContentsMargins(10,10,10,10)
-        bbox_section_layout.setSpacing(10)
-        bbox_section_layout.addStretch()
+        legend_bbox_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        legend_bbox_adjustment_section_layout.setSpacing(10)
+        legend_bbox_adjustment_section_layout.addStretch()
 
-        #Add the bbox adjustment sections onto the main widget
-        main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.bbox_adjustment_section)
-        
-        #Add the margins and spacings to make sure that it fits nicely
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0,0,0,0)
-
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-    
     def update_x(self):
         #Get the text input of x from the user and remove any excess spaces
         x_input = self.x_input.text().strip()
 
+        #If the user deletes their entry for x replace it with the default value
         if (x_input == ""):
             self.valid_input_widget.hide()
             self.invalid_input_widget.hide()
-            self.x_value = ""
+            self.x_value = 0
             self.update_bbox_anchor()
             return
 
@@ -1828,10 +1832,11 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
         #Get the text input of y from the user and remove any excess spaces
         y_input = self.y_input.text().strip()
 
+        #If the user deletes their entry for x replace it with the default value
         if (y_input == ""):
             self.valid_input_widget.hide()
             self.invalid_input_widget.hide()
-            self.y_value = ""
+            self.y_value = 0
             self.update_bbox_anchor()
             return
 
@@ -1852,10 +1857,11 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
         #Get the text input of the width from the user and remove any excess spaces
         width_input = self.width_input.text().strip()
 
+        #If the user deletes their entry for x replace it with the default value
         if (width_input == ""):
             self.valid_input_widget.hide()
             self.invalid_input_widget.hide()
-            self.width_value = ""
+            self.width_value = 1
             self.update_bbox_anchor()
             return
 
@@ -1876,10 +1882,11 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
         #Get the text input of the height input from the user and remove any excess spaces
         height_input = self.height_input.text().strip()
 
+        #If the user deletes their entry for x replace it with the default value
         if (height_input == ""):
             self.valid_input_widget.hide()
             self.invalid_input_widget.hide()
-            self.height_value = ""
+            self.height_value = 1
             self.update_bbox_anchor()
             return
         
@@ -1901,19 +1908,16 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
         db = self.plot_manager.get_db()
 
         #Reset the values that are empty to be the default again
-        if (self.x_value or self.y_value or self.width_value or self.height_value):
-            if (self.x_value == ""):
-                self.x_value = 0
-            if (self.y_value == ""):
-                self.y_value = 0
-            if (self.width_value == ""):
-                self.width_value = 1
-            if (self.height_value == ""):
-                self.height_value = 1
-            #Create the new_bbox_anchor with the current x,y,width,height values
-            new_bbox_anchor = (self.x_value,self.y_value,self.width_value,self.height_value)
-        else:
-            new_bbox_anchor = None
+        if (self.x_value == ""):
+            self.x_value = 0
+        if (self.y_value == ""):
+            self.y_value = 0
+        if (self.width_value == ""):
+            self.width_value = 1
+        if (self.height_value == ""):
+            self.height_value = 1
+        #Create the new_bbox_anchor with the current x,y,width,height values
+        new_bbox_anchor = (self.x_value,self.y_value,self.width_value,self.height_value)
 
         #If the json file is not empty then update it and if it is empty then create one with the new bbox anchor with it.
         if (db != []):
@@ -1925,6 +1929,7 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
         self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
+        #Clear the focus of the inputs if the cursor clicks somewhere else
         if not self.x_input.geometry().contains(event.position().toPoint()):
             self.x_input.clearFocus()
         if not self.y_input.geometry().contains(event.position().toPoint()):
