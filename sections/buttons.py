@@ -1944,12 +1944,97 @@ class legend_ncol_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
         
-        self.plot_manager = PlotManager()
-        
         self.selected_graph = selected_graph
         self.graph_display = graph_display
+        self.plot_manager = PlotManager()
 
-        #Create a section to display the ncol section and style it
+        #Initialize the ncol value to be 1
+        self.ncol_value = 1
+
+        #-----Create the Validity Check Widgets-----
+        self.valid_ncol_input_widget = QWidget()
+        self.valid_ncol_input_widget.setObjectName("valid_ncol_input_widget")
+        self.valid_ncol_input_widget.setStyleSheet("""
+            QWidget#valid_ncol_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_ncol_input_label = QLabel("Valid Input")
+        self.valid_ncol_input_widget.setWordWrap(True)
+        self.valid_ncol_input_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_ncol_input_widget.setObjectName("valid_ncol_input_widget")
+        self.valid_ncol_input_widget.setStyleSheet("""
+            QLabel#valid_ncol_input_widget{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        self.invalid_ncol_input_widget = QWidget()
+        self.invalid_ncol_input_widget.setObjectName("invalid_ncol_input_widget")
+        self.invalid_ncol_input_widget.setStyleSheet("""
+            QWidget#invalid_ncol_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_ncol_input_label = QLabel("Invalid Input")
+        self.invalid_ncol_input_label.setWordWrap(True)
+        self.invalid_ncol_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_ncol_input_label.setObjectName("invalid_ncol_input_label")
+        self.invalid_ncol_input_label.setStyleSheet("""
+            QLabel#invalid_ncol_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_ncol_input_widget_layout = QVBoxLayout(self.valid_ncol_input_widget)
+        valid_ncol_input_widget_layout.addWidget(self.valid_ncol_input_label)
+        valid_ncol_input_widget_layout.setSpacing(0)
+        valid_ncol_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        invalid_ncol_input_widget_layout = QVBoxLayout(self.invalid_ncol_input_widget)
+        invalid_ncol_input_widget_layout.addWidget(self.invalid_ncol_input_label)
+        invalid_ncol_input_widget_layout.setSpacing(0)
+        invalid_ncol_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        #-----Set the height for the widgets-----
+        self.valid_ncol_input_widget.setMaximumHeight(50)
+        self.invalid_ncol_input_widget.setMaximumHeight(50)
+
+        #-----Hide the Validity Check Widgets-----
+        self.valid_ncol_input_widget.hide()
+        self.invalid_ncol_input_widget.hide()
+
+        #-----Create the ncol adjustment section-----
         self.ncol_adjustment_section = QWidget()
         self.ncol_adjustment_section.setObjectName("adjust_ncol_section")
         self.ncol_adjustment_section.setStyleSheet("""
@@ -1976,9 +2061,20 @@ class legend_ncol_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
+        self.create_ncol_adjustment_section()
 
-        #Initialize the ncol value to be 0
-        self.ncol_value = 1
+        #Add the ncol adjustment section to the main widget
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.ncol_adjustment_section)
+        
+        #Set both the spacing and margins for the main widget to make sure it fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+    def create_ncol_adjustment_section(self):
+        ncol_adjustment_section_layout = QVBoxLayout(self.ncol_adjustment_section)
 
         #Create a line edit object for the user to input the ncol
         self.ncol_input = QLineEdit()
@@ -1990,112 +2086,21 @@ class legend_ncol_adjustment_section(QWidget):
         #Connect any changes with the text to an update function
         self.ncol_input.textChanged.connect(self.change_ncol)
 
-        #Create two widget to display valid and invalid inputs
-        self.valid_input_widget = QWidget()
-        self.valid_input_widget.setObjectName("valid_input")
-        self.valid_input_widget.setStyleSheet("""
-            QWidget#valid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),   
-                    stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1)
-                    stop:1 rgba(180, 200, 255, 1)  
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.valid_input_label = QLabel("Valid Input")
-        self.valid_input_label.setWordWrap(True)
-        self.valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.valid_input_label.setObjectName("valid_input_label")
-        self.valid_input_label.setStyleSheet("""
-            QLabel#valid_input_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        valid_input_layout = QVBoxLayout(self.valid_input_widget)
-        valid_input_layout.addWidget(self.valid_input_label)
-        valid_input_layout.setSpacing(0)
-        valid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.invalid_input_widget = QWidget()
-        self.invalid_input_widget.setObjectName("invalid_input")
-        self.invalid_input_widget.setStyleSheet("""
-            QWidget#invalid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 100, 100, 1),   
-                    stop:0.4 rgba(255, 130, 120, 1), 
-                    stop:0.7 rgba(200, 90, 150, 1), 
-                    stop:1 rgba(180, 60, 140, 1)     
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.invalid_input_label = QLabel("Invalid Input")
-        self.invalid_input_label.setWordWrap(True)
-        self.invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.invalid_input_label.setObjectName("invalid_input_label")
-        self.invalid_input_label.setStyleSheet("""
-            QLabel#invalid_input_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        invalid_input_layout = QVBoxLayout(self.invalid_input_widget)
-        invalid_input_layout.addWidget(self.invalid_input_label)
-        invalid_input_layout.setSpacing(0)
-        invalid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.valid_input_widget.setMaximumHeight(50)
-        self.invalid_input_widget.setMaximumHeight(50)
-
-        self.valid_input_widget.hide()
-        self.invalid_input_widget.hide()
-
-        #Create a layout for the ncol adjustment section and add the line edit object to it
-        ncol_section_layout = QVBoxLayout(self.ncol_adjustment_section)
-        ncol_section_layout.addWidget(self.ncol_input)
-        ncol_section_layout.addWidget(self.valid_input_widget)
-        ncol_section_layout.addWidget(self.invalid_input_widget)
+        #Add the line edit widget and the two validity check widgets to the layout
+        ncol_adjustment_section_layout.addWidget(self.ncol_input)
+        ncol_adjustment_section_layout.addWidget(self.valid_input_widget)
+        ncol_adjustment_section_layout.addWidget(self.invalid_input_widget)
     
         #Add the margins, spacing, and stretch to the layout to make it look good
-        ncol_section_layout.setContentsMargins(10,10,10,10)
-        ncol_section_layout.setSpacing(10)
-        ncol_section_layout.addStretch()
+        ncol_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        ncol_adjustment_section_layout.setSpacing(10)
+        ncol_adjustment_section_layout.addStretch()
 
-        #Add the ncol adjustment section to the main widget
-        main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.ncol_adjustment_section)
-        
-        #Set both the spacing and margins for the main widget to make sure it fits nicely
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0,0,0,0)
-
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-    
     def change_ncol(self):
         #Extract the ncol input from the user and remove any excess text from it
         ncol_input = self.ncol_input.text().strip()
 
+        #Change ncol to the default value if the user deletes their entry
         if (ncol_input == ""):
             self.valid_input_widget.hide()
             self.invalid_input_widget.hide()
@@ -2129,6 +2134,7 @@ class legend_ncol_adjustment_section(QWidget):
         self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
+        #Clear the focus of the input widget if the cursor clicks somewhere else
         if not self.ncol_input.geometry().contains(event.position().toPoint()):
             self.ncol_input.clearFocus()
         super().mousePressEvent(event)
