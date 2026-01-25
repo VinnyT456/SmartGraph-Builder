@@ -2623,15 +2623,17 @@ class legend_title_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
         
-        self.plot_manager = PlotManager()
-        
         self.selected_graph = selected_graph
         self.graph_display = graph_display
+        self.plot_manager = PlotManager()
 
-        #Create a section to display the legend title section and style it
-        self.title_adjustment_section = QWidget()
-        self.title_adjustment_section.setObjectName("adjust_title_section")
-        self.title_adjustment_section.setStyleSheet("""
+        #Initialize the value for the title
+        self.title_value = None
+
+        #-----Create the Legend title adjustment section-----
+        self.legend_title_adjustment_section = QWidget()
+        self.legend_title_adjustment_section.setObjectName("adjust_title_section")
+        self.legend_title_adjustment_section.setStyleSheet("""
             QWidget#adjust_title_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
@@ -2655,28 +2657,7 @@ class legend_title_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-
-        #Initialize the value for the title
-        self.title_value = None
-
-        #Create a QLineEdit to allow the user to input the title and add a placeholder text to it
-        self.title_input = QLineEdit()
-        self.title_input.setPlaceholderText("title: ")
-        
-        #Set the height of the object for consistency
-        self.title_input.setFixedHeight(60)
-
-        #Connect the object to a function to allow it to update automatically
-        self.title_input.textChanged.connect(self.change_title)
-
-        #Create a layout for the title section and add the line edit object to the layout
-        title_section_layout = QVBoxLayout(self.title_adjustment_section)
-        title_section_layout.addWidget(self.title_input)
-
-        #Add the margins, spacing, and stretch to the layout to make it look good
-        title_section_layout.setContentsMargins(10,10,10,10)
-        title_section_layout.setSpacing(10)
-        title_section_layout.addStretch()
+        self.create_legend_title_adjustment_section()
 
         #Create a main layout for the main widget and add the title adjustment section to it
         main_layout = QVBoxLayout(self)
@@ -2685,12 +2666,32 @@ class legend_title_adjustment_section(QWidget):
         #Add the spacing and margin to the main widget to ensure it fits nicely
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0,0,0,0)
-    
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
-    def change_title(self):
+    def create_legend_title_adjustment_section(self):
+        #Create a layout for the legend title adjustment section 
+        legend_title_adjustment_section_layout = QVBoxLayout(self.legend_title_adjustment_section)
+
+        #Create a QLineEdit to allow the user to input the title and add a placeholder text to it
+        self.legend_title_input = QLineEdit()
+        self.titlegend_title_inputle_input.setPlaceholderText("Title: ")
+        
+        #Set the height of the object for consistency
+        self.legend_title_input.setFixedHeight(60)
+
+        #Connect the object to a function to allow it to update automatically
+        self.legend_title_input.textChanged.connect(self.change_legend_title)
+
+        #Create a layout for the title section and add the line edit object to the layout
+        legend_title_adjustment_section_layout.addWidget(self.legend_title_input)
+
+        #Add the margins, spacing, and stretch to the layout to make it look good
+        legend_title_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        legend_title_adjustment_section_layout.setSpacing(10)
+        legend_title_adjustment_section_layout.addStretch()
+
+    def change_legend_title(self):
         #Extract the title from the user input and remove any excess spaces.
-        self.title_value = self.title_input.text().strip()
+        self.title_value = self.legend_title_input.text().strip()
 
         #Change the title to None if it's an empty string
         if (self.title_value == ""):
