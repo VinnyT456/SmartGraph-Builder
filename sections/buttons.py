@@ -2142,26 +2142,108 @@ class legend_ncol_adjustment_section(QWidget):
 class legend_fontsize_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
-        
-        self.plot_manager = PlotManager()
-
+    
         self.selected_graph = selected_graph
         self.graph_display = graph_display
+        self.plot_manager = PlotManager()
 
         #Initialize the options for the fixed fontsize
         self.fixed_fontsizes = ["xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large"]
         
+        #Available pages in this section
+        self.available_pages = ["Fixed Fontsize","Custom Fontsize"]
+
         #Set the initial fontsize to be none
         self.current_fontsize = None
-    
-        #Use current page to control going back and forth on pages and idx to control which font size is chosen
-        self.current_page = 0
 
-        #Create a new widget for the fontsize adjustment section and style it to match the other ones
-        self.fontsize_adjustment_section = QWidget()
-        self.fontsize_adjustment_section.setObjectName("adjust_fontsize_section")
-        self.fontsize_adjustment_section.setStyleSheet("""
-            QWidget#adjust_fontsize_section{
+        #-----Create the Validity Check Widgets-----
+        self.valid_custom_fontsize_input_widget = QWidget()
+        self.valid_custom_fontsize_input_widget.setObjectName("valid_custom_fontsize_input_widget")
+        self.valid_custom_fontsize_input_widget.setStyleSheet("""
+            QWidget#valid_custom_fontsize_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_custom_fontsize_input_label = QLabel("Valid Custom Fontsize")
+        self.valid_custom_fontsize_input_label.setWordWrap(True)
+        self.valid_custom_fontsize_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_custom_fontsize_input_label.setObjectName("valid_custom_fontsize_input_label")
+        self.valid_custom_fontsize_input_label.setStyleSheet("""
+            QLabel#valid_custom_fontsize_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_custom_fontsize_input_widget_layout = QVBoxLayout(self.valid_custom_fontsize_input_widget)
+        valid_custom_fontsize_input_widget_layout.addWidget(self.valid_custom_fontsize_input_label)
+        valid_custom_fontsize_input_widget_layout.setSpacing(0)
+        valid_custom_fontsize_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        self.invalid_custom_fontsize_input_widget = QWidget()
+        self.invalid_custom_fontsize_input_widget.setObjectName("invalid_custom_fontsize_input_widget")
+        self.invalid_custom_fontsize_input_widget.setStyleSheet("""
+            QWidget#invalid_custom_fontsize_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_custom_fontsize_input_label = QLabel("Invalid Custom Fontsize")
+        self.invalid_custom_fontsize_input_label.setWordWrap(True)
+        self.invalid_custom_fontsize_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_custom_fontsize_input_label.setObjectName("invalid_custom_fontsize_input_label")
+        self.invalid_custom_fontsize_input_label.setStyleSheet("""
+            QLabel#invalid_custom_fontsize_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        invalid_custom_fontsize_input_widget_layout = QVBoxLayout(self.invalid_custom_fontsize_input_widget)
+        invalid_custom_fontsize_input_widget_layout.addWidget(self.invalid_custom_fontsize_input_label)
+        invalid_custom_fontsize_input_widget_layout.setSpacing(0)
+        invalid_custom_fontsize_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        #-----Set the height of the Validity Check Widgets-----
+        self.valid_custom_fontsize_input_widget.setMaximumHeight(50)
+        self.invalid_custom_fontsize_input_widget.setMaximumHeight(50)
+
+        #-----Hide the Validity Check Widgets-----
+        self.valid_custom_fontsize_input_widget.hide()
+        self.invalid_custom_fontsize_input_widget.hide()
+
+        #-----Create the Fontsize Adjustment Section-----
+        self.legend_fontsize_adjustment_section = QWidget()
+        self.legend_fontsize_adjustment_section.setObjectName("legend_fontsize_adjustment_section")
+        self.legend_fontsize_adjustment_section.setStyleSheet("""
+            QWidget#legend_fontsize_adjustment_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -2172,103 +2254,30 @@ class legend_fontsize_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
+        self.create_legend_fontsize_adjustment_section()
 
-        #Create a button for getting to the screen to input the custom fontsize and customize the button
-        self.custom_fontsize_button = QPushButton("Custom Fontsize")
-        self.custom_fontsize_button.setObjectName("custom_fontsize")
-        self.custom_fontsize_button.setStyleSheet("""
-            QPushButton#custom_fontsize{
+        #-----Create the Fixed Fontsize Section-----
+        self.legend_fixed_fontsize_adjustment_section = QWidget()
+        self.legend_fixed_fontsize_adjustment_section.setObjectName("legend_fixed_fontsize_adjustment_section")
+        self.legend_fixed_fontsize_adjustment_section.setStyleSheet("""
+            QWidget#legend_fixed_fontsize_adjustment_section{
                 background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
                 );
                 border: 2px solid black;
                 border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#custom_fontsize:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
             }
         """)
+        self.create_legend_fixed_fontsize_adjustment_section()
+        self.legend_fixed_fontsize_adjustment_section.hide()
 
-        #Create a button for getting to the screen for selecting the fixed fontsizes and customize the button
-        self.fixed_fontsize_button = QPushButton("Fixed Fontsize")
-        self.fixed_fontsize_button.setObjectName("fixed_fontsize")
-        self.fixed_fontsize_button.setStyleSheet("""
-            QPushButton#fixed_fontsize{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#fixed_fontsize:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        #Connect both the custom and fixed fontsize buttons to their associated function
-        self.custom_fontsize_button.clicked.connect(self.change_to_custom_fontsize_screen)
-        self.fixed_fontsize_button.clicked.connect(self.change_to_fixed_fontsize_screen)
-
-        #Create a layout to store all the buttons in
-        button_layout = QVBoxLayout(self.fontsize_adjustment_section)
-        button_layout.addWidget(self.custom_fontsize_button)
-        button_layout.addWidget(self.fixed_fontsize_button)
-
-        #Add margins, spacing, and stretch to make the layout look nice.
-        button_layout.setContentsMargins(10,10,10,10)
-        button_layout.setSpacing(5)
-        button_layout.addStretch()
-
-        #Create the custom fontsize adjustment screen
-        self.custom_fontsize_screen = QWidget()
-        self.custom_fontsize_screen.setObjectName("custom_fontsize_screen")
-        self.custom_fontsize_screen.setStyleSheet("""
+        #-----Create the Custom Fontsize Section-----
+        self.legend_custom_fontsize_screen = QWidget()
+        self.legend_custom_fontsize_screen.setObjectName("custom_fontsize_screen")
+        self.legend_custom_fontsize_screen.setStyleSheet("""
             QWidget#custom_fontsize_screen{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
@@ -2280,28 +2289,11 @@ class legend_fontsize_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-        self.create_custom_fontsize_screen()
-        self.custom_fontsize_screen.hide()
+        self.create_legend_custom_fontsize_adjustment_section()
+        self.legend_custom_fontsize_screen.hide()
 
-        #Create the fixed fontsize adjustment screen
-        self.fixed_fontsize_screen = QWidget()
-        self.fixed_fontsize_screen.setObjectName("fixed_fontsize_screen")
-        self.fixed_fontsize_screen.setStyleSheet("""
-            QWidget#fixed_fontsize_screen{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-        self.create_fixed_fontsize_screen()
-        self.fixed_fontsize_screen.hide()
-
-        self.available_screen = [self.fontsize_adjustment_section,self.custom_fontsize_screen,self.fixed_fontsize_screen]
+        self.available_screen = [self.legend_fontsize_adjustment_section,self.legend_custom_fontsize_screen,self.legend_fixed_fontsize_screen]
+        self.current_screen_idx = 0
 
         #Create a layout for the main widget and add the adjustment section to it
         main_layout = QVBoxLayout(self)
@@ -2313,22 +2305,213 @@ class legend_fontsize_adjustment_section(QWidget):
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0,0,0,0)
 
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-
         #Create shortcuts to go back and forth between the screens.
         go_back_shortcut = QShortcut(QKeySequence("left"), self) 
         go_back_shortcut.activated.connect(self.change_to_original_screen)
 
-    def create_custom_fontsize_screen(self):
-        custom_fontsize_layout = QVBoxLayout(self.custom_fontsize_screen)
+    def create_legend_fontsize_adjustment_section(self):
+        #Created the legend fontsize adjustment section layout
+        legend_fontsize_adjustment_section_layout = QVBoxLayout(self.legend_fontsize_adjustment_section)
+    
+        #Create the list view and model to display the available pages
+        self.legend_fontsize_adjustment_section_list_view = QListView()
+        self.legend_fontsize_adjustment_section_model = QStringListModel(self.available_pages)
+
+        #Set the page names that will be displayed and block editting the column names
+        self.legend_fontsize_adjustment_section_list_view.setModel(self.legend_fontsize_adjustment_section_model)
+        self.legend_fontsize_adjustment_section_list_view.setObjectName("legend_fontsize_adjustment_section_list_view")
+        self.legend_fontsize_adjustment_section_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        #Get the first page in list view and select it
+        source_index = self.column_button_model.index(0)  
+        self.legend_fontsize_adjustment_section_model.setCurrentIndex(source_index)
+
+        #Modification to make the list view look better
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        #Apply the modifications to the list view
+        self.legend_fontsize_adjustment_section_list_view.setItemDelegate(CustomDelegate())
+
+        #Style the list view with the looks of the item, selected, and hover
+        self.legend_fontsize_adjustment_section_list_view.setStyleSheet("""
+            QListView#legend_fontsize_adjustment_section_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#legend_fontsize_adjustment_section_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#legend_fontsize_adjustment_section_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#legend_fontsize_adjustment_section_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        #Control what the scroll bar looks like and spacing between items
+        self.legend_fontsize_adjustment_section_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.legend_fontsize_adjustment_section_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.legend_fontsize_adjustment_section_list_view.setSpacing(3)
+
+        #Connect the list view to automatically change to the selected page when clicked on
+        self.legend_fontsize_adjustment_section_list_view.clicked.connect(self.change_current_page)
+
+        #Add the customized list view to the column button screen
+        legend_fontsize_adjustment_section_layout.addWidget(self.legend_fontsize_adjustment_section_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        legend_fontsize_adjustment_section_layout.setContentsMargins(10, 10, 10, 10)
+        legend_fontsize_adjustment_section_layout.setSpacing(10)
+        legend_fontsize_adjustment_section_layout.addStretch()
+
+    def create_legend_fixed_fontsize_adjustment_section(self):
+        #Created the fixed fontsize adjustment section layout
+        legend_fixed_fontsize_adjustment_section_layout = QVBoxLayout(self.legend_fixed_fontsize_adjustment_section)
+    
+        #Created the list view and model with the available fixed fontsize arguments
+        self.legend_fixed_fontsize_list_view = QListView()
+        self.legend_fixed_fontsize_model = QStringListModel(self.fixed_fontsizes)
+
+        #Set the model for list view to display the fixed fontsizes and block the possibility of editting them
+        self.legend_fixed_fontsize_list_view.setModel(self.legend_fixed_fontsize_model)
+        self.legend_fixed_fontsize_list_view.setObjectName("legend_fixed_fontsize_list_view")
+        self.legend_fixed_fontsize_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        
+        #Create customization for the list view
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        #Apply the customization on the list view
+        self.legend_fixed_fontsize_list_view.setItemDelegate(CustomDelegate())
+
+        #Style the fixed fontsize background, item, selected and hover effect
+        self.legend_fixed_fontsize_list_view.setStyleSheet("""
+            QListView#legend_fixed_fontsize_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#legend_fixed_fontsize_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#legend_fixed_fontsize_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#legend_fixed_fontsize_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        #Hide the horizon and vertical scrollbars and add spacing between the items in the list view
+        self.legend_fixed_fontsize_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.legend_fixed_fontsize_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.legend_fixed_fontsize_list_view.setSpacing(3)
+
+        #Automatically update the font size based on what the user clicks on
+        self.legend_fixed_fontsize_list_view.clicked.connect(self.change_fixed_fontsize)
+
+        #Add the list view to the layout to display it
+        legend_fixed_fontsize_adjustment_section_layout.addWidget(self.legend_fixed_fontsize_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        legend_fixed_fontsize_adjustment_section_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_legend_custom_fontsize_adjustment_section(self):
+        #Create a layout for the custom fontsize section
+        legend_custom_fontsize_adjustment_section_layout = QVBoxLayout(self.legend_custom_fontsize_adjustment_section)
 
         #Create a QLineEdit object to allow the user input the custom fontsize
         #Give it a placeholder text to make sure that the user knows what to input and style the button
-        self.custom_fontsize_input = QLineEdit()
-        self.custom_fontsize_input.setPlaceholderText("Fontsize:")
-        self.custom_fontsize_input.setObjectName("custom_fontsize_input")
-        self.custom_fontsize_input.setStyleSheet("""
-            QLineEdit#custom_fontsize_input{
+        self.legend_custom_fontsize_input = QLineEdit()
+        self.legend_custom_fontsize_input.setPlaceholderText("Fontsize:")
+        self.legend_custom_fontsize_input.setObjectName("legend_custom_fontsize_input")
+        self.legend_custom_fontsize_input.setStyleSheet("""
+            QLineEdit#legend_custom_fontsize_input{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -2343,201 +2526,51 @@ class legend_fontsize_adjustment_section(QWidget):
         """)
 
         #Set the height for the QLineEdit for consistency
-        self.custom_fontsize_input.setFixedHeight(60) 
+        self.legend_custom_fontsize_input.setFixedHeight(60) 
         
         #Connect the QLineEdit object with a update to automatically update the user inputs
-        self.custom_fontsize_input.textChanged.connect(self.change_custom_fontsize)
-
-        #Create two widget to display valid and invalid inputs
-        self.valid_input_widget = QWidget()
-        self.valid_input_widget.setObjectName("valid_input")
-        self.valid_input_widget.setStyleSheet("""
-            QWidget#valid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),   
-                    stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1)
-                    stop:1 rgba(180, 200, 255, 1)  
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.valid_input_label = QLabel("Valid Input")
-        self.valid_input_label.setWordWrap(True)
-        self.valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.valid_input_label.setObjectName("valid_input_label")
-        self.valid_input_label.setStyleSheet("""
-            QLabel#valid_input_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        valid_input_layout = QVBoxLayout(self.valid_input_widget)
-        valid_input_layout.addWidget(self.valid_input_label)
-        valid_input_layout.setSpacing(0)
-        valid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.invalid_input_widget = QWidget()
-        self.invalid_input_widget.setObjectName("invalid_input")
-        self.invalid_input_widget.setStyleSheet("""
-            QWidget#invalid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 100, 100, 1),   
-                    stop:0.4 rgba(255, 130, 120, 1), 
-                    stop:0.7 rgba(200, 90, 150, 1), 
-                    stop:1 rgba(180, 60, 140, 1)     
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.invalid_input_label = QLabel("Invalid Input")
-        self.invalid_input_label.setWordWrap(True)
-        self.invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.invalid_input_label.setObjectName("invalid_input_label")
-        self.invalid_input_label.setStyleSheet("""
-            QLabel#invalid_input_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        invalid_input_layout = QVBoxLayout(self.invalid_input_widget)
-        invalid_input_layout.addWidget(self.invalid_input_label)
-        invalid_input_layout.setSpacing(0)
-        invalid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.valid_input_widget.setMaximumHeight(50)
-        self.invalid_input_widget.setMaximumHeight(50)
-
-        self.valid_input_widget.hide()
-        self.invalid_input_widget.hide()
+        self.legend_custom_fontsize_input.textChanged.connect(self.change_custom_fontsize)
 
         #Add the QLineEdit object to the layout and add the margins, spacing, and stretch to make it look good
-        custom_fontsize_layout.addWidget(self.custom_fontsize_input)
-        custom_fontsize_layout.addWidget(self.valid_input_widget)
-        custom_fontsize_layout.addWidget(self.invalid_input_widget)
-        custom_fontsize_layout.setContentsMargins(10,10,10,10)
-        custom_fontsize_layout.setSpacing(10)
-        custom_fontsize_layout.addStretch()
+        legend_custom_fontsize_adjustment_section_layout.addWidget(self.legend_custom_fontsize_input)
+        legend_custom_fontsize_adjustment_section_layout.addWidget(self.valid_custom_fontsize_input_widget)
+        legend_custom_fontsize_adjustment_section_layout.addWidget(self.invalid_custom_fontsize_input_widget)
+        legend_custom_fontsize_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        legend_custom_fontsize_adjustment_section_layout.setSpacing(10)
+        legend_custom_fontsize_adjustment_section_layout.addStretch()
 
-    def create_fixed_fontsize_screen(self):
-        fixed_fontsize_screen_layout = QVBoxLayout(self.fixed_fontsize_screen)
-    
-        self.fixed_fontsize_list_view = QListView()
-        self.fixed_fontsize_model = QStringListModel(self.fixed_fontsizes)
+    def change_current_page(self,index):
+        page_name = self.legend_fontsize_adjustment_section_model.data(index,Qt.ItemDataRole.DisplayRole)
 
-        self.fixed_fontsize_list_view.setModel(self.fixed_fontsize_model)
-        self.fixed_fontsize_list_view.setObjectName("fixed_fontsize_list_view")
-        self.fixed_fontsize_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        class CustomDelegate(QStyledItemDelegate):
-            def paint(self, painter, option, index):
-                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
-                font = QFont("SF Pro Display", 24)
-                font.setWeight(600)
-                option.font = font
-                super().paint(painter, option, index)
-        
-        self.fixed_fontsize_list_view.setItemDelegate(CustomDelegate())
+        if (page_name == "Fixed Fontsize"):
+            self.change_to_fixed_fontsize_screen()
 
-        self.fixed_fontsize_list_view.setStyleSheet("""
-            QListView#fixed_fontsize_list_view{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: transparent;
-                border-radius: 16px;
-            }
-            QListView#fixed_fontsize_list_view::item {
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                color: black;
-                min-height: 41px;
-            }
-            QListView#fixed_fontsize_list_view::item:selected {
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                color: black;
-                min-height: 41px;
-            }
-            QListView#fixed_fontsize_list_view::item:hover {
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                color: black;
-                min-height: 41px;
-            }
-        """)
-
-        self.fixed_fontsize_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.fixed_fontsize_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.fixed_fontsize_list_view.setSpacing(3)
-
-        self.fixed_fontsize_list_view.clicked.connect(self.change_fixed_fontsize)
-
-        fixed_fontsize_screen_layout.addWidget(self.fixed_fontsize_list_view)
-
-        # Add margins and spacing to make it look good and push content to the top
-        fixed_fontsize_screen_layout.setContentsMargins(10, 10, 10, 10)
+        if (page_name == "Custom Fontsize"):
+            self.change_to_custom_fontsize_screen()
 
     def change_to_original_screen(self):
-        self.available_screen[self.current_page].hide()
-        self.current_page = 0
-        self.fontsize_adjustment_section.show()
-
-    def change_to_custom_fontsize_screen(self):
-        self.available_screen[self.current_page].hide()
-        self.current_page = 1
-        self.custom_fontsize_screen.show()
+        #Hide the current screen, change the screen index, show the new screen 
+        self.available_screen[self.current_screen_idx].hide()
+        self.current_screen_idx = 0
+        self.available_screen[self.current_screen_idx].show()
 
     def change_to_fixed_fontsize_screen(self):
-        self.available_screen[self.current_page].hide()
-        self.current_page = 2
-        self.fixed_fontsize_screen.show()
+        #Hide the current screen, change the screen index, show the new screen 
+        self.available_screen[self.current_screen_idx].hide()
+        self.current_screen_idx = 1
+        self.available_screen[self.current_screen_idx].show()
+
+    def change_to_custom_fontsize_screen(self):
+        #Hide the current screen, change the screen index, show the new screen 
+        self.available_screen[self.current_screen_idx].hide()
+        self.current_screen_idx = 2
+        self.available_screen[self.current_screen_idx].show()
 
     def change_custom_fontsize(self):
+        #Get the input the user enters and remove any spaces
         custom_fontsize_input = self.custom_fontsize_input.text().strip()
 
+        #Hide the validity check widgets and reset the current fonsit
         if (custom_fontsize_input == ""):
             self.valid_input_widget.hide()
             self.invalid_input_widget.hide()
@@ -2546,20 +2579,24 @@ class legend_fontsize_adjustment_section(QWidget):
             return
 
         try:
+            #turn the fontsize into an integer and check if it's valid or not
             custom_fontsize_value = int(custom_fontsize_input)
             if (0 >= custom_fontsize_value):
                 raise Exception
             self.valid_input_widget.show()
             self.invalid_input_widget.hide()
         except:
+            #If the input isn't valid then display the invalid widget
             self.valid_input_widget.hide()
             self.invalid_input_widget.show()
         else:
+            #Update the current fontsize on the plot config
             self.current_fontsize = custom_fontsize_value
             self.update_fontsize()
 
     def change_fixed_fontsize(self,index):
-        self.current_fontsize = self.fixed_fontsize_model.data(index,Qt.ItemDataRole.DisplayRole)
+        #Find the name of the element in the model based on the index given then update it
+        self.current_fontsize = self.legend_fixed_fontsize_model.data(index,Qt.ItemDataRole.DisplayRole)
         self.update_fontsize()
 
     def update_fontsize(self):
@@ -2577,6 +2614,7 @@ class legend_fontsize_adjustment_section(QWidget):
         self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
+        #Remove the focus of the custom fontsize line edit if the cursor presses somewhere else
         if not self.custom_fontsize_input.geometry().contains(event.position().toPoint()):
             self.custom_fontsize_input.clearFocus()
         super().mousePressEvent(event)
