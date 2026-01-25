@@ -3185,20 +3185,19 @@ class legend_title_fontsize_adjustment_section(QWidget):
 class legend_frameon_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
-        
-        self.plot_manager = PlotManager()
 
         self.selected_graph = selected_graph
         self.graph_display = graph_display
+        self.plot_manager = PlotManager()
         
         #Initialize the frameon state
         self.frameon_state = True
         
         #Create a widget to display the frameon adjustment section and style it for consistency
-        self.frameon_adjustment_section = QWidget()
-        self.frameon_adjustment_section.setObjectName("frameon_adjustment_section")
-        self.frameon_adjustment_section.setStyleSheet("""
-            QWidget#frameon_adjustment_section{
+        self.legend_frameon_adjustment_section = QWidget()
+        self.legend_frameon_adjustment_section.setObjectName("legend_frameon_adjustment_section")
+        self.legend_frameon_adjustment_section.setStyleSheet("""
+            QWidget#legend_frameon_adjustment_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -3209,7 +3208,17 @@ class legend_frameon_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
+        self.create_legend_frameon_adjustment_section()
 
+        #Create a layout for the main widget and store the frameon adjustment section in
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.frameon_adjustment_section)
+
+        #Add the spacing and margins to make sure that the section fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+    def create_legend_frameon_adjustment_section(self):
         #Create a label to put on top of the QPushButton
         self.frameon_label = QLabel("Frameon")
         self.frameon_label.setWordWrap(True)
@@ -3269,42 +3278,35 @@ class legend_frameon_adjustment_section(QWidget):
         self.frameon_button.setMinimumHeight(45)
         
         #Put the label on top of the button we created for control frameon
-        frameon_button_layout = QVBoxLayout(self.frameon_button)
-        frameon_button_layout.addWidget(self.frameon_label)
-        frameon_button_layout.setContentsMargins(0,0,0,0)
-        frameon_button_layout.setSpacing(0)
+        legend_frameon_button_layout = QVBoxLayout(self.frameon_button)
+        legend_frameon_button_layout.addWidget(self.frameon_label)
+        legend_frameon_button_layout.setContentsMargins(0,0,0,0)
+        legend_frameon_button_layout.setSpacing(0)
 
         #Connect the frameon button to a function to switch between the two states
         self.frameon_button.clicked.connect(self.switch_frameon_state)
 
-        #Create a button layout for the frameon adjustment section
-        button_layout = QVBoxLayout(self.frameon_adjustment_section)
+        #Create a layout for the frameon adjustment section
+        legend_frameon_adjustment_section_layout = QVBoxLayout(self.legend_frameon_adjustment_section)
 
         #Add the frameon button to the layout
-        button_layout.addWidget(self.frameon_button)
+        legend_frameon_adjustment_section_layout.addWidget(self.frameon_button)
 
         #Set the spacing, margins, and stretch to make it look good
-        button_layout.setSpacing(0)
-        button_layout.setContentsMargins(10,10,10,10)
-        button_layout.addStretch()
+        legend_frameon_adjustment_section_layout.setSpacing(0)
+        legend_frameon_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        legend_frameon_adjustment_section_layout.addStretch()
 
-        #Create a layout for the main widget and store the frameon adjustment section in
-        main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.frameon_adjustment_section)
-
-        #Add the spacing and margins to make sure that the section fits nicely
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0,0,0,0)
-
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-
-    def switch_frameon_state(self):
+    def change_frameon_state(self):
         #Change the frameon_state to be the opposite of the current state and update it in the json
         self.frameon_state = not self.frameon_state
         if (self.frameon_state):
-            self.frameon_label.setText("Frameon")
-        else:
+            #Set the text to Frameoff if the state is true
             self.frameon_label.setText("Frameoff")
+        else:
+            #Set the text to Frameon if the state is false
+            self.frameon_label.setText("Frameon")
+        #Update the frameon state on the plot config
         self.update_frameon()
 
     def update_frameon(self):
