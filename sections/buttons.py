@@ -2717,220 +2717,25 @@ class legend_title_adjustment_section(QWidget):
 class legend_title_fontsize_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
-        
-        self.plot_manager = PlotManager()
 
         self.selected_graph = selected_graph
         self.graph_display = graph_display
+        self.plot_manager = PlotManager()
         
+        #Types of legend fontsize 
+        self.legend_fontsize_types = ["Fixed Fontsize","Custom Fontsize"]
+
         #Initialize the fixed fontsizes
         self.fixed_title_fontsizes = ["xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large"]
         
         #Initialize the fontsize to be None in the beginning
         self.current_title_fontsize = None
 
-        #Initialize the current page to be 0 and the index to be 0
-        self.current_page = 0
-
-        #Create a widget for the title fontsize adjustment section and style it.
-        self.title_fontsize_adjustment_section = QWidget()
-        self.title_fontsize_adjustment_section.setObjectName("adjust_title_fontsize_section")
-        self.title_fontsize_adjustment_section.setStyleSheet("""
-            QWidget#adjust_title_fontsize_section{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        #Create a QPushButton for switching to the custom title fontsize screen and customize it
-        self.custom_title_fontsize_button = QPushButton("Custom Title Fontsize")
-        self.custom_title_fontsize_button.setObjectName("custom_title_fontsize")
-        self.custom_title_fontsize_button.setStyleSheet("""
-            QPushButton#custom_title_fontsize{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#custom_title_fontsize:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        #Create the Custom Title Fontsize Screen
-        self.custom_title_fontsize_screen = QWidget()
-        self.custom_title_fontsize_screen.setObjectName("custom_title_fontsize_screen")
-        self.custom_title_fontsize_screen.setStyleSheet("""
-            QWidget#custom_title_fontsize_screen{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-        self.create_custom_title_fontsize_screen()
-        self.custom_title_fontsize_screen.hide()
-
-        #Create a QPushButton for switching to the fixed fontsize screen and customize it
-        self.fixed_title_fontsize_button = QPushButton("Fixed Title Fontsize")
-        self.fixed_title_fontsize_button.setObjectName("fixed_title_fontsize")
-        self.fixed_title_fontsize_button.setStyleSheet("""
-            QPushButton#fixed_title_fontsize{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#fixed_title_fontsize:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        #Create the Fixed Title Fontsize Screen
-        self.fixed_title_fontsize_screen = QWidget()
-        self.fixed_title_fontsize_screen.setObjectName("fixed_title_fontsize_screen")
-        self.fixed_title_fontsize_screen.setStyleSheet("""
-            QWidget#fixed_title_fontsize_screen{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-        self.create_fixed_title_fontsize_screen()
-        self.fixed_title_fontsize_screen.hide()
-
-        #Store all the available screens in a list
-        self.available_screens = [self.title_fontsize_adjustment_section,self.custom_title_fontsize_screen,self.fixed_title_fontsize_screen]
-
-        #Connect the two buttons to a button that will switch to the associated screen either custom or fixed fontsize
-        self.custom_title_fontsize_button.clicked.connect(self.change_to_custom_title_fontsize)
-        self.fixed_title_fontsize_button.clicked.connect(self.change_to_fixed_title_fontsize)
-
-        #Create a layout for the title fontsize adjustment section
-        title_fontsize_layout = QVBoxLayout(self.title_fontsize_adjustment_section)
-
-        #Add all the buttons to the layout which will be added to the title fontsize adjustment section
-        title_fontsize_layout.addWidget(self.custom_title_fontsize_button)
-        title_fontsize_layout.addWidget(self.fixed_title_fontsize_button)
-
-        #Add the margins, spacing, and stretch to the layout so that the buttons will look good on the widget
-        title_fontsize_layout.setContentsMargins(10,10,10,10)
-        title_fontsize_layout.setSpacing(5)
-        title_fontsize_layout.addStretch()
-
-        #Create a layout for the main wdiget and add the title fontsize adjustment section to it
-        main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.title_fontsize_adjustment_section)
-        main_layout.addWidget(self.custom_title_fontsize_screen)
-        main_layout.addWidget(self.fixed_title_fontsize_screen)
-
-        #Add the spacing and margins to make sure that the section fits nicely to the main widget
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0,0,0,0)
-
-        #Create two shortcuts to allow the user to switch between screens
-        go_back_shortcut = QShortcut(QKeySequence("left"), self) 
-        go_back_shortcut.activated.connect(self.change_to_original_screen)
-
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-
-    def create_custom_title_fontsize_screen(self):
-        custom_title_fontsize_layout = QVBoxLayout(self.custom_title_fontsize_screen)
-
-        #Create a QLineEdit object to allow the user input the custom fontsize
-        #Give it a placeholder text to make sure that the user knows what to input and style the button
-        self.custom_title_fontsize_input = QLineEdit()
-        self.custom_title_fontsize_input.setPlaceholderText("Fontsize:")
-        self.custom_title_fontsize_input.setObjectName("custom_title_fontsize_input")
-        self.custom_title_fontsize_input.setStyleSheet("""
-            QLineEdit#custom_title_fontsize_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                color: black;
-                font-size: 24pt;
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        #Set the height for the QLineEdit for consistency
-        self.custom_title_fontsize_input.setFixedHeight(60) 
-        
-        #Connect the QLineEdit object with a update to automatically update the user inputs
-        self.custom_title_fontsize_input.textChanged.connect(self.change_custom_title_fontsize)
-
-        #Create two widget to display valid and invalid inputs
-        self.valid_input_widget = QWidget()
-        self.valid_input_widget.setObjectName("valid_input")
-        self.valid_input_widget.setStyleSheet("""
-            QWidget#valid_input{
+        #-----Validity Check Widgets-----
+        self.valid_custom_fontsize_input_widget = QWidget()
+        self.valid_custom_fontsize_input_widget.setObjectName("valid_custom_fontsize_input_widget")
+        self.valid_custom_fontsize_input_widget.setStyleSheet("""
+            QWidget#valid_custom_fontsize_input_widget{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 rgba(94, 255, 234, 1),   
@@ -2943,12 +2748,12 @@ class legend_title_fontsize_adjustment_section(QWidget):
             }
         """)
 
-        self.valid_input_label = QLabel("Valid Input")
-        self.valid_input_label.setWordWrap(True)
-        self.valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.valid_input_label.setObjectName("valid_input_label")
-        self.valid_input_label.setStyleSheet("""
-            QLabel#valid_input_label{
+        self.valid_custom_fontsize_input_label = QLabel("Valid Custom Fontsize")
+        self.valid_custom_fontsize_input_label.setWordWrap(True)
+        self.valid_custom_fontsize_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_custom_fontsize_input_label.setObjectName("valid_custom_fontsize_input_label")
+        self.valid_custom_fontsize_input_label.setStyleSheet("""
+            QLabel#valid_custom_fontsize_input_label{
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
@@ -2959,15 +2764,15 @@ class legend_title_fontsize_adjustment_section(QWidget):
             }
         """)
 
-        valid_input_layout = QVBoxLayout(self.valid_input_widget)
-        valid_input_layout.addWidget(self.valid_input_label)
-        valid_input_layout.setSpacing(0)
-        valid_input_layout.setContentsMargins(0,0,0,0)
+        valid_custom_fontsize_input_widget_layout = QVBoxLayout(self.valid_custom_fontsize_input_widget)
+        valid_custom_fontsize_input_widget_layout.addWidget(self.valid_custom_fontsize_input_label)
+        valid_custom_fontsize_input_widget_layout.setSpacing(0)
+        valid_custom_fontsize_input_widget_layout.setContentsMargins(0,0,0,0)
 
-        self.invalid_input_widget = QWidget()
-        self.invalid_input_widget.setObjectName("invalid_input")
-        self.invalid_input_widget.setStyleSheet("""
-            QWidget#invalid_input{
+        self.invalid_custom_fontsize_input_widget = QWidget()
+        self.invalid_custom_fontsize_input_widget.setObjectName("valid_custom_fontsize_input_widget")
+        self.invalid_custom_fontsize_input_widget.setStyleSheet("""
+            QWidget#valid_custom_fontsize_input_widget{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 rgba(255, 100, 100, 1),   
@@ -2980,12 +2785,12 @@ class legend_title_fontsize_adjustment_section(QWidget):
             }
         """)
 
-        self.invalid_input_label = QLabel("Invalid Input")
-        self.invalid_input_label.setWordWrap(True)
-        self.invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.invalid_input_label.setObjectName("invalid_input_label")
-        self.invalid_input_label.setStyleSheet("""
-            QLabel#invalid_input_label{
+        self.invalid_custom_fontsize_input_label = QLabel("Invalid Custom Fontsize")
+        self.invalid_custom_fontsize_input_label.setWordWrap(True)
+        self.invalid_custom_fontsize_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_custom_fontsize_input_label.setObjectName("invalid_custom_fontsize_input_label")
+        self.invalid_custom_fontsize_input_label.setStyleSheet("""
+            QLabel#invalid_custom_fontsize_input_label{
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
@@ -2996,26 +2801,185 @@ class legend_title_fontsize_adjustment_section(QWidget):
             }
         """)
 
-        invalid_input_layout = QVBoxLayout(self.invalid_input_widget)
-        invalid_input_layout.addWidget(self.invalid_input_label)
-        invalid_input_layout.setSpacing(0)
-        invalid_input_layout.setContentsMargins(0,0,0,0)
+        invalid_custom_fontsize_input_widget_layout = QVBoxLayout(self.invalid_custom_fontsize_input_widget)
+        invalid_custom_fontsize_input_widget_layout.addWidget(self.invalid_custom_fontsize_input_label)
+        invalid_custom_fontsize_input_widget_layout.setSpacing(0)
+        invalid_custom_fontsize_input_widget_layout.setContentsMargins(0,0,0,0)
 
-        self.valid_input_widget.setMaximumHeight(50)
-        self.invalid_input_widget.setMaximumHeight(50)
+        #-----Set the height for the validity check widgets-----
+        self.valid_custom_fontsize_input_widget.setMaximumHeight(50)
+        self.invalid_custom_fontsize_input_widget.setMaximumHeight(50)
 
-        self.valid_input_widget.hide()
-        self.invalid_input_widget.hide()
+        #-----Hide all the validity check widgets-----
+        self.valid_custom_fontsize_input_widget.hide()
+        self.invalid_custom_fontsize_input_widget.hide()
 
-        #Add the QLineEdit object to the layout and add the margins, spacing, and stretch to make it look good
-        custom_title_fontsize_layout.addWidget(self.custom_title_fontsize_input)
-        custom_title_fontsize_layout.addWidget(self.valid_input_widget)
-        custom_title_fontsize_layout.addWidget(self.invalid_input_widget)
-        custom_title_fontsize_layout.setContentsMargins(10,10,10,10)
-        custom_title_fontsize_layout.setSpacing(10)
-        custom_title_fontsize_layout.addStretch()
+        #-----Create the legend title fontsize adjustment section-----
+        self.legend_title_fontsize_adjustment_section = QWidget()
+        self.legend_title_fontsize_adjustment_section.setObjectName("legend_title_fontsize_adjustment_section")
+        self.legend_title_fontsize_adjustment_section.setStyleSheet("""
+            QWidget#legend_title_fontsize_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.create_legend_title_fontsize_adjustment_section()
 
-    def create_fixed_title_fontsize_screen(self):
+        #-----Create the Legend Fixed Title Fontsize Screen-----
+        self.fixed_title_fontsize_section = QWidget()
+        self.fixed_title_fontsize_section.setObjectName("fixed_title_fontsize_section")
+        self.fixed_title_fontsize_section.setStyleSheet("""
+            QWidget#fixed_title_fontsize_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.create_fixed_title_fontsize_section()
+        self.fixed_title_fontsize_section.hide()
+
+        #-----Create the Legend Custom Title Fontsize Screen----
+        self.custom_title_fontsize_section = QWidget()
+        self.custom_title_fontsize_section.setObjectName("custom_title_fontsize_section")
+        self.custom_title_fontsize_section.setStyleSheet("""
+            QWidget#custom_title_fontsize_screen{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.create_custom_title_fontsize_section()
+        self.custom_title_fontsize_section.hide()
+
+        #-----Available Screens-----
+        self.available_screens = [self.legend_title_fontsize_adjustment_section,
+                                self.fixed_title_fontsize_section,
+                                self.custom_title_fontsize_section]
+        self.current_screen_idx = 0
+
+        #-----Add the sections onto the main widget-----
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.legend_title_fontsize_adjustment_section)
+        main_layout.addWidget(self.fixed_title_fontsize_screen)
+        main_layout.addWidget(self.custom_title_fontsize_screen)
+
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+        #-----Keyboard Shortcut-----
+        go_back_shortcut = QShortcut(QKeySequence("left"), self) 
+        go_back_shortcut.activated.connect(self.change_to_original_screen)
+
+    def create_legend_title_fontsize_adjustment_section(self):
+        #Creat the legend title fontsize adjustment section layout
+        legend_title_fontsize_adjustment_section_layout = QVBoxLayout(self.legend_title_fontsize_adjustment_section)
+    
+        #Create the list view and model for displaying the type of fontsize available
+        self.legend_title_fontsize_parameter_list_view = QListView()
+        self.legend_title_fontsize_parameter_model = QStringListModel(self.legend_fontsize_types)
+
+        #Apply the model onto the list view and disable editting for the list view
+        self.legend_title_fontsize_parameter_list_view.setModel(self.legend_title_fontsize_parameter_model)
+        self.legend_title_fontsize_parameter_list_view.setObjectName("legend_title_fontsize_parameter_list_view")
+        self.legend_title_fontsize_parameter_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        
+        #Customization for the list view
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        #Apply the customization to the list view
+        self.legend_title_fontsize_parameter_list_view.setItemDelegate(CustomDelegate())
+
+        #Style the list view's background, item, and selected and hover effects
+        self.legend_title_fontsize_parameter_list_view.setStyleSheet("""
+            QListView#legend_title_fontsize_parameter_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#legend_title_fontsize_parameter_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#legend_title_fontsize_parameter_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#legend_title_fontsize_parameter_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        #Hide the scroll bars and control the spacing between each item
+        self.legend_title_fontsize_parameter_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.legend_title_fontsize_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.legend_title_fontsize_parameter_list_view.setSpacing(3)
+
+        #Make the list view automatically switch sections based on item clicked
+        self.legend_title_fontsize_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+
+        #Add the list view to the layout
+        legend_title_fontsize_adjustment_section_layout.addWidget(self.fixed_title_fontsize_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        legend_title_fontsize_adjustment_section_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_fixed_title_fontsize_section(self):
         fixed_title_fontsize_screen_layout = QVBoxLayout(self.fixed_title_fontsize_screen)
     
         self.fixed_title_fontsize_list_view = QListView()
@@ -3098,25 +3062,76 @@ class legend_title_fontsize_adjustment_section(QWidget):
         # Add margins and spacing to make it look good and push content to the top
         fixed_title_fontsize_screen_layout.setContentsMargins(10, 10, 10, 10)
 
+    def create_custom_title_fontsize_section(self):
+        custom_title_fontsize_layout = QVBoxLayout(self.custom_title_fontsize_screen)
+
+        #Create a QLineEdit object to allow the user input the custom fontsize
+        #Give it a placeholder text to make sure that the user knows what to input and style the button
+        self.custom_title_fontsize_input = QLineEdit()
+        self.custom_title_fontsize_input.setPlaceholderText("Fontsize:")
+        self.custom_title_fontsize_input.setObjectName("custom_title_fontsize_input")
+        self.custom_title_fontsize_input.setStyleSheet("""
+            QLineEdit#custom_title_fontsize_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        #Set the height for the QLineEdit for consistency
+        self.custom_title_fontsize_input.setFixedHeight(60) 
+        
+        #Connect the QLineEdit object with a update to automatically update the user inputs
+        self.custom_title_fontsize_input.textChanged.connect(self.change_custom_title_fontsize)
+
+        #Add the QLineEdit object to the layout and add the margins, spacing, and stretch to make it look good
+        custom_title_fontsize_layout.addWidget(self.custom_title_fontsize_input)
+        custom_title_fontsize_layout.addWidget(self.valid_custom_fontsize_input_widget)
+        custom_title_fontsize_layout.addWidget(self.invalid_custom_fontsize_input_widget)
+        custom_title_fontsize_layout.setContentsMargins(10,10,10,10)
+        custom_title_fontsize_layout.setSpacing(10)
+        custom_title_fontsize_layout.addStretch()
+
+    def change_current_parameter_screen(self,index):
+        screen_name = self.legend_title_fontsize_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
+
+        if (screen_name == "Fixed Fontsize"):
+            self.change_to_fixed_title_fontsize_screen()
+
+        if (screen_name == "Custom Fontsize"):
+            self.change_to_custom_title_fontsize_screen()
+
     def change_to_original_screen(self):
-        self.available_screens[self.current_page].hide()
-        self.current_page = 0
-        self.title_fontsize_adjustment_section.show()
+        #Hide the current screen, change the screen idx, and display the original screen
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 0
+        self.available_screens[self.current_screen_idx].show()
 
-    def change_to_custom_title_fontsize(self):
-        self.available_screens[self.current_page].hide()
-        self.current_page = 1
-        self.custom_title_fontsize_screen.show()
+    def change_to_fixed_title_fontsize_screen(self):
+        #Hide the current screen, change the screen idx, and display the fixed fontsize screen
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 1
+        self.available_screens[self.current_screen_idx].show()
 
-    def change_to_fixed_title_fontsize(self):
-        self.available_screens[self.current_page].hide()
-        self.current_page = 2
-        self.fixed_title_fontsize_screen.show()
+    def change_to_custom_title_fontsize_screen(self):
+        #Hide the current screen, change the screen idx, and display the custom fontsize screen
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 2
+        self.available_screens[self.current_screen_idx].show()
 
     def change_custom_title_fontsize(self):
         #Extract the fontsize from the user input
         current_title_fontsize_value = self.custom_title_fontsize_input.text().strip()
 
+        #If the fontsize the user inputs is blank then hide the validity check widgets
+        #Set the title fontsize to default and update it
         if (current_title_fontsize_value == ""):
             self.valid_input_widget.hide()
             self.invalid_input_widget.hide()
@@ -3126,6 +3141,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
 
         #Check if the input is valid and only update if it's valid
         try:
+            #turn the fontsize into an integer and check if it's valid or not and updates it if valid
             current_title_fontsize_value = int(current_title_fontsize_value)
             if (current_title_fontsize_value <= 0):
                 raise Exception
@@ -3134,10 +3150,12 @@ class legend_title_fontsize_adjustment_section(QWidget):
             self.current_title_fontsize = current_title_fontsize_value
             self.update_title_fontsize()
         except:
+            #If the input isn't valid then display the invalid widget
             self.valid_input_widget.hide()
             self.invalid_input_widget.show()
 
     def change_fixed_title_fontsize(self,index):
+        #Changes the current title fontsize and updates the fontsize on the plot config
         self.current_title_fontsize = self.fixed_title_fontsize_model.data(index, Qt.ItemDataRole.DisplayRole)
         self.update_title_fontsize()
 
@@ -3154,11 +3172,13 @@ class legend_title_fontsize_adjustment_section(QWidget):
         self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
+        #Clear the focus if the cursor presses on somewhere other than the line edit
         if not self.custom_title_fontsize_input.geometry().contains(event.position().toPoint()):
             self.custom_title_fontsize_input.clearFocus()
         super().mousePressEvent(event)
 
     def showEvent(self, event):
+        #Always start at the original screen
         super().showEvent(event)
         self.change_to_original_screen()
 
