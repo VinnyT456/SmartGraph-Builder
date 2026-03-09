@@ -2,8 +2,9 @@ from PyQt6.QtCore import QItemSelectionModel, QSortFilterProxyModel, QStringList
 from PyQt6.QtGui import QFont, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QListWidget, QListWidgetItem, QPushButton, 
-    QSizePolicy, QTableView, QWidget, QVBoxLayout, QStyledItemDelegate, QSizePolicy, QWidgetAction
+    QTableView, QWidget, QVBoxLayout, QStyledItemDelegate, QSizePolicy
 )
+from fsspec.caching import P
 from sections import plot_manager
 from sections.dataset import PrepareDataset
 from sections.plot_manager import PlotManager
@@ -27,7 +28,7 @@ plot_json = {
         },
         "title":None,
         "legend":{
-            "visible":False,
+            "visible":True,
             "label":"__nolegend__",
             "loc":"best",
             "bbox_to_anchor":None,
@@ -105,9 +106,12 @@ class x_axis_button(QDialog):
         #Set the title of the window
         self.setWindowTitle("Select the x-axis")
         
+        #Set the object name of the QDialog window
+        self.setObjectName("x_axis_screen")
+        
         #Style the Dialog window for selecting the x-axis
         self.setStyleSheet("""
-            QDialog{
+            QDialog#x_axis_screen{
                background: qlineargradient(
                     x1: 0, y1: 1, 
                     x2: 0, y2: 0,
@@ -138,6 +142,7 @@ class x_axis_button(QDialog):
                 border-radius: 16px;
             }
         """)
+
         self.create_button_section()
         self.update_x_axis()
 
@@ -204,21 +209,23 @@ class x_axis_button(QDialog):
         self.layout.addWidget(self.data_section,stretch=1)
 
         #Create a shortcut for the user to go to the previous column by press up
-        up_shortcut = QShortcut(QKeySequence("up"), self) 
+        up_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Up), self) 
+        up_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         up_shortcut.activated.connect(self.columns_go_up)  
 
         #Create a shortcut for the user to go to the next column by press down
-        down_shortcut = QShortcut(QKeySequence("down"), self) 
+        down_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Down), self) 
+        down_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         down_shortcut.activated.connect(self.columns_go_down)
 
-        return_shortcut = QShortcut(QKeySequence("return"),self)
-        return_shortcut.activated.connect(self.close_dialog)
-
-        esc_shortcut = QShortcut(QKeySequence("esc"),self)
+        #Create shortcuts for the user to exit
+        esc_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape), self)
+        esc_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         esc_shortcut.activated.connect(self.close_dialog)
 
-        #Make sure this gets drawn.
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        return_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Return), self)
+        return_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
+        return_shortcut.activated.connect(self.close_dialog)
 
     def create_button_section(self):  
         #Create the button layout for the columns 
@@ -417,13 +424,13 @@ class x_axis_button(QDialog):
 
         #Get the new usable columns and reset the column index
         self.usable_columns = self.find_usable_columns()
-        self.current_column_index = 0
 
         #In the case that there are usable columns display the first one and update the model
         if self.usable_columns:
             self.display_dataset()
 
             self.column_button_model.setStringList(self.usable_columns)
+            self.column_name = self.usable_columns[self.current_column_index]
             column_index = self.column_button_model.index(self.current_column_index)  
             self.column_button_list_view.setCurrentIndex(column_index)
 
@@ -451,10 +458,13 @@ class y_axis_button(QDialog):
         self.current_column_index = 0
         self.get_dataset()
         self.usable_columns = self.find_usable_columns()
+
+        #Set the object name of the QDialog window
+        self.setObjectName("y_axis_screen")
         
         #Style the Dialog window for selecting the x-axis
         self.setStyleSheet("""
-            QDialog{
+            QDialog#y_axis_screen{
                background: qlineargradient(
                     x1: 0, y1: 1, 
                     x2: 0, y2: 0,
@@ -554,18 +564,23 @@ class y_axis_button(QDialog):
         self.layout.addWidget(self.data_section,stretch=1)
 
         #Create a shortcut for the user to go to the previous column by press up
-        up_shortcut = QShortcut(QKeySequence("up"), self) 
+        up_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Up), self) 
+        up_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         up_shortcut.activated.connect(self.columns_go_up)  
 
         #Create a shortcut for the user to go to the next column by press down
-        down_shortcut = QShortcut(QKeySequence("down"), self) 
+        down_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Down), self) 
+        down_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         down_shortcut.activated.connect(self.columns_go_down)
 
-        return_shortcut = QShortcut(QKeySequence("return"),self)
-        return_shortcut.activated.connect(self.close_dialog)
-
-        esc_shortcut = QShortcut(QKeySequence("esc"),self)
+        #Create shortcuts for the user to exit
+        esc_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape), self)
+        esc_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         esc_shortcut.activated.connect(self.close_dialog)
+
+        return_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Return), self)
+        return_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
+        return_shortcut.activated.connect(self.close_dialog)
 
     def create_button_section(self):  
         #Create the button layout for the columns
@@ -759,13 +774,13 @@ class y_axis_button(QDialog):
 
         #Get the new usable columns and reset the column index
         self.usable_columns = self.find_usable_columns()
-        self.current_column_index = 0
 
         #In the case that there are usable columns display the first one and update the model
         if self.usable_columns:
             self.display_dataset()
 
             self.column_button_model.setStringList(self.usable_columns)
+            self.column_name = self.usable_columns[self.current_column_index]
             column_index = self.column_button_model.index(self.current_column_index)  
             self.column_button_list_view.setCurrentIndex(column_index)
 
@@ -803,6 +818,9 @@ class axis_title_button(QDialog):
 
         #Set the title for the window
         self.setWindowTitle("Enter the x/y axis titles")
+
+        #Set the object name for the window
+        self.setWindowTitle("axis_title_screen")
         
         #Initialize the width and height of the window
         self.setFixedWidth(900)
@@ -879,7 +897,8 @@ class axis_title_button(QDialog):
         main_layout.addWidget(self.axis_label_adjustment_section,stretch=1)
         main_layout.setSpacing(20)
 
-        esc_shortcut = QShortcut(QKeySequence("esc"), self) 
+        esc_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape), self) 
+        esc_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         esc_shortcut.activated.connect(self.close_dialog)
 
     def create_axis_button_section(self):
@@ -1120,6 +1139,7 @@ class axis_title_button(QDialog):
     def close_dialog(self):
         self.axis_title_created = False
 
+#TODO Turn this into one similar to the axis title one
 class title_button(QDialog):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
@@ -1127,13 +1147,17 @@ class title_button(QDialog):
         self.plot_manager = PlotManager()
         self.selected_graph = selected_graph
         self.title_created = False
-
         self.graph_display = graph_display
 
+        #Set the title and the dimension for the window
         self.setWindowTitle("Enter the Title for the graph")
         self.setFixedHeight(80)
         self.setFixedWidth(500)
 
+        #Set the object name for the window
+        self.setObjectName("title_screen")
+
+        #Set the style sheet for the window
         self.setStyleSheet("""
             QDialog{
                background: qlineargradient(
@@ -1174,7 +1198,8 @@ class title_button(QDialog):
         layout.setContentsMargins(10,10,10,10)
         layout.setSpacing(10)
 
-        close_shortcut = QShortcut(QKeySequence("Return"), self) 
+        close_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape), self) 
+        close_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         close_shortcut.activated.connect(self.close_application)
 
     def update_title(self):
@@ -1207,7 +1232,10 @@ class legend_visible_adjustment_section(QWidget):
         self.plot_manager = PlotManager()
 
         #Initialize the visible state so it can be adjusted later
-        self.legend_visible_state = False
+        self.legend_visible_state = True
+
+        #Set the object name for the widget
+        self.setObjectName("legend_visible_adjustment_section")
 
         #-----Create the legend visibility adjustment section-----
         self.legend_visibility_adjustment_section = QWidget()
@@ -1224,6 +1252,7 @@ class legend_visible_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
+        self.create_legend_visibility_adjustment_section()
 
         #Create a layout for the main widget and store the legend visibility adjustment section in
         main_layout = QVBoxLayout(self)
@@ -1237,8 +1266,8 @@ class legend_visible_adjustment_section(QWidget):
         #Create a layout for the legend visibility adjustment section
         legend_visibility_adjustment_section_layout = QVBoxLayout(self.legend_visibility_adjustment_section)
 
-        #-----Create the legend visibility used for the button-----
-        self.legend_visibility_label = QLabel("Legend On")
+        #-----Create the legend visibility label used for the button-----
+        self.legend_visibility_label = QLabel("Legend Off")
         self.legend_visibility_label.setWordWrap(True)
         self.legend_visibility_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.legend_visibility_label.setObjectName("legend_visibility_label")
@@ -1309,11 +1338,14 @@ class legend_visible_adjustment_section(QWidget):
         legend_visibility_adjustment_section_layout.setContentsMargins(10,10,10,10)
         legend_visibility_adjustment_section_layout.addStretch()
 
+    def change_to_original_screen(self):
+        pass
+
     def change_legend_visibility(self):
         #Change the legend visible state to be the opposite of what it was
         self.legend_visible_state = not self.legend_visible_state
         #Change the label displayed on the button to match the visibility state
-        if (self.legend_visible_state == False):
+        if (not self.legend_visible_state):
             self.legend_visibility_label.setText("Legend On")
         else:
             self.legend_visibility_label.setText("Legend Off")
@@ -1346,6 +1378,9 @@ class legend_label_adjustment_section(QWidget):
 
         #Initialize the ncol value to be 0
         self.label_value = "__nolegend__"
+
+        #Set the object name for the widget
+        self.setObjectName("legend_label_adjustment_section")
 
         #-----Create the legend label adjustment section-----
         self.legend_label_adjustment_section = QWidget()
@@ -1406,6 +1441,9 @@ class legend_label_adjustment_section(QWidget):
         legend_label_adjustment_section_layout.setContentsMargins(10,10,10,10)
         legend_label_adjustment_section_layout.addStretch()
 
+    def change_to_original_screen(self):
+        pass
+
     def change_legend_label(self):
         #Extract the ncol input from the user and remove any excess text from it
         self.label_value = self.label_input.text().strip()
@@ -1448,6 +1486,9 @@ class legend_loc_adjustment_section(QWidget):
                                     "lower right","right","center left","center right",
                                     "lower center","upper center","center"]
 
+        #Set the object name for the widget
+        self.setObjectName("legend_loc_adjustment_section")
+
         #-----Create the legend loc adjustment section-----
         self.legend_loc_adjustment_section = QWidget()
         self.legend_loc_adjustment_section.setObjectName("legend_loc_adjustment_section")
@@ -1467,7 +1508,7 @@ class legend_loc_adjustment_section(QWidget):
 
         #Add the legend loc adjustment section to the main widget to display on the other QDialog
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.loc_adjustment_section)
+        main_layout.addWidget(self.legend_loc_adjustment_section)
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0,0,0,0)
 
@@ -1505,7 +1546,7 @@ class legend_loc_adjustment_section(QWidget):
 
         #Setup a filter that only shows results that match what the user types based on the loc model
         self.filter_proxy = QSortFilterProxyModel()
-        self.filter_proxy.setSourceModel(self.loc_position_model)
+        self.filter_proxy.setSourceModel(self.legend_loc_model)
         self.filter_proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive) 
         self.filter_proxy.setFilterKeyColumn(0)  
 
@@ -1597,6 +1638,9 @@ class legend_loc_adjustment_section(QWidget):
         # Add margins and spacing to make it look good and push content to the top
         legend_loc_adjustment_section_layout.setContentsMargins(10, 10, 10, 10)
 
+    def change_to_original_screen(self):
+        pass
+
     def change_legend_loc(self,index):
         #Get the index that matches the actual model
         source_index = self.filter_proxy.mapToSource(index)
@@ -1610,7 +1654,7 @@ class legend_loc_adjustment_section(QWidget):
         db = self.plot_manager.get_db()
         if (db != []):
             #If it does exist, then update the loc in the newest plot config
-            self.plot_manager.update_legend("loc",self.loc_argument_name)
+            self.plot_manager.update_legend("loc",self.legend_loc)
         else:
             #If it doesn't exitst, copy the default plot config and update the loc there then add it to the plot config
             plot_parameters = plot_json[self.selected_graph].copy()
@@ -1638,6 +1682,9 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
         self.y_value = 0
         self.width_value = 1
         self.height_value = 1
+
+        #Set the object name for the widget
+        self.setObjectName("legend_bbox_to_anchor_adjustment_section")
 
         #-----Create the Valid Input Widget-----
         self.valid_bbox_input_widget = QWidget()
@@ -1710,18 +1757,18 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
             }
         """)
 
-        invalid_bbox_input_widget_layout = QVBoxLayout(self.invalid_bbox_input_widget_layout)
+        invalid_bbox_input_widget_layout = QVBoxLayout(self.invalid_bbox_input_widget)
         invalid_bbox_input_widget_layout.addWidget(self.invalid_bbox_input_label)
         invalid_bbox_input_widget_layout.setSpacing(0)
         invalid_bbox_input_widget_layout.setContentsMargins(0,0,0,0)
 
         #-----Set the height for both Validity Check Widgets-----
-        self.valid_input_widget.setMaximumHeight(50)
-        self.invalid_input_widget.setMaximumHeight(50)
+        self.valid_bbox_input_widget.setMaximumHeight(50)
+        self.invalid_bbox_input_widget.setMaximumHeight(50)
 
         #-----Hide both Validity Check Widgets-----
-        self.valid_input_widget.hide()
-        self.invalid_input_widget.hide()
+        self.valid_bbox_input_widget.hide()
+        self.invalid_bbox_input_widget.hide()
 
         #-----Create the legend bbox adjustment section-----
         self.legend_bbox_adjustment_section = QWidget()
@@ -1754,7 +1801,7 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
 
         #Add the bbox adjustment sections onto the main widget
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.bbox_adjustment_section)
+        main_layout.addWidget(self.legend_bbox_adjustment_section)
         
         #Add the margins and spacings to make sure that it fits nicely
         main_layout.setSpacing(0)
@@ -1778,6 +1825,71 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
         self.height_input = QLineEdit()
         self.height_input.setPlaceholderText("Height: ")
 
+        #Create a reset bbox anchor label for the reset bbox anchor button
+        self.reset_bbox_anchor_label = QLabel("Reset bbox anchor")
+        self.reset_bbox_anchor_label.setObjectName("reset_bbox_anchor_label")
+        self.reset_bbox_anchor_label.setWordWrap(True)
+        self.reset_bbox_anchor_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_bbox_anchor_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents,True)
+        self.reset_bbox_anchor_label.setStyleSheet("""
+            QLabel#reset_bbox_anchor_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        #Create a reset bbox anchor button and connect the reset function to it
+        self.reset_bbox_anchor_button = QPushButton()
+        self.reset_bbox_anchor_button.setObjectName("reset_bbox_anchor_button")
+        self.reset_bbox_anchor_button.setStyleSheet("""
+            QPushButton#reset_bbox_anchor_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#reset_bbox_anchor_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.reset_bbox_anchor_button.clicked.connect(self.reset_bbox_anchor)
+        self.reset_bbox_anchor_button.setMinimumHeight(50)
+
+        #Add the label onto the button
+        reset_bbox_anchor_button_layout = QVBoxLayout(self.reset_bbox_anchor_button)
+        reset_bbox_anchor_button_layout.addWidget(self.reset_bbox_anchor_label)
+        reset_bbox_anchor_button_layout.setContentsMargins(0,0,0,0)
+        reset_bbox_anchor_button_layout.setSpacing(0)
+
         #Set the size of each bbox parameter line edit
         self.x_input.setFixedHeight(60)
         self.y_input.setFixedHeight(60)
@@ -1785,123 +1897,139 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
         self.height_input.setFixedHeight(60)
 
         #Connect each line edit to update whenever the user inputs something
-        self.x_input.textChanged.connect(self.update_x)
-        self.y_input.textChanged.connect(self.update_y)
-        self.width_input.textChanged.connect(self.update_width)
-        self.height_input.textChanged.connect(self.update_height)
+        self.x_input.textChanged.connect(self.change_bbox_anchor)
+        self.y_input.textChanged.connect(self.change_bbox_anchor)
+        self.width_input.textChanged.connect(self.change_bbox_anchor)
+        self.height_input.textChanged.connect(self.change_bbox_anchor)
 
         #Add the 4 line edit widgets to the layout and the 2 valid/invalid widgets
         legend_bbox_adjustment_section_layout.addWidget(self.x_input)
         legend_bbox_adjustment_section_layout.addWidget(self.y_input)
         legend_bbox_adjustment_section_layout.addWidget(self.width_input)
         legend_bbox_adjustment_section_layout.addWidget(self.height_input)
-        legend_bbox_adjustment_section_layout.addWidget(self.valid_input_widget)
-        legend_bbox_adjustment_section_layout.addWidget(self.invalid_input_widget)
+        legend_bbox_adjustment_section_layout.addWidget(self.valid_bbox_input_widget)
+        legend_bbox_adjustment_section_layout.addWidget(self.invalid_bbox_input_widget)
 
         #Add margins, spacing, and stretch to make it look good
         legend_bbox_adjustment_section_layout.setContentsMargins(10,10,10,10)
         legend_bbox_adjustment_section_layout.setSpacing(10)
         legend_bbox_adjustment_section_layout.addStretch()
 
-    def update_x(self):
+        #Add the reset bbox anchor button to the layout
+        legend_bbox_adjustment_section_layout.addWidget(self.reset_bbox_anchor_button)
+
+    def change_to_original_screen(self):
+        pass
+
+    def change_x(self):
         #Get the text input of x from the user and remove any excess spaces
         x_input = self.x_input.text().strip()
 
         #If the user deletes their entry for x replace it with the default value
         if (x_input == ""):
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.hide()
-            self.x_value = 0
-            self.update_bbox_anchor()
-            return
+            return True
 
         #Check if the input is valid and only update if it's valid
         try:
             self.x_value = float(x_input)
-            self.valid_input_label.setText("Valid X")
-            self.valid_input_widget.show()
-            self.invalid_input_widget.hide()
-        except:
-            self.invalid_input_label.setText("Invalid X")
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.show()
-        else:
-            self.update_bbox_anchor()
+        except ValueError:
+            return False
+        return True
         
-    def update_y(self):
+    def change_y(self):
         #Get the text input of y from the user and remove any excess spaces
         y_input = self.y_input.text().strip()
 
         #If the user deletes their entry for x replace it with the default value
         if (y_input == ""):
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.hide()
-            self.y_value = 0
-            self.update_bbox_anchor()
-            return
+            return True
 
         #Check if the input is valid and only update if it's valid
         try:
             self.y_value = float(y_input)
-            self.valid_input_label.setText("Valid Y")
-            self.valid_input_widget.show()
-            self.invalid_input_widget.hide()
-        except:
-            self.invalid_input_label.setText("Invalid Y")
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.show()
-        else:
-            self.update_bbox_anchor()
+        except ValueError:
+            return False
+        return True
 
-    def update_width(self):
+    def change_width(self):
         #Get the text input of the width from the user and remove any excess spaces
         width_input = self.width_input.text().strip()
 
         #If the user deletes their entry for x replace it with the default value
         if (width_input == ""):
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.hide()
-            self.width_value = 1
-            self.update_bbox_anchor()
-            return
+            return True
 
         #Check if the input is valid and only update if it's valid
         try:
             self.width_value = float(width_input)
-            self.valid_input_label.setText("Valid Width")
-            self.valid_input_widget.show()
-            self.invalid_input_widget.hide()
-        except:
-            self.invalid_input_label.setText("Invalid Width")
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.show()
-        else:
-            self.update_bbox_anchor()
+        except ValueError:
+            return False
+        return True
 
-    def update_height(self):
+    def change_height(self):
         #Get the text input of the height input from the user and remove any excess spaces
         height_input = self.height_input.text().strip()
 
         #If the user deletes their entry for x replace it with the default value
         if (height_input == ""):
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.hide()
-            self.height_value = 1
-            self.update_bbox_anchor()
-            return
+            return True
         
         #Check if the input is valid and only update if it's valid
         try:
             self.height_value = float(height_input)
-            self.valid_input_label.setText("Valid Height")
-            self.valid_input_widget.show()
-            self.invalid_input_widget.hide()
-        except:
-            self.invalid_input_label.setText("Invalid Height")
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.show()
+        except ValueError:
+            return False
+        return True
+
+    def change_bbox_anchor(self):
+        #Check which value is invalid
+        valid_x = self.change_x()
+        valid_y = self.change_y()
+        valid_width = self.change_width()
+        valid_height = self.change_height()
+
+        #Show and hide the validity check widgets accordingly
+        if (not valid_x):
+            self.invalid_bbox_input_label.setText("Invalid X-Value")
+            self.invalid_bbox_input_widget.show()
+        elif (not valid_y):
+            self.invalid_bbox_input_label.setText("Invalid Y-Value")
+            self.invalid_bbox_input_widget.show()
+        elif (not valid_width):
+            self.invalid_bbox_input_label.setText("Invalid Width")
+            self.invalid_bbox_input_widget.show()
+        elif (not valid_height):
+            self.invalid_bbox_input_label.setText("Invalid Height")
+            self.invalid_bbox_input_widget.show()
         else:
+            x_value = self.x_input.text().strip()
+            y_value = self.y_input.text().strip()
+            width_value = self.width_input.text().strip()
+            height_value = self.height_input.text().strip()
+
+            if (x_value and y_value and width_value and height_value):
+                self.valid_bbox_input_widget.show()
+                self.invalid_bbox_input_widget.hide()
+            else:
+                self.valid_bbox_input_widget.hide()
+                self.invalid_bbox_input_widget.hide()
             self.update_bbox_anchor()
+
+    def reset_bbox_anchor(self):
+        #Clear input widget for each of the parameters
+        self.x_input.clear()
+        self.y_input.clear()
+        self.width_input.clear()
+        self.height_input.clear()
+
+        #Reset the values back to normal
+        self.x_value = 0
+        self.y_value = 0
+        self.width_value = 1
+        self.height_value = 1
+
+        #Update the bbox anchor in the plot config
+        self.update_bbox_anchor()
 
     def update_bbox_anchor(self):
         #Get the newest json file if it exist
@@ -1951,6 +2079,9 @@ class legend_ncol_adjustment_section(QWidget):
         #Initialize the ncol value to be 1
         self.ncol_value = 1
 
+        #Set the object name for the widget
+        self.setObjectName("legend_ncol_adjustment_section")
+
         #-----Create the Validity Check Widgets-----
         self.valid_ncol_input_widget = QWidget()
         self.valid_ncol_input_widget.setObjectName("valid_ncol_input_widget")
@@ -1968,11 +2099,11 @@ class legend_ncol_adjustment_section(QWidget):
             }
         """)
 
-        self.valid_ncol_input_label = QLabel("Valid Input")
-        self.valid_ncol_input_widget.setWordWrap(True)
-        self.valid_ncol_input_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.valid_ncol_input_widget.setObjectName("valid_ncol_input_widget")
-        self.valid_ncol_input_widget.setStyleSheet("""
+        self.valid_ncol_input_label = QLabel("Valid ncol")
+        self.valid_ncol_input_label.setWordWrap(True)
+        self.valid_ncol_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_ncol_input_label.setObjectName("valid_ncol_input_widget")
+        self.valid_ncol_input_label.setStyleSheet("""
             QLabel#valid_ncol_input_widget{
                 font-family: "SF Pro Display";
                 font-weight: 600;
@@ -2000,7 +2131,7 @@ class legend_ncol_adjustment_section(QWidget):
             }
         """)
 
-        self.invalid_ncol_input_label = QLabel("Invalid Input")
+        self.invalid_ncol_input_label = QLabel("Invalid ncol")
         self.invalid_ncol_input_label.setWordWrap(True)
         self.invalid_ncol_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.invalid_ncol_input_label.setObjectName("invalid_ncol_input_label")
@@ -2035,10 +2166,10 @@ class legend_ncol_adjustment_section(QWidget):
         self.invalid_ncol_input_widget.hide()
 
         #-----Create the ncol adjustment section-----
-        self.ncol_adjustment_section = QWidget()
-        self.ncol_adjustment_section.setObjectName("adjust_ncol_section")
-        self.ncol_adjustment_section.setStyleSheet("""
-            QWidget#adjust_ncol_section{
+        self.legend_ncol_adjustment_section = QWidget()
+        self.legend_ncol_adjustment_section.setObjectName("legend_ncol_adjustment_section")
+        self.legend_ncol_adjustment_section.setStyleSheet("""
+            QWidget#legend_ncol_adjustment_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -2061,20 +2192,19 @@ class legend_ncol_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-        self.create_ncol_adjustment_section()
+        self.create_legend_ncol_adjustment_section()
 
         #Add the ncol adjustment section to the main widget
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.ncol_adjustment_section)
+        main_layout.addWidget(self.legend_ncol_adjustment_section)
         
         #Set both the spacing and margins for the main widget to make sure it fits nicely
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0,0,0,0)
 
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-
-    def create_ncol_adjustment_section(self):
-        ncol_adjustment_section_layout = QVBoxLayout(self.ncol_adjustment_section)
+    def create_legend_ncol_adjustment_section(self):
+        #Create a layout for the ncol adjustment section
+        legend_ncol_adjustment_section_layout = QVBoxLayout(self.legend_ncol_adjustment_section)
 
         #Create a line edit object for the user to input the ncol
         self.ncol_input = QLineEdit()
@@ -2086,38 +2216,115 @@ class legend_ncol_adjustment_section(QWidget):
         #Connect any changes with the text to an update function
         self.ncol_input.textChanged.connect(self.change_ncol)
 
+        #Create a reset ncol label
+        self.reset_ncol_label = QLabel("Reset ncol")
+        self.reset_ncol_label.setObjectName("reset_ncol_label")
+        self.reset_ncol_label.setWordWrap(True)
+        self.reset_ncol_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_ncol_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents,True)
+        self.reset_ncol_label.setStyleSheet("""
+            QLabel#reset_ncol_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        #Create a reset ncol button and connect the reset function to it
+        self.reset_ncol_button = QPushButton()
+        self.reset_ncol_button.setObjectName("reset_ncol_button")
+        self.reset_ncol_button.setStyleSheet("""
+            QPushButton#reset_ncol_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#reset_ncol_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.reset_ncol_button.clicked.connect(self.reset_ncol)
+        self.reset_ncol_button.setMinimumHeight(50)
+
+        #Add the label onto the button
+        reset_ncol_button_layout = QVBoxLayout(self.reset_ncol_button)
+        reset_ncol_button_layout.addWidget(self.reset_ncol_label)
+        reset_ncol_button_layout.setContentsMargins(0,0,0,0)
+        reset_ncol_button_layout.setSpacing(0)
+
         #Add the line edit widget and the two validity check widgets to the layout
-        ncol_adjustment_section_layout.addWidget(self.ncol_input)
-        ncol_adjustment_section_layout.addWidget(self.valid_input_widget)
-        ncol_adjustment_section_layout.addWidget(self.invalid_input_widget)
+        legend_ncol_adjustment_section_layout.addWidget(self.ncol_input)
+        legend_ncol_adjustment_section_layout.addWidget(self.valid_ncol_input_widget)
+        legend_ncol_adjustment_section_layout.addWidget(self.invalid_ncol_input_widget)
     
         #Add the margins, spacing, and stretch to the layout to make it look good
-        ncol_adjustment_section_layout.setContentsMargins(10,10,10,10)
-        ncol_adjustment_section_layout.setSpacing(10)
-        ncol_adjustment_section_layout.addStretch()
+        legend_ncol_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        legend_ncol_adjustment_section_layout.setSpacing(10)
+        legend_ncol_adjustment_section_layout.addStretch()
+
+        #Add the reset ncol button to the layout
+        legend_ncol_adjustment_section_layout.addWidget(self.reset_ncol_button)
+
+    def change_to_original_screen(self):
+        pass
 
     def change_ncol(self):
         #Extract the ncol input from the user and remove any excess text from it
         ncol_input = self.ncol_input.text().strip()
 
-        #Change ncol to the default value if the user deletes their entry
+        #Hide the validity check widgets if the ncol input is empty
         if (ncol_input == ""):
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.hide()
-            self.ncol_value = 1
-            self.update_ncol()
+            self.valid_ncol_input_widget.hide()
+            self.invalid_ncol_input_widget.hide()
             return 
 
         #Only update the ncol value in the json file if the input is valid
         try:
             self.ncol_value = int(ncol_input)
-            self.valid_input_widget.show()
-            self.invalid_input_widget.hide()
-        except:
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.show()
+            self.valid_ncol_input_widget.show()
+            self.invalid_ncol_input_widget.hide()
+        except ValueError:
+            self.valid_ncol_input_widget.hide()
+            self.invalid_ncol_input_widget.show()
         else:
             self.update_ncol()
+
+    def reset_ncol(self):
+        #Clear the input in the QLineEdit Widget
+        self.ncol_input.clear()
+
+        #Set the ncol to 1 (default value) then update it in the plot config
+        self.ncol_value = 1
+        self.update_ncol()
 
     def update_ncol(self):
         #Get the newest json entries from the plot manager
@@ -2131,6 +2338,7 @@ class legend_ncol_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["ncol"] = self.ncol_value
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        #Update the graph
         self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
@@ -2151,10 +2359,13 @@ class legend_fontsize_adjustment_section(QWidget):
         self.fixed_fontsizes = ["xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large"]
         
         #Available pages in this section
-        self.available_pages = ["Fixed Fontsize","Custom Fontsize"]
+        self.available_pages = ["Fixed Fontsize","Custom Fontsize", "Reset Fontsize"]
 
         #Set the initial fontsize to be none
         self.current_fontsize = None
+
+        #Set the object name for the widget
+        self.setObjectName("legend_fontsize_adjustment_section")
 
         #-----Create the Validity Check Widgets-----
         self.valid_custom_fontsize_input_widget = QWidget()
@@ -2173,7 +2384,7 @@ class legend_fontsize_adjustment_section(QWidget):
             }
         """)
 
-        self.valid_custom_fontsize_input_label = QLabel("Valid Custom Fontsize")
+        self.valid_custom_fontsize_input_label = QLabel("Valid Fontsize")
         self.valid_custom_fontsize_input_label.setWordWrap(True)
         self.valid_custom_fontsize_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.valid_custom_fontsize_input_label.setObjectName("valid_custom_fontsize_input_label")
@@ -2210,7 +2421,7 @@ class legend_fontsize_adjustment_section(QWidget):
             }
         """)
 
-        self.invalid_custom_fontsize_input_label = QLabel("Invalid Custom Fontsize")
+        self.invalid_custom_fontsize_input_label = QLabel("Invalid Fontsize")
         self.invalid_custom_fontsize_input_label.setWordWrap(True)
         self.invalid_custom_fontsize_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.invalid_custom_fontsize_input_label.setObjectName("invalid_custom_fontsize_input_label")
@@ -2257,10 +2468,10 @@ class legend_fontsize_adjustment_section(QWidget):
         self.create_legend_fontsize_adjustment_section()
 
         #-----Create the Fixed Fontsize Section-----
-        self.legend_fixed_fontsize_adjustment_section = QWidget()
-        self.legend_fixed_fontsize_adjustment_section.setObjectName("legend_fixed_fontsize_adjustment_section")
-        self.legend_fixed_fontsize_adjustment_section.setStyleSheet("""
-            QWidget#legend_fixed_fontsize_adjustment_section{
+        self.fixed_fontsize_adjustment_section = QWidget()
+        self.fixed_fontsize_adjustment_section.setObjectName("fixed_fontsize_adjustment_section")
+        self.fixed_fontsize_adjustment_section.setStyleSheet("""
+            QWidget#fixed_fontsize_adjustment_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -2271,14 +2482,14 @@ class legend_fontsize_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-        self.create_legend_fixed_fontsize_adjustment_section()
-        self.legend_fixed_fontsize_adjustment_section.hide()
+        self.create_fixed_fontsize_adjustment_section()
+        self.fixed_fontsize_adjustment_section.hide()
 
         #-----Create the Custom Fontsize Section-----
-        self.legend_custom_fontsize_screen = QWidget()
-        self.legend_custom_fontsize_screen.setObjectName("custom_fontsize_screen")
-        self.legend_custom_fontsize_screen.setStyleSheet("""
-            QWidget#custom_fontsize_screen{
+        self.custom_fontsize_adjustment_section = QWidget()
+        self.custom_fontsize_adjustment_section.setObjectName("custom_fontsize_adjustment_section")
+        self.custom_fontsize_adjustment_section.setStyleSheet("""
+            QWidget#custom_fontsize_adjustment_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -2289,24 +2500,48 @@ class legend_fontsize_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-        self.create_legend_custom_fontsize_adjustment_section()
-        self.legend_custom_fontsize_screen.hide()
+        self.create_custom_fontsize_adjustment_section()
+        self.custom_fontsize_adjustment_section.hide()
 
-        self.available_screen = [self.legend_fontsize_adjustment_section,self.legend_custom_fontsize_screen,self.legend_fixed_fontsize_screen]
+        #-----Reset Fontsize Section-----
+        self.reset_fontsize_section = QWidget()
+        self.reset_fontsize_section.setObjectName("reset_fontsize_section")
+        self.reset_fontsize_section.setStyleSheet("""
+            QWidget#reset_fontsize_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black; 
+                border-radius: 16px;
+            }
+        """)
+        self.create_reset_fontsize_section()
+        self.reset_fontsize_section.hide()
+
+        #-----Available Screens------
+        self.available_screen = [self.legend_fontsize_adjustment_section,
+                                self.fixed_fontsize_adjustment_section,
+                                self.custom_fontsize_adjustment_section,
+                                self.reset_fontsize_section]
         self.current_screen_idx = 0
 
         #Create a layout for the main widget and add the adjustment section to it
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.fontsize_adjustment_section)
-        main_layout.addWidget(self.custom_fontsize_screen)
-        main_layout.addWidget(self.fixed_fontsize_screen)
+        main_layout.addWidget(self.legend_fontsize_adjustment_section)
+        main_layout.addWidget(self.fixed_fontsize_adjustment_section)
+        main_layout.addWidget(self.custom_fontsize_adjustment_section)
+        main_layout.addWidget(self.reset_fontsize_section)
 
         #Add the spacing and margin to ensure the section fits nicely with the main widget
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0,0,0,0)
 
         #Create shortcuts to go back and forth between the screens.
-        go_back_shortcut = QShortcut(QKeySequence("left"), self) 
+        go_back_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left), self) 
+        go_back_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         go_back_shortcut.activated.connect(self.change_to_original_screen)
 
     def create_legend_fontsize_adjustment_section(self):
@@ -2321,10 +2556,6 @@ class legend_fontsize_adjustment_section(QWidget):
         self.legend_fontsize_adjustment_section_list_view.setModel(self.legend_fontsize_adjustment_section_model)
         self.legend_fontsize_adjustment_section_list_view.setObjectName("legend_fontsize_adjustment_section_list_view")
         self.legend_fontsize_adjustment_section_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-
-        #Get the first page in list view and select it
-        source_index = self.column_button_model.index(0)  
-        self.legend_fontsize_adjustment_section_model.setCurrentIndex(source_index)
 
         #Modification to make the list view look better
         class CustomDelegate(QStyledItemDelegate):
@@ -2408,18 +2639,18 @@ class legend_fontsize_adjustment_section(QWidget):
         legend_fontsize_adjustment_section_layout.setSpacing(10)
         legend_fontsize_adjustment_section_layout.addStretch()
 
-    def create_legend_fixed_fontsize_adjustment_section(self):
+    def create_fixed_fontsize_adjustment_section(self):
         #Created the fixed fontsize adjustment section layout
-        legend_fixed_fontsize_adjustment_section_layout = QVBoxLayout(self.legend_fixed_fontsize_adjustment_section)
+        fixed_fontsize_adjustment_section_layout = QVBoxLayout(self.fixed_fontsize_adjustment_section)
     
         #Created the list view and model with the available fixed fontsize arguments
-        self.legend_fixed_fontsize_list_view = QListView()
-        self.legend_fixed_fontsize_model = QStringListModel(self.fixed_fontsizes)
+        self.fixed_fontsize_list_view = QListView()
+        self.fixed_fontsize_model = QStringListModel(self.fixed_fontsizes)
 
         #Set the model for list view to display the fixed fontsizes and block the possibility of editting them
-        self.legend_fixed_fontsize_list_view.setModel(self.legend_fixed_fontsize_model)
-        self.legend_fixed_fontsize_list_view.setObjectName("legend_fixed_fontsize_list_view")
-        self.legend_fixed_fontsize_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.fixed_fontsize_list_view.setModel(self.fixed_fontsize_model)
+        self.fixed_fontsize_list_view.setObjectName("fixed_fontsize_list_view")
+        self.fixed_fontsize_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         
         #Create customization for the list view
         class CustomDelegate(QStyledItemDelegate):
@@ -2431,11 +2662,11 @@ class legend_fontsize_adjustment_section(QWidget):
                 super().paint(painter, option, index)
         
         #Apply the customization on the list view
-        self.legend_fixed_fontsize_list_view.setItemDelegate(CustomDelegate())
+        self.fixed_fontsize_list_view.setItemDelegate(CustomDelegate())
 
         #Style the fixed fontsize background, item, selected and hover effect
-        self.legend_fixed_fontsize_list_view.setStyleSheet("""
-            QListView#legend_fixed_fontsize_list_view{
+        self.fixed_fontsize_list_view.setStyleSheet("""
+            QListView#fixed_fontsize_list_view{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -2445,7 +2676,7 @@ class legend_fontsize_adjustment_section(QWidget):
                 border: transparent;
                 border-radius: 16px;
             }
-            QListView#legend_fixed_fontsize_list_view::item {
+            QListView#fixed_fontsize_list_view::item {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -2459,7 +2690,7 @@ class legend_fontsize_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#legend_fixed_fontsize_list_view::item:selected {
+            QListView#fixed_fontsize_list_view::item:selected {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -2472,7 +2703,7 @@ class legend_fontsize_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#legend_fixed_fontsize_list_view::item:hover {
+            QListView#fixed_fontsize_list_view::item:hover {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -2488,29 +2719,29 @@ class legend_fontsize_adjustment_section(QWidget):
         """)
 
         #Hide the horizon and vertical scrollbars and add spacing between the items in the list view
-        self.legend_fixed_fontsize_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.legend_fixed_fontsize_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.legend_fixed_fontsize_list_view.setSpacing(3)
+        self.fixed_fontsize_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.fixed_fontsize_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.fixed_fontsize_list_view.setSpacing(3)
 
         #Automatically update the font size based on what the user clicks on
-        self.legend_fixed_fontsize_list_view.clicked.connect(self.change_fixed_fontsize)
+        self.fixed_fontsize_list_view.clicked.connect(self.change_fixed_fontsize)
 
         #Add the list view to the layout to display it
-        legend_fixed_fontsize_adjustment_section_layout.addWidget(self.legend_fixed_fontsize_list_view)
+        fixed_fontsize_adjustment_section_layout.addWidget(self.fixed_fontsize_list_view)
 
         # Add margins and spacing to make it look good and push content to the top
-        legend_fixed_fontsize_adjustment_section_layout.setContentsMargins(10, 10, 10, 10)
+        fixed_fontsize_adjustment_section_layout.setContentsMargins(10, 10, 10, 10)
 
-    def create_legend_custom_fontsize_adjustment_section(self):
+    def create_custom_fontsize_adjustment_section(self):
         #Create a layout for the custom fontsize section
-        legend_custom_fontsize_adjustment_section_layout = QVBoxLayout(self.legend_custom_fontsize_adjustment_section)
+        custom_fontsize_adjustment_section_layout = QVBoxLayout(self.custom_fontsize_adjustment_section)
 
         #Create a QLineEdit object to allow the user input the custom fontsize
         #Give it a placeholder text to make sure that the user knows what to input and style the button
-        self.legend_custom_fontsize_input = QLineEdit()
-        self.legend_custom_fontsize_input.setPlaceholderText("Fontsize:")
-        self.legend_custom_fontsize_input.setObjectName("legend_custom_fontsize_input")
-        self.legend_custom_fontsize_input.setStyleSheet("""
+        self.custom_fontsize_input = QLineEdit()
+        self.custom_fontsize_input.setPlaceholderText("Fontsize:")
+        self.custom_fontsize_input.setObjectName("legend_custom_fontsize_input")
+        self.custom_fontsize_input.setStyleSheet("""
             QLineEdit#legend_custom_fontsize_input{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
@@ -2526,27 +2757,176 @@ class legend_fontsize_adjustment_section(QWidget):
         """)
 
         #Set the height for the QLineEdit for consistency
-        self.legend_custom_fontsize_input.setFixedHeight(60) 
+        self.custom_fontsize_input.setFixedHeight(60) 
         
         #Connect the QLineEdit object with a update to automatically update the user inputs
-        self.legend_custom_fontsize_input.textChanged.connect(self.change_custom_fontsize)
+        self.custom_fontsize_input.textChanged.connect(self.change_custom_fontsize)
+
+        #Create a reset custom fontsize label for the reset custom fontsize button
+        self.reset_custom_fontsize_label = QLabel("Reset Fontsize")
+        self.reset_custom_fontsize_label.setObjectName("reset_custom_fontsize_label")
+        self.reset_custom_fontsize_label.setWordWrap(True)
+        self.reset_custom_fontsize_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_custom_fontsize_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents,True)
+        self.reset_custom_fontsize_label.setStyleSheet("""
+            QLabel#reset_custom_fontsize_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        #Create a reset bbox anchor button and connect the reset function to it
+        self.reset_custom_fontsize_button = QPushButton()
+        self.reset_custom_fontsize_button.setObjectName("reset_custom_fontsize_button")
+        self.reset_custom_fontsize_button.setStyleSheet("""
+            QPushButton#reset_custom_fontsize_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#reset_custom_fontsize_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.reset_custom_fontsize_button.clicked.connect(self.reset_fontsize)
+        self.reset_custom_fontsize_button.setMinimumHeight(50)
+
+        #Add the label onto the button
+        reset_custom_fontsize_button_layout = QVBoxLayout(self.reset_custom_fontsize_button)
+        reset_custom_fontsize_button_layout.addWidget(self.reset_custom_fontsize_label)
+        reset_custom_fontsize_button_layout.setContentsMargins(0,0,0,0)
+        reset_custom_fontsize_button_layout.setSpacing(0)
 
         #Add the QLineEdit object to the layout and add the margins, spacing, and stretch to make it look good
-        legend_custom_fontsize_adjustment_section_layout.addWidget(self.legend_custom_fontsize_input)
-        legend_custom_fontsize_adjustment_section_layout.addWidget(self.valid_custom_fontsize_input_widget)
-        legend_custom_fontsize_adjustment_section_layout.addWidget(self.invalid_custom_fontsize_input_widget)
-        legend_custom_fontsize_adjustment_section_layout.setContentsMargins(10,10,10,10)
-        legend_custom_fontsize_adjustment_section_layout.setSpacing(10)
-        legend_custom_fontsize_adjustment_section_layout.addStretch()
+        custom_fontsize_adjustment_section_layout.addWidget(self.custom_fontsize_input)
+        custom_fontsize_adjustment_section_layout.addWidget(self.valid_custom_fontsize_input_widget)
+        custom_fontsize_adjustment_section_layout.addWidget(self.invalid_custom_fontsize_input_widget)
+        custom_fontsize_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        custom_fontsize_adjustment_section_layout.setSpacing(10)
+        custom_fontsize_adjustment_section_layout.addStretch()
+
+        #Add the reset custom fontsize button to the layout
+        custom_fontsize_adjustment_section_layout.addWidget(self.reset_custom_fontsize_button)
+
+    def create_reset_fontsize_section(self):
+        #Create a layout for the reset fontsize section
+        reset_fontsize_section_layout = QVBoxLayout(self.reset_fontsize_section)
+
+        #Create the reset face color label for the button
+        self.reset_fontsize_label = QLabel("Reset Fontsize")
+        self.reset_fontsize_label.setWordWrap(True)
+        self.reset_fontsize_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_fontsize_label.setObjectName("reset_fontsize_label")
+        self.reset_fontsize_label.setStyleSheet("""
+            QLabel#reset_fontsize_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.reset_fontsize_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+        #Create the reset fontsize button
+        self.reset_fontsize_button = QPushButton()
+        self.reset_fontsize_button.setObjectName("reset_fontsize_button")
+        self.reset_fontsize_button.setStyleSheet("""
+            QPushButton#reset_fontsize_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#reset_fontsize_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.reset_fontsize_button.setMinimumHeight(50)
+
+        #Connect the button to automatically reset the face color when clicked on
+        self.reset_fontsize_button.clicked.connect(self.reset_fontsize)
+
+        #Add the label onto the button
+        reset_fontsize_button_layout = QVBoxLayout(self.reset_fontsize_button)
+        reset_fontsize_button_layout.addWidget(self.reset_fontsize_label)
+        reset_fontsize_button_layout.setContentsMargins(0,0,0,0)
+        reset_fontsize_button_layout.setSpacing(0)
+
+        #Add the button created to the reset face color section
+        reset_fontsize_section_layout.addWidget(self.reset_fontsize_button)
+        reset_fontsize_section_layout.setContentsMargins(10,10,10,10)
+        reset_fontsize_section_layout.addStretch()
 
     def change_current_page(self,index):
+        #Identify the page name 
         page_name = self.legend_fontsize_adjustment_section_model.data(index,Qt.ItemDataRole.DisplayRole)
 
+        #Switch to the correct page based on the page name
         if (page_name == "Fixed Fontsize"):
-            self.change_to_fixed_fontsize_screen()
+            self.change_to_fixed_fontsize_section()
 
         if (page_name == "Custom Fontsize"):
-            self.change_to_custom_fontsize_screen()
+            self.change_to_custom_fontsize_section()
+
+        if (page_name == "Reset Fontsize"):
+            self.change_to_reset_fontsize_section()
 
     def change_to_original_screen(self):
         #Hide the current screen, change the screen index, show the new screen 
@@ -2554,16 +2934,22 @@ class legend_fontsize_adjustment_section(QWidget):
         self.current_screen_idx = 0
         self.available_screen[self.current_screen_idx].show()
 
-    def change_to_fixed_fontsize_screen(self):
+    def change_to_fixed_fontsize_section(self):
         #Hide the current screen, change the screen index, show the new screen 
         self.available_screen[self.current_screen_idx].hide()
         self.current_screen_idx = 1
         self.available_screen[self.current_screen_idx].show()
 
-    def change_to_custom_fontsize_screen(self):
+    def change_to_custom_fontsize_section(self):
         #Hide the current screen, change the screen index, show the new screen 
         self.available_screen[self.current_screen_idx].hide()
         self.current_screen_idx = 2
+        self.available_screen[self.current_screen_idx].show()
+
+    def change_to_reset_fontsize_section(self):
+        #Hide the current screen, change the screen index, show the new screen 
+        self.available_screen[self.current_screen_idx].hide()
+        self.current_screen_idx = 3
         self.available_screen[self.current_screen_idx].show()
 
     def change_custom_fontsize(self):
@@ -2572,23 +2958,21 @@ class legend_fontsize_adjustment_section(QWidget):
 
         #Hide the validity check widgets and reset the current fonsit
         if (custom_fontsize_input == ""):
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.hide()
-            self.current_fontsize = None
-            self.update_fontsize()
+            self.valid_custom_fontsize_input_widget.hide()
+            self.invalid_custom_fontsize_input_widget.hide()
             return
 
         try:
             #turn the fontsize into an integer and check if it's valid or not
-            custom_fontsize_value = int(custom_fontsize_input)
+            custom_fontsize_value = max(10,int(custom_fontsize_input))
             if (0 >= custom_fontsize_value):
-                raise Exception
-            self.valid_input_widget.show()
-            self.invalid_input_widget.hide()
-        except:
+                raise ValueError
+            self.valid_custom_fontsize_input_widget.show()
+            self.invalid_custom_fontsize_input_widget.hide()
+        except ValueError:
             #If the input isn't valid then display the invalid widget
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.show()
+            self.valid_custom_fontsize_input_widget.hide()
+            self.invalid_custom_fontsize_input_widget.show()
         else:
             #Update the current fontsize on the plot config
             self.current_fontsize = custom_fontsize_value
@@ -2596,7 +2980,15 @@ class legend_fontsize_adjustment_section(QWidget):
 
     def change_fixed_fontsize(self,index):
         #Find the name of the element in the model based on the index given then update it
-        self.current_fontsize = self.legend_fixed_fontsize_model.data(index,Qt.ItemDataRole.DisplayRole)
+        self.current_fontsize = self.fixed_fontsize_model.data(index,Qt.ItemDataRole.DisplayRole)
+        self.update_fontsize()
+
+    def reset_fontsize(self):
+        #Clear the QLineEdit Widget
+        self.custom_fontsize_input.clear()
+        
+        #Set the fontsize to None and update it in the plot config
+        self.current_fontsize = None
         self.update_fontsize()
 
     def update_fontsize(self):
@@ -2630,6 +3022,9 @@ class legend_title_adjustment_section(QWidget):
         #Initialize the value for the title
         self.title_value = None
 
+        #Set the object name for the widget
+        self.setObjectName("legend_title_adjustment_section")
+
         #-----Create the Legend title adjustment section-----
         self.legend_title_adjustment_section = QWidget()
         self.legend_title_adjustment_section.setObjectName("adjust_title_section")
@@ -2661,7 +3056,7 @@ class legend_title_adjustment_section(QWidget):
 
         #Create a main layout for the main widget and add the title adjustment section to it
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.title_adjustment_section)
+        main_layout.addWidget(self.legend_title_adjustment_section)
         
         #Add the spacing and margin to the main widget to ensure it fits nicely
         main_layout.setSpacing(0)
@@ -2673,7 +3068,7 @@ class legend_title_adjustment_section(QWidget):
 
         #Create a QLineEdit to allow the user to input the title and add a placeholder text to it
         self.legend_title_input = QLineEdit()
-        self.titlegend_title_inputle_input.setPlaceholderText("Title: ")
+        self.legend_title_input.setPlaceholderText("Title: ")
         
         #Set the height of the object for consistency
         self.legend_title_input.setFixedHeight(60)
@@ -2688,6 +3083,9 @@ class legend_title_adjustment_section(QWidget):
         legend_title_adjustment_section_layout.setContentsMargins(10,10,10,10)
         legend_title_adjustment_section_layout.setSpacing(10)
         legend_title_adjustment_section_layout.addStretch()
+
+    def change_to_original_screen(self):
+        pass
 
     def change_legend_title(self):
         #Extract the title from the user input and remove any excess spaces.
@@ -2723,13 +3121,16 @@ class legend_title_fontsize_adjustment_section(QWidget):
         self.plot_manager = PlotManager()
         
         #Types of legend fontsize 
-        self.legend_fontsize_types = ["Fixed Fontsize","Custom Fontsize"]
+        self.legend_fontsize_types = ["Fixed Fontsize","Custom Fontsize", "Reset Fontsize"]
 
         #Initialize the fixed fontsizes
         self.fixed_title_fontsizes = ["xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large"]
         
         #Initialize the fontsize to be None in the beginning
         self.current_title_fontsize = None
+
+        #Set the object name for the widget
+        self.setObjectName("legend_title_fontsize_adjustment_section")
 
         #-----Validity Check Widgets-----
         self.valid_custom_fontsize_input_widget = QWidget()
@@ -2748,7 +3149,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
             }
         """)
 
-        self.valid_custom_fontsize_input_label = QLabel("Valid Custom Fontsize")
+        self.valid_custom_fontsize_input_label = QLabel("Valid Fontsize")
         self.valid_custom_fontsize_input_label.setWordWrap(True)
         self.valid_custom_fontsize_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.valid_custom_fontsize_input_label.setObjectName("valid_custom_fontsize_input_label")
@@ -2785,7 +3186,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
             }
         """)
 
-        self.invalid_custom_fontsize_input_label = QLabel("Invalid Custom Fontsize")
+        self.invalid_custom_fontsize_input_label = QLabel("Invalid Fontsize")
         self.invalid_custom_fontsize_input_label.setWordWrap(True)
         self.invalid_custom_fontsize_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.invalid_custom_fontsize_input_label.setObjectName("invalid_custom_fontsize_input_label")
@@ -2835,7 +3236,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
         self.fixed_title_fontsize_section = QWidget()
         self.fixed_title_fontsize_section.setObjectName("fixed_title_fontsize_section")
         self.fixed_title_fontsize_section.setStyleSheet("""
-            QWidget#fixed_title_fontsize_screen{
+            QWidget#fixed_title_fontsize_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -2853,7 +3254,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
         self.custom_title_fontsize_section = QWidget()
         self.custom_title_fontsize_section.setObjectName("custom_title_fontsize_section")
         self.custom_title_fontsize_section.setStyleSheet("""
-            QWidget#custom_title_fontsize_screen{
+            QWidget#custom_title_fontsize_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -2867,23 +3268,44 @@ class legend_title_fontsize_adjustment_section(QWidget):
         self.create_custom_title_fontsize_section()
         self.custom_title_fontsize_section.hide()
 
+        #-----Reset Fontsize Section-----
+        self.reset_fontsize_section = QWidget()
+        self.reset_fontsize_section.setObjectName("reset_fontsize_section")
+        self.reset_fontsize_section.setStyleSheet("""
+            QWidget#reset_fontsize_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black; 
+                border-radius: 16px;
+            }
+        """)
+        self.create_reset_fontsize_section()
+        self.reset_fontsize_section.hide()
+
         #-----Available Screens-----
         self.available_screens = [self.legend_title_fontsize_adjustment_section,
                                 self.fixed_title_fontsize_section,
-                                self.custom_title_fontsize_section]
+                                self.custom_title_fontsize_section,
+                                self.reset_fontsize_section]
         self.current_screen_idx = 0
 
         #-----Add the sections onto the main widget-----
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.legend_title_fontsize_adjustment_section)
-        main_layout.addWidget(self.fixed_title_fontsize_screen)
-        main_layout.addWidget(self.custom_title_fontsize_screen)
+        main_layout.addWidget(self.fixed_title_fontsize_section)
+        main_layout.addWidget(self.custom_title_fontsize_section)
+        main_layout.addWidget(self.reset_fontsize_section)
 
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0,0,0,0)
 
         #-----Keyboard Shortcut-----
-        go_back_shortcut = QShortcut(QKeySequence("left"), self) 
+        go_back_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left), self) 
+        go_back_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         go_back_shortcut.activated.connect(self.change_to_original_screen)
 
     def create_legend_title_fontsize_adjustment_section(self):
@@ -2974,13 +3396,13 @@ class legend_title_fontsize_adjustment_section(QWidget):
         self.legend_title_fontsize_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
 
         #Add the list view to the layout
-        legend_title_fontsize_adjustment_section_layout.addWidget(self.fixed_title_fontsize_list_view)
+        legend_title_fontsize_adjustment_section_layout.addWidget(self.legend_title_fontsize_parameter_list_view)
 
         # Add margins and spacing to make it look good and push content to the top
         legend_title_fontsize_adjustment_section_layout.setContentsMargins(10, 10, 10, 10)
 
     def create_fixed_title_fontsize_section(self):
-        fixed_title_fontsize_screen_layout = QVBoxLayout(self.fixed_title_fontsize_screen)
+        fixed_title_fontsize_section_layout = QVBoxLayout(self.fixed_title_fontsize_section)
     
         self.fixed_title_fontsize_list_view = QListView()
         self.fixed_title_fontsize_model = QStringListModel(self.fixed_title_fontsizes)
@@ -3057,13 +3479,13 @@ class legend_title_fontsize_adjustment_section(QWidget):
 
         self.fixed_title_fontsize_list_view.clicked.connect(self.change_fixed_title_fontsize)
 
-        fixed_title_fontsize_screen_layout.addWidget(self.fixed_title_fontsize_list_view)
+        fixed_title_fontsize_section_layout.addWidget(self.fixed_title_fontsize_list_view)
 
         # Add margins and spacing to make it look good and push content to the top
-        fixed_title_fontsize_screen_layout.setContentsMargins(10, 10, 10, 10)
+        fixed_title_fontsize_section_layout.setContentsMargins(10, 10, 10, 10)
 
     def create_custom_title_fontsize_section(self):
-        custom_title_fontsize_layout = QVBoxLayout(self.custom_title_fontsize_screen)
+        custom_title_fontsize_section_layout = QVBoxLayout(self.custom_title_fontsize_section)
 
         #Create a QLineEdit object to allow the user input the custom fontsize
         #Give it a placeholder text to make sure that the user knows what to input and style the button
@@ -3091,22 +3513,171 @@ class legend_title_fontsize_adjustment_section(QWidget):
         #Connect the QLineEdit object with a update to automatically update the user inputs
         self.custom_title_fontsize_input.textChanged.connect(self.change_custom_title_fontsize)
 
+        #Create a reset custom title fontsize label for the reset custom title fontsize button
+        self.reset_custom_title_fontsize_label = QLabel("Reset Fontsize")
+        self.reset_custom_title_fontsize_label.setObjectName("reset_custom_title_fontsize_label")
+        self.reset_custom_title_fontsize_label.setWordWrap(True)
+        self.reset_custom_title_fontsize_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_custom_title_fontsize_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents,True)
+        self.reset_custom_title_fontsize_label.setStyleSheet("""
+            QLabel#reset_custom_title_fontsize_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        #Create a reset custom title fontsize button and connect the reset function to it
+        self.reset_custom_title_fontsize_button = QPushButton()
+        self.reset_custom_title_fontsize_button.setObjectName("reset_custom_title_fontsize_button")
+        self.reset_custom_title_fontsize_button.setStyleSheet("""
+            QPushButton#reset_custom_title_fontsize_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#reset_custom_title_fontsize_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.reset_custom_title_fontsize_button.clicked.connect(self.reset_title_fontsize)
+        self.reset_custom_title_fontsize_button.setMinimumHeight(50)
+
+        #Add the label onto the button
+        reset_custom_title_fontsize_button_layout = QVBoxLayout(self.reset_custom_title_fontsize_button)
+        reset_custom_title_fontsize_button_layout.addWidget(self.reset_custom_title_fontsize_label)
+        reset_custom_title_fontsize_button_layout.setContentsMargins(0,0,0,0)
+        reset_custom_title_fontsize_button_layout.setSpacing(0)
+
         #Add the QLineEdit object to the layout and add the margins, spacing, and stretch to make it look good
-        custom_title_fontsize_layout.addWidget(self.custom_title_fontsize_input)
-        custom_title_fontsize_layout.addWidget(self.valid_custom_fontsize_input_widget)
-        custom_title_fontsize_layout.addWidget(self.invalid_custom_fontsize_input_widget)
-        custom_title_fontsize_layout.setContentsMargins(10,10,10,10)
-        custom_title_fontsize_layout.setSpacing(10)
-        custom_title_fontsize_layout.addStretch()
+        custom_title_fontsize_section_layout.addWidget(self.custom_title_fontsize_input)
+        custom_title_fontsize_section_layout.addWidget(self.valid_custom_fontsize_input_widget)
+        custom_title_fontsize_section_layout.addWidget(self.invalid_custom_fontsize_input_widget)
+        custom_title_fontsize_section_layout.setContentsMargins(10,10,10,10)
+        custom_title_fontsize_section_layout.setSpacing(10)
+        custom_title_fontsize_section_layout.addStretch()
+
+        #Add the reset ncol button to the layout
+        custom_title_fontsize_section_layout.addWidget(self.reset_custom_title_fontsize_button)
+
+    def create_reset_fontsize_section(self):
+        #Create a layout for the reset fontsize section
+        reset_fontsize_section_layout = QVBoxLayout(self.reset_fontsize_section)
+
+        #Create the reset face color label for the button
+        self.reset_fontsize_label = QLabel("Reset Fontsize")
+        self.reset_fontsize_label.setWordWrap(True)
+        self.reset_fontsize_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_fontsize_label.setObjectName("reset_fontsize_label")
+        self.reset_fontsize_label.setStyleSheet("""
+            QLabel#reset_fontsize_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.reset_fontsize_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+        #Create the reset fontsize button
+        self.reset_fontsize_button = QPushButton()
+        self.reset_fontsize_button.setObjectName("reset_fontsize_button")
+        self.reset_fontsize_button.setStyleSheet("""
+            QPushButton#reset_fontsize_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#reset_fontsize_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.reset_fontsize_button.setMinimumHeight(50)
+
+        #Connect the button to automatically reset the face color when clicked on
+        self.reset_fontsize_button.clicked.connect(self.reset_title_fontsize)
+
+        #Add the label onto the button
+        reset_fontsize_button_layout = QVBoxLayout(self.reset_fontsize_button)
+        reset_fontsize_button_layout.addWidget(self.reset_fontsize_label)
+        reset_fontsize_button_layout.setContentsMargins(0,0,0,0)
+        reset_fontsize_button_layout.setSpacing(0)
+
+        #Add the button created to the reset face color section
+        reset_fontsize_section_layout.addWidget(self.reset_fontsize_button)
+        reset_fontsize_section_layout.setContentsMargins(10,10,10,10)
+        reset_fontsize_section_layout.addStretch()
 
     def change_current_parameter_screen(self,index):
+        #Identify the screen name selected
         screen_name = self.legend_title_fontsize_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
 
+        #Switch to the correct screen based on the screen name
         if (screen_name == "Fixed Fontsize"):
-            self.change_to_fixed_title_fontsize_screen()
+            self.change_to_fixed_title_fontsize_section()
 
         if (screen_name == "Custom Fontsize"):
-            self.change_to_custom_title_fontsize_screen()
+            self.change_to_custom_title_fontsize_section()
+
+        if (screen_name == "Reset Fontsize"):
+            self.change_to_reset_fontsize_section()
 
     def change_to_original_screen(self):
         #Hide the current screen, change the screen idx, and display the original screen
@@ -3114,16 +3685,22 @@ class legend_title_fontsize_adjustment_section(QWidget):
         self.current_screen_idx = 0
         self.available_screens[self.current_screen_idx].show()
 
-    def change_to_fixed_title_fontsize_screen(self):
+    def change_to_fixed_title_fontsize_section(self):
         #Hide the current screen, change the screen idx, and display the fixed fontsize screen
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 1
         self.available_screens[self.current_screen_idx].show()
 
-    def change_to_custom_title_fontsize_screen(self):
+    def change_to_custom_title_fontsize_section(self):
         #Hide the current screen, change the screen idx, and display the custom fontsize screen
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 2
+        self.available_screens[self.current_screen_idx].show()
+
+    def change_to_reset_fontsize_section(self):
+        #Hide the current screen, change the screen idx, and display the custom fontsize screen
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 3
         self.available_screens[self.current_screen_idx].show()
 
     def change_custom_title_fontsize(self):
@@ -3133,10 +3710,9 @@ class legend_title_fontsize_adjustment_section(QWidget):
         #If the fontsize the user inputs is blank then hide the validity check widgets
         #Set the title fontsize to default and update it
         if (current_title_fontsize_value == ""):
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.hide()
+            self.valid_custom_fontsize_input_widget.hide()
+            self.invalid_custom_fontsize_input_widget.hide()
             self.current_title_fontsize = None
-            self.update_title_fontsize()
             return 
 
         #Check if the input is valid and only update if it's valid
@@ -3144,19 +3720,29 @@ class legend_title_fontsize_adjustment_section(QWidget):
             #turn the fontsize into an integer and check if it's valid or not and updates it if valid
             current_title_fontsize_value = int(current_title_fontsize_value)
             if (current_title_fontsize_value <= 0):
-                raise Exception
-            self.valid_input_widget.show()
-            self.invalid_input_widget.hide()
+                raise ValueError
+            self.valid_custom_fontsize_input_widget.show()
+            self.invalid_custom_fontsize_input_widget.hide()
             self.current_title_fontsize = current_title_fontsize_value
             self.update_title_fontsize()
-        except:
+        except ValueError:
             #If the input isn't valid then display the invalid widget
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.show()
+            self.valid_custom_fontsize_input_widget.hide()
+            self.invalid_custom_fontsize_input_widget.show()
 
     def change_fixed_title_fontsize(self,index):
         #Changes the current title fontsize and updates the fontsize on the plot config
         self.current_title_fontsize = self.fixed_title_fontsize_model.data(index, Qt.ItemDataRole.DisplayRole)
+        self.update_title_fontsize()
+
+    def reset_title_fontsize(self):
+        #Clear the QLineEdit Widget for the custom title fontsize
+        self.custom_title_fontsize_input.clear()
+
+        #Reset the current title fontsize
+        self.current_title_fontsize = None
+        
+        #Update the new title fontsize in the plot config
         self.update_title_fontsize()
 
     def update_title_fontsize(self):
@@ -3177,11 +3763,6 @@ class legend_title_fontsize_adjustment_section(QWidget):
             self.custom_title_fontsize_input.clearFocus()
         super().mousePressEvent(event)
 
-    def showEvent(self, event):
-        #Always start at the original screen
-        super().showEvent(event)
-        self.change_to_original_screen()
-
 class legend_frameon_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
@@ -3192,8 +3773,11 @@ class legend_frameon_adjustment_section(QWidget):
         
         #Initialize the frameon state
         self.frameon_state = True
+
+        #Set the object name for the widget
+        self.setObjectName("legend_frameon_adjustment_section")
         
-        #Create a widget to display the frameon adjustment section and style it for consistency
+        #-----Create the Legend Frameon Adjustment Section-----
         self.legend_frameon_adjustment_section = QWidget()
         self.legend_frameon_adjustment_section.setObjectName("legend_frameon_adjustment_section")
         self.legend_frameon_adjustment_section.setStyleSheet("""
@@ -3212,7 +3796,7 @@ class legend_frameon_adjustment_section(QWidget):
 
         #Create a layout for the main widget and store the frameon adjustment section in
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.frameon_adjustment_section)
+        main_layout.addWidget(self.legend_frameon_adjustment_section)
 
         #Add the spacing and margins to make sure that the section fits nicely
         main_layout.setSpacing(0)
@@ -3275,7 +3859,7 @@ class legend_frameon_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.frameon_button.setMinimumHeight(45)
+        self.frameon_button.setMinimumHeight(50)
         
         #Put the label on top of the button we created for control frameon
         legend_frameon_button_layout = QVBoxLayout(self.frameon_button)
@@ -3284,7 +3868,7 @@ class legend_frameon_adjustment_section(QWidget):
         legend_frameon_button_layout.setSpacing(0)
 
         #Connect the frameon button to a function to switch between the two states
-        self.frameon_button.clicked.connect(self.switch_frameon_state)
+        self.frameon_button.clicked.connect(self.change_frameon_state)
 
         #Create a layout for the frameon adjustment section
         legend_frameon_adjustment_section_layout = QVBoxLayout(self.legend_frameon_adjustment_section)
@@ -3296,6 +3880,9 @@ class legend_frameon_adjustment_section(QWidget):
         legend_frameon_adjustment_section_layout.setSpacing(0)
         legend_frameon_adjustment_section_layout.setContentsMargins(10,10,10,10)
         legend_frameon_adjustment_section_layout.addStretch()
+
+    def change_to_original_screen(self):
+        pass
 
     def change_frameon_state(self):
         #Change the frameon_state to be the opposite of the current state and update it in the json
@@ -3319,33 +3906,297 @@ class legend_frameon_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["frameon"] = self.frameon_state
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        #Update the graph
         self.graph_display.show_graph()
 
 class legend_face_color_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
 
-        self.graph_display = graph_display
-
         self.plot_manager = PlotManager()
         self.selected_graph = selected_graph
+        self.graph_display = graph_display    
+
+        #Set the object name for the widget
+        self.setObjectName("legend_face_color_adjustment_section")    
+
+        #Get the all the named colors and the short code colors
         self.named_colors = list(mcolors.get_named_colors_mapping().keys())
         self.short_code_colors = self.named_colors[-8:]
         self.named_colors = [c.replace("xkcd:","") for c in self.named_colors]
         self.named_colors = [c.replace("tab:","") for c in self.named_colors]
         self.named_colors = self.named_colors[:-8]
 
+        #Get the xkcd colors and store it in a list
         self.xkcd_colors = [color.replace("xkcd:","") for color in list(mcolors.XKCD_COLORS)]
+        #Get the tableau colors and store it in a list
         self.tableau_colors = [color.replace("tab:","") for color in list(mcolors.TABLEAU_COLORS)]
 
-        self.current_facecolor = ""
+        #Initialize the color types for the face color
+        self.facecolor_types = ["Named Color","Hex Code","RGB Color","Grayscale Color","Short Code Color","Reset Face Color"]
 
-        #-----Home Screen-----
+        #Initialize the Initial RGBA Values
+        self.r_value = 1
+        self.g_value = 1
+        self.b_value = 1
 
-        self.face_color_adjustment_homescreen = QWidget()
-        self.face_color_adjustment_homescreen.setObjectName("face_color_adjustment")
-        self.face_color_adjustment_homescreen.setStyleSheet("""
-            QWidget#face_color_adjustment{
+        #Initialize the current facecolor
+        self.current_facecolor = None
+
+        #-----Validity Check Widget For Hex Code-----
+        self.valid_hex_code_input_widget = QWidget()
+        self.valid_hex_code_input_widget.setObjectName("valid_hex_code_input_widget")
+        self.valid_hex_code_input_widget.setStyleSheet("""
+            QWidget#valid_hex_code_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_hex_code_input_label = QLabel("Valid Hex Code")
+        self.valid_hex_code_input_label.setWordWrap(True)
+        self.valid_hex_code_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_hex_code_input_label.setObjectName("valid_hex_code_input_label")
+        self.valid_hex_code_input_label.setStyleSheet("""
+            QLabel#valid_hex_code_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_hex_code_input_widget_layout = QVBoxLayout(self.valid_hex_code_input_widget)
+        valid_hex_code_input_widget_layout.addWidget(self.valid_hex_code_input_label)
+        valid_hex_code_input_widget_layout.setSpacing(0)
+        valid_hex_code_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        self.invalid_hex_code_input_widget = QWidget()
+        self.invalid_hex_code_input_widget.setObjectName("invalid_hex_code_input_widget")
+        self.invalid_hex_code_input_widget.setStyleSheet("""
+            QWidget#invalid_hex_code_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_hex_code_input_label = QLabel("Invalid Hex Code")
+        self.invalid_hex_code_input_label.setWordWrap(True)
+        self.invalid_hex_code_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_hex_code_input_label.setObjectName("invalid_hex_code_input_label")
+        self.invalid_hex_code_input_label.setStyleSheet("""
+            QLabel#invalid_hex_code_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        invalid_hex_code_input_widget_layout = QVBoxLayout(self.invalid_hex_code_input_widget)
+        invalid_hex_code_input_widget_layout.addWidget(self.invalid_hex_code_input_label)
+        invalid_hex_code_input_widget_layout.setSpacing(0)
+        invalid_hex_code_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        #-----Set the size for the Hex Code Validity Check Widgets-----
+        self.valid_hex_code_input_widget.setMaximumHeight(50)
+        self.invalid_hex_code_input_widget.setMaximumHeight(50)
+
+        #-----Hide the Hex Code Validity Check Widgets-----
+        self.valid_hex_code_input_widget.hide()
+        self.invalid_hex_code_input_widget.hide()
+
+        #-----Validity Check Widgets For RGBA Color-----
+        self.valid_rgb_color_input_widget = QWidget()
+        self.valid_rgb_color_input_widget.setObjectName("valid_rgb_color_input_widget")
+        self.valid_rgb_color_input_widget.setStyleSheet("""
+            QWidget#valid_rgb_color_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_rgb_color_input_label = QLabel("Valid RBG Color")
+        self.valid_rgb_color_input_label.setWordWrap(True)
+        self.valid_rgb_color_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_rgb_color_input_label.setObjectName("valid_rgb_color_input_label")
+        self.valid_rgb_color_input_label.setStyleSheet("""
+            QLabel#valid_rgb_color_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_rgb_color_input_widget_layout = QVBoxLayout(self.valid_rgb_color_input_widget)
+        valid_rgb_color_input_widget_layout.addWidget(self.valid_rgb_color_input_label)
+        valid_rgb_color_input_widget_layout.setSpacing(0)
+        valid_rgb_color_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        self.invalid_rgb_color_input_widget = QWidget()
+        self.invalid_rgb_color_input_widget.setObjectName("invalid_rgb_color_input_widget")
+        self.invalid_rgb_color_input_widget.setStyleSheet("""
+            QWidget#invalid_rgb_color_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_rgb_color_input_label = QLabel("Invalid RGB Color")
+        self.invalid_rgb_color_input_label.setWordWrap(True)
+        self.invalid_rgb_color_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_rgb_color_input_label.setObjectName("invalid_rgb_color_input_label")
+        self.invalid_rgb_color_input_label.setStyleSheet("""
+            QLabel#invalid_rgb_color_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        invalid_rgb_color_input_widget_layout = QVBoxLayout(self.invalid_rgb_color_input_widget)
+        invalid_rgb_color_input_widget_layout.addWidget(self.invalid_rgb_color_input_label)
+        invalid_rgb_color_input_widget_layout.setSpacing(0)
+        invalid_rgb_color_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        #-----Set the height for the RGBA Color Validity Check Widgets-----
+        self.valid_rgb_color_input_widget.setMaximumHeight(50)
+        self.invalid_rgb_color_input_widget.setMaximumHeight(50)
+
+        #----Hide the RBGA Color Validity Check Widgets-----
+        self.valid_rgb_color_input_widget.hide()
+        self.invalid_rgb_color_input_widget.hide()
+
+        #-----Validity Check Widget for Grayscale Color-----
+        self.valid_grayscale_color_input_widget = QWidget()
+        self.valid_grayscale_color_input_widget.setObjectName("valid_grayscale_color_input_widget")
+        self.valid_grayscale_color_input_widget.setStyleSheet("""
+            QWidget#valid_grayscale_color_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_grayscale_color_input_label = QLabel("Valid Grayscale")
+        self.valid_grayscale_color_input_label.setWordWrap(True)
+        self.valid_grayscale_color_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_grayscale_color_input_label.setObjectName("valid_grayscale_color_input_label")
+        self.valid_grayscale_color_input_label.setStyleSheet("""
+            QLabel#valid_grayscale_color_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_grayscale_color_input_layout = QVBoxLayout(self.valid_grayscale_color_input_widget)
+        valid_grayscale_color_input_layout.addWidget(self.valid_grayscale_color_input_label)
+        valid_grayscale_color_input_layout.setSpacing(0)
+        valid_grayscale_color_input_layout.setContentsMargins(0,0,0,0)
+
+        self.invalid_grayscale_color_input_widget = QWidget()
+        self.invalid_grayscale_color_input_widget.setObjectName("invalid_grayscale_color_input_widget")
+        self.invalid_grayscale_color_input_widget.setStyleSheet("""
+            QWidget#invalid_grayscale_color_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_grayscale_color_input_label = QLabel("Invalid Grayscale")
+        self.invalid_grayscale_color_input_label.setWordWrap(True)
+        self.invalid_grayscale_color_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_grayscale_color_input_label.setObjectName("invalid_grayscale_color_input_label")
+        self.invalid_grayscale_color_input_label.setStyleSheet("""
+            QLabel#invalid_grayscale_color_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        invalid_grayscale_color_input_layout = QVBoxLayout(self.invalid_grayscale_color_input_widget)
+        invalid_grayscale_color_input_layout.addWidget(self.invalid_grayscale_color_input_label)
+        invalid_grayscale_color_input_layout.setSpacing(0)
+        invalid_grayscale_color_input_layout.setContentsMargins(0,0,0,0)
+
+        #-----Set the height for the Grayscale Color Validity Check Widgets-----
+        self.valid_grayscale_color_input_widget.setMaximumHeight(50)
+        self.invalid_grayscale_color_input_widget.setMaximumHeight(50)
+
+        #----Hide the Grayscale Color Validity Check Widgets-----
+        self.valid_grayscale_color_input_widget.hide()
+        self.invalid_grayscale_color_input_widget.hide()
+
+        #-----Create the Face Color Adjustment Section-----
+        self.legend_face_color_adjustment_section = QWidget()
+        self.legend_face_color_adjustment_section.setObjectName("legend_face_color_adjustment_section")
+        self.legend_face_color_adjustment_section.setStyleSheet("""
+            QWidget#legend_face_color_adjustment_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -3356,259 +4207,13 @@ class legend_face_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }            
         """)
+        self.create_legend_face_color_adjustment_section()
 
-        self.named_color_button = QPushButton("Named Colors")
-        self.named_color_button.setObjectName("named_color")
-        self.named_color_button.setStyleSheet("""
-            QPushButton#named_color{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#named_color:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.hex_code_button = QPushButton("Hex Code Color")
-        self.hex_code_button.setObjectName("hex_code")
-        self.hex_code_button.setStyleSheet("""
-            QPushButton#hex_code{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#hex_code:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.rgba_color_button = QPushButton("RGBA Color")
-        self.rgba_color_button.setObjectName("rgba_color")
-        self.rgba_color_button.setStyleSheet("""
-            QPushButton#rgba_color{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#rgba_color:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.grayscale_color_button = QPushButton("Grayscale Color")
-        self.grayscale_color_button.setObjectName("grayscale")
-        self.grayscale_color_button.setStyleSheet("""
-            QPushButton#grayscale{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#grayscale:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.short_code_color_button = QPushButton("Short Code Color")
-        self.short_code_color_button.setObjectName("short_code_color")
-        self.short_code_color_button.setStyleSheet("""
-            QPushButton#short_code_color{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#short_code_color:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.none_button = QPushButton("None")
-        self.none_button.setObjectName("none")
-        self.none_button.setStyleSheet("""
-            QPushButton#none{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#none:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.named_color_button.clicked.connect(self.change_to_named_color_screen)
-        self.hex_code_button.clicked.connect(self.change_to_hex_code_screen)
-        self.rgba_color_button.clicked.connect(self.change_to_rgba_color_screen)
-        self.grayscale_color_button.clicked.connect(self.change_to_grayscale_colors_screen)
-        self.short_code_color_button.clicked.connect(self.change_to_short_code_color_screen)
-        self.none_button.clicked.connect(self.set_color_to_none)
-
-        button_layout = QVBoxLayout(self.face_color_adjustment_homescreen)
-        button_layout.addWidget(self.named_color_button)
-        button_layout.addWidget(self.hex_code_button)
-        button_layout.addWidget(self.rgba_color_button)
-        button_layout.addWidget(self.grayscale_color_button)
-        button_layout.addWidget(self.short_code_color_button)
-        button_layout.addWidget(self.none_button)
-        button_layout.setContentsMargins(10,10,10,10)
-        button_layout.setSpacing(5)
-        button_layout.addStretch()
-
-        #-----Named Color Screen-----
-
-        self.named_color_screen = QWidget()
-        self.named_color_screen.setObjectName("named_color_screen")
-        self.named_color_screen.setStyleSheet("""
-            QWidget#named_color_screen{
+        #-----Named Color Section-----
+        self.named_color_section = QWidget()
+        self.named_color_section.setObjectName("named_color_section")
+        self.named_color_section.setStyleSheet("""
+            QWidget#named_color_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -3619,15 +4224,14 @@ class legend_face_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }   
         """)
-        self.create_named_color_screen()
-        self.named_color_screen.hide()
+        self.create_named_color_section()
+        self.named_color_section.hide()
 
-        #-----Hex Code Color Screen-----
-
-        self.hex_code_color_screen = QWidget()
-        self.hex_code_color_screen.setObjectName("hex_code_color_screen")
-        self.hex_code_color_screen.setStyleSheet("""
-            QWidget#hex_code_color_screen{
+        #-----Hex Code Color Section-----
+        self.hex_code_color_section = QWidget()
+        self.hex_code_color_section.setObjectName("hex_code_color_section")
+        self.hex_code_color_section.setStyleSheet("""
+            QWidget#hex_code_color_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -3638,15 +4242,14 @@ class legend_face_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }  
         """)
-        self.create_hex_code_screen()
-        self.hex_code_color_screen.hide()
+        self.create_hex_code_color_section()
+        self.hex_code_color_section.hide()
 
-        #------RGBA Color Screen-----
-
-        self.rgba_color_screen = QWidget()
-        self.rgba_color_screen.setObjectName("rgba_color_screen")
-        self.rgba_color_screen.setStyleSheet("""
-            QWidget#rgba_color_screen{
+        #------RGBA Color Section-----
+        self.rgb_color_section = QWidget()
+        self.rgb_color_section.setObjectName("rgb_color_section")
+        self.rgb_color_section.setStyleSheet("""
+            QWidget#rgb_color_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -3657,17 +4260,14 @@ class legend_face_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }  
         """)
-        self.create_rgba_color_screen()
-        self.rgba_color_screen.hide()
+        self.create_rgb_color_section()
+        self.rgb_color_section.hide()
 
-        self.initial_rgba = [0,0,0,1]
-
-        #------Grayscale Color Screen-----
-
-        self.grayscale_color_screen = QWidget()
-        self.grayscale_color_screen.setObjectName("grayscale_color_screen")
-        self.grayscale_color_screen.setStyleSheet("""
-            QWidget#grayscale_color_screen{
+        #------Grayscale Color Section-----
+        self.grayscale_color_section = QWidget()
+        self.grayscale_color_section.setObjectName("grayscale_color_section")
+        self.grayscale_color_section.setStyleSheet("""
+            QWidget#grayscale_color_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -3678,15 +4278,14 @@ class legend_face_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }  
         """)
-        self.create_grayscale_color_screen()
-        self.grayscale_color_screen.hide()
+        self.create_grayscale_color_section()
+        self.grayscale_color_section.hide()
 
-        #-----Short Code Colors-----
-
-        self.short_code_color_screen = QWidget()
-        self.short_code_color_screen.setObjectName("short_code_color")
-        self.short_code_color_screen.setStyleSheet("""
-            QWidget#short_code_color{
+        #-----Short Code Colors Section-----
+        self.short_code_color_section = QWidget()
+        self.short_code_color_section.setObjectName("short_code_color_section")
+        self.short_code_color_section.setStyleSheet("""
+            QWidget#short_code_color_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -3697,37 +4296,150 @@ class legend_face_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }  
         """)
-        self.create_short_code_color_screen()
-        self.short_code_color_screen.hide()
+        self.create_short_code_color_section()
+        self.short_code_color_section.hide()
 
-        #-----Initialize Screen Value-----
+        #-----Reset Face Color Section-----
+        self.reset_face_color_section = QWidget()
+        self.reset_face_color_section.setObjectName("reset_facecolor_section")
+        self.reset_face_color_section.setStyleSheet("""
+            QWidget#reset_facecolor_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.create_reset_face_color_section()
+        self.reset_face_color_section.hide()
 
-        self.available_screens = [self.face_color_adjustment_homescreen,self.named_color_screen,
-                                self.hex_code_color_screen,self.rgba_color_screen,
-                                self.grayscale_color_screen,self.short_code_color_screen]
-        self.previous_screen_idx = 0
+        #-----Available Screens-----
+        self.available_screens = [self.legend_face_color_adjustment_section,self.named_color_section,
+                                self.hex_code_color_section,self.rgb_color_section,
+                                self.grayscale_color_section,self.short_code_color_section,
+                                self.reset_face_color_section]
         self.current_screen_idx = 0
+        self.available_screens[self.current_screen_idx].show()
 
         #-----Main Screen-----
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.face_color_adjustment_homescreen)
-        main_layout.addWidget(self.named_color_screen)
-        main_layout.addWidget(self.hex_code_color_screen)
-        main_layout.addWidget(self.rgba_color_screen)
-        main_layout.addWidget(self.grayscale_color_screen)
-        main_layout.addWidget(self.short_code_color_screen)
+        main_layout.addWidget(self.legend_face_color_adjustment_section)
+        main_layout.addWidget(self.named_color_section)
+        main_layout.addWidget(self.hex_code_color_section)
+        main_layout.addWidget(self.rgb_color_section)
+        main_layout.addWidget(self.grayscale_color_section)
+        main_layout.addWidget(self.short_code_color_section)
+        main_layout.addWidget(self.reset_face_color_section)
         main_layout.setContentsMargins(0,0,0,0)
         main_layout.setSpacing(0)
 
-        #-----Shortcuts-----
-        original_screen_shortcut = QShortcut(QKeySequence("left"),self)
+        #-----Keyboard Shortcut-----
+        original_screen_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left),self)
+        original_screen_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         original_screen_shortcut.activated.connect(self.change_to_original_screen)
 
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+    def create_legend_face_color_adjustment_section(self):
+        #Create the layout for the legend face color adjustment section
+        legend_face_color_adjustment_section_layout = QVBoxLayout(self.legend_face_color_adjustment_section)
+    
+        #Create the list view and model for the face color adjustment section
+        self.legend_face_color_parameter_list_view = QListView()
+        self.legend_face_color_parameter_model = QStringListModel(self.facecolor_types)
 
-    def create_named_color_screen(self):
-        named_color_screen_layout = QVBoxLayout(self.named_color_screen)
+        #Add the model to the list view and disable editting for the list view
+        self.legend_face_color_parameter_list_view.setModel(self.legend_face_color_parameter_model)
+        self.legend_face_color_parameter_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        
+        #Customization for the list view
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        #Apply the customization to the list view
+        self.legend_face_color_parameter_list_view.setItemDelegate(CustomDelegate())
 
+        #Set the object name and style the list view's background, item, select and hover effects. 
+        self.legend_face_color_parameter_list_view.setObjectName("legend_face_color_parameter_list_view")
+        self.legend_face_color_parameter_list_view.setStyleSheet("""
+            QListView#legend_face_color_parameter_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#legend_face_color_parameter_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#legend_face_color_parameter_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#legend_face_color_parameter_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+        
+        #Hide the scroll bar for the list view and control the spacing for each item
+        self.legend_face_color_parameter_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.legend_face_color_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.legend_face_color_parameter_list_view.setSpacing(3)
+
+        #Automatically update the facecolor based on the selected parameter
+        self.legend_face_color_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+
+        #Add the list view to the face color adjustment section layout
+        legend_face_color_adjustment_section_layout.addWidget(self.legend_face_color_parameter_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        legend_face_color_adjustment_section_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_named_color_section(self):
+        #Create the layout for the named color section layout
+        named_color_section_layout = QVBoxLayout(self.named_color_section)
+
+        #Create a search bar for the named colors
         self.color_search_bar = QLineEdit()
         self.color_search_bar.setObjectName("search_bar")
         self.color_search_bar.setPlaceholderText("Search: ")
@@ -3746,22 +4458,30 @@ class legend_face_color_adjustment_section(QWidget):
             }
         """)
         self.color_search_bar.setMinimumHeight(60)
-        named_color_screen_layout.addWidget(self.color_search_bar)
-        named_color_screen_layout.addSpacing(15)
+
+        #Add the search bar to the layout and control the spacing for it
+        named_color_section_layout.addWidget(self.color_search_bar)
+        named_color_section_layout.addSpacing(15)
     
+        #Created the list view and model for the named colors
         self.named_color_list_view = QListView()
         self.named_color_model = QStringListModel(self.named_colors)
 
+        #Created a filter proxy and applied the model to mimic filter by input
         self.filter_proxy = QSortFilterProxyModel()
         self.filter_proxy.setSourceModel(self.named_color_model)
         self.filter_proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive) 
         self.filter_proxy.setFilterKeyColumn(0)  
 
+        #Connect the filter proxy to the search bar
         self.color_search_bar.textChanged.connect(self.filter_proxy.setFilterFixedString)
 
+        #Add the filter model to the list view and give the list view an object name and restrict editting the item
         self.named_color_list_view.setModel(self.filter_proxy)
         self.named_color_list_view.setObjectName("named_color_list_view")
+        self.named_color_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
+        #Customization for the list view
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -3770,8 +4490,10 @@ class legend_face_color_adjustment_section(QWidget):
                 option.font = font
                 super().paint(painter, option, index)
         
+        #Apply the customization to the list view
         self.named_color_list_view.setItemDelegate(CustomDelegate())
 
+        #Style the list view's background, item, select and hover effects
         self.named_color_list_view.setStyleSheet("""
             QListView#named_color_list_view{
                 background: qlineargradient(
@@ -3825,20 +4547,25 @@ class legend_face_color_adjustment_section(QWidget):
             }
         """)
 
+        #Hide the scroll bars and set the spacing for the items
         self.named_color_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.named_color_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.named_color_list_view.setSpacing(3)
 
+        #Connect the list view to automatically update the face color based on the named color clicked on
         self.named_color_list_view.clicked.connect(self.change_named_color)
 
-        named_color_screen_layout.addWidget(self.named_color_list_view)
+        #Add the list view to the layout
+        named_color_section_layout.addWidget(self.named_color_list_view)
 
         # Add margins and spacing to make it look good and push content to the top
-        named_color_screen_layout.setContentsMargins(10, 10, 10, 10)
+        named_color_section_layout.setContentsMargins(10, 10, 10, 10)
 
-    def create_hex_code_screen(self):
-        hex_code_color_screen_layout = QVBoxLayout(self.hex_code_color_screen)
+    def create_hex_code_color_section(self):
+        #Create the layout for the hex code section
+        hex_code_color_section_layout = QVBoxLayout(self.hex_code_color_section)
 
+        #Create a line edit widget to take in the input
         self.hex_code_input = QLineEdit()
         self.hex_code_input.setObjectName("hex_code")
         self.hex_code_input.setPlaceholderText("Hex Code:")
@@ -3858,30 +4585,17 @@ class legend_face_color_adjustment_section(QWidget):
         """)
         self.hex_code_input.setMinimumHeight(60)
 
+        #Connect the hex code input widget to automatically update when the text changes
         self.hex_code_input.textChanged.connect(self.change_hex_code_color)
-
-        self.hex_valid_input_widget = QWidget()
-        self.hex_valid_input_widget.setObjectName("hex_valid_input")
-        self.hex_valid_input_widget.setStyleSheet("""
-            QWidget#hex_valid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),   
-                    stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1)
-                    stop:1 rgba(180, 200, 255, 1)  
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.hex_valid_input_label = QLabel("Valid Input")
-        self.hex_valid_input_label.setWordWrap(True)
-        self.hex_valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.hex_valid_input_label.setObjectName("hex_valid_input_label")
-        self.hex_valid_input_label.setStyleSheet("""
-            QLabel#hex_valid_input_label{
+    
+        #Create a reset hex code label for the reset hex code button
+        self.reset_hex_code_value_label = QLabel("Reset Hexcode")
+        self.reset_hex_code_value_label.setObjectName("reset_hex_code_value_label")
+        self.reset_hex_code_value_label.setWordWrap(True)
+        self.reset_hex_code_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_hex_code_value_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents,True)
+        self.reset_hex_code_value_label.setStyleSheet("""
+            QLabel#reset_hex_code_value_label{
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
@@ -3892,64 +4606,71 @@ class legend_face_color_adjustment_section(QWidget):
             }
         """)
 
-        hex_valid_input_layout = QVBoxLayout(self.hex_valid_input_widget)
-        hex_valid_input_layout.addWidget(self.hex_valid_input_label)
-        hex_valid_input_layout.setSpacing(0)
-        hex_valid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.hex_invalid_input_widget = QWidget()
-        self.hex_invalid_input_widget.setObjectName("hex_invalid_input")
-        self.hex_invalid_input_widget.setStyleSheet("""
-            QWidget#hex_invalid_input{
+        #Create the reset hex code button
+        self.reset_hex_code_value_button = QPushButton()
+        self.reset_hex_code_value_button.setObjectName("reset_hex_code_value_button")
+        self.reset_hex_code_value_button.setStyleSheet("""
+            QPushButton#reset_hex_code_value_button{
                 background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 100, 100, 1),   
-                    stop:0.4 rgba(255, 130, 120, 1), 
-                    stop:0.7 rgba(200, 90, 150, 1), 
-                    stop:1 rgba(180, 60, 140, 1)     
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
                 );
                 border: 2px solid black;
                 border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
             }
-        """)
-
-        self.hex_invalid_input_label = QLabel("Invalid Input")
-        self.hex_invalid_input_label.setWordWrap(True)
-        self.hex_invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.hex_invalid_input_label.setObjectName("hex_invalid_input_label")
-        self.hex_invalid_input_label.setStyleSheet("""
-            QLabel#hex_invalid_input_label{
+            QPushButton#reset_hex_code_value_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
                 padding: 6px;
                 color: black;
-                border: none;
-                background: transparent;
             }
         """)
+        self.reset_hex_code_value_button.setMinimumHeight(50)
+        self.reset_hex_code_value_button.clicked.connect(self.reset_face_color)
 
-        hex_invalid_input_layout = QVBoxLayout(self.hex_invalid_input_widget)
-        hex_invalid_input_layout.addWidget(self.hex_invalid_input_label)
-        hex_invalid_input_layout.setSpacing(0)
-        hex_invalid_input_layout.setContentsMargins(0,0,0,0)
+        #Add the label onto the button
+        reset_hex_code_value_button_layout = QVBoxLayout(self.reset_hex_code_value_button)
+        reset_hex_code_value_button_layout.addWidget(self.reset_hex_code_value_label)
+        reset_hex_code_value_button_layout.setContentsMargins(0,0,0,0)
+        reset_hex_code_value_button_layout.setSpacing(0)
 
-        self.hex_valid_input_widget.setMaximumHeight(50)
-        self.hex_invalid_input_widget.setMaximumHeight(50)
+        #Add the widgets to the layout
+        hex_code_color_section_layout.addWidget(self.hex_code_input)
+        hex_code_color_section_layout.addWidget(self.valid_hex_code_input_widget)
+        hex_code_color_section_layout.addWidget(self.invalid_hex_code_input_widget)
+        
+        #Add the contents margins, spacing, and stretch to the layout
+        hex_code_color_section_layout.setContentsMargins(10,10,10,10)
+        hex_code_color_section_layout.setSpacing(10)
+        hex_code_color_section_layout.addStretch()
 
-        self.hex_valid_input_widget.hide()
-        self.hex_invalid_input_widget.hide()
+        #Add the reset hex code value button
+        hex_code_color_section_layout.addWidget(self.reset_hex_code_value_button)
 
-        hex_code_color_screen_layout.addWidget(self.hex_code_input)
-        hex_code_color_screen_layout.addWidget(self.hex_valid_input_widget)
-        hex_code_color_screen_layout.addWidget(self.hex_invalid_input_widget)
-        hex_code_color_screen_layout.setContentsMargins(10,10,10,10)
-        hex_code_color_screen_layout.setSpacing(10)
-        hex_code_color_screen_layout.addStretch()
+    def create_rgb_color_section(self):
+        #Create the rgba color section layout
+        rgb_color_section_layout = QVBoxLayout(self.rgb_color_section)
 
-    def create_rgba_color_screen(self):
-        rgba_color_screen_layout = QVBoxLayout(self.rgba_color_screen)
-
+        #Create a line edit widget for r,g,b,a
         self.r_input = QLineEdit()
         self.r_input.setObjectName("r_input")
         self.r_input.setPlaceholderText("r:")
@@ -4004,56 +4725,24 @@ class legend_face_color_adjustment_section(QWidget):
             }
         """)
 
-        self.a_input = QLineEdit()
-        self.a_input.setObjectName("a_input")
-        self.a_input.setPlaceholderText("a:")
-        self.a_input.setStyleSheet("""
-            QLineEdit#a_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                color: black;
-                font-size: 24pt;
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
+        #Set the height for the four (r,g,b,a) line edit widgets
         self.r_input.setMinimumHeight(60)
         self.g_input.setMinimumHeight(60)
         self.b_input.setMinimumHeight(60)
-        self.a_input.setMinimumHeight(60)
 
-        self.r_input.textChanged.connect(self.change_rgba_color)
-        self.g_input.textChanged.connect(self.change_rgba_color)
-        self.b_input.textChanged.connect(self.change_rgba_color)
-        self.a_input.textChanged.connect(self.change_rgba_color)
+        #Automatically update the r,g,b,a whenever the text changes for the line edit widgets
+        self.r_input.textChanged.connect(self.change_rgb_color)
+        self.g_input.textChanged.connect(self.change_rgb_color)
+        self.b_input.textChanged.connect(self.change_rgb_color)
 
-        self.rgba_valid_input_widget = QWidget()
-        self.rgba_valid_input_widget.setObjectName("rgba_valid_input")
-        self.rgba_valid_input_widget.setStyleSheet("""
-            QWidget#rgba_valid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),   
-                    stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1)
-                    stop:1 rgba(180, 200, 255, 1)  
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.rgba_valid_input_label = QLabel("Valid Input")
-        self.rgba_valid_input_label.setWordWrap(True)
-        self.rgba_valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.rgba_valid_input_label.setObjectName("rgba_valid_input_label")
-        self.rgba_valid_input_label.setStyleSheet("""
-            QLabel#rgba_valid_input_label{
+        #Create a reset rgb value label for the reset rgba value button
+        self.reset_rgb_value_label = QLabel("Reset RGB Value")
+        self.reset_rgb_value_label.setObjectName("reset_rgb_value_label")
+        self.reset_rgb_value_label.setWordWrap(True)
+        self.reset_rgb_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_rgb_value_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents,True)
+        self.reset_rgb_value_label.setStyleSheet("""
+            QLabel#reset_rgb_value_label{
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
@@ -4064,73 +4753,78 @@ class legend_face_color_adjustment_section(QWidget):
             }
         """)
 
-        rgba_valid_input_layout = QVBoxLayout(self.rgba_valid_input_widget)
-        rgba_valid_input_layout.addWidget(self.rgba_valid_input_label)
-        rgba_valid_input_layout.setSpacing(0)
-        rgba_valid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.rgba_invalid_input_widget = QWidget()
-        self.rgba_invalid_input_widget.setObjectName("rgba_invalid_input")
-        self.rgba_invalid_input_widget.setStyleSheet("""
-            QWidget#rgba_invalid_input{
+        #Create the reset rgb value button
+        self.reset_rgb_value_button = QPushButton()
+        self.reset_rgb_value_button.setObjectName("reset_rgb_value_button")
+        self.reset_rgb_value_button.setStyleSheet("""
+            QPushButton#reset_rgb_value_button{
                 background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 100, 100, 1),   
-                    stop:0.4 rgba(255, 130, 120, 1), 
-                    stop:0.7 rgba(200, 90, 150, 1), 
-                    stop:1 rgba(180, 60, 140, 1)     
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
                 );
                 border: 2px solid black;
                 border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
             }
-        """)
-
-        self.rgba_invalid_input_label = QLabel("Invalid Input")
-        self.rgba_invalid_input_label.setWordWrap(True)
-        self.rgba_invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.rgba_invalid_input_label.setObjectName("rgba_invalid_input_label")
-        self.rgba_invalid_input_label.setStyleSheet("""
-            QLabel#rgba_invalid_input_label{
+            QPushButton#reset_rgb_value_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
                 padding: 6px;
                 color: black;
-                border: none;
-                background: transparent;
             }
         """)
+        self.reset_rgb_value_button.setMinimumHeight(50)
+        self.reset_rgb_value_button.clicked.connect(self.reset_face_color)
 
-        rgba_invalid_input_layout = QVBoxLayout(self.rgba_invalid_input_widget)
-        rgba_invalid_input_layout.addWidget(self.rgba_invalid_input_label)
-        rgba_invalid_input_layout.setSpacing(0)
-        rgba_invalid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.rgba_valid_input_widget.setMaximumHeight(50)
-        self.rgba_invalid_input_widget.setMaximumHeight(50)
-
-        self.rgba_valid_input_widget.hide()
-        self.rgba_invalid_input_widget.hide()
+        #Add the label to the button
+        reset_rgb_value_button_layout = QVBoxLayout(self.reset_rgb_value_button)
+        reset_rgb_value_button_layout.addWidget(self.reset_rgb_value_label)
+        reset_rgb_value_button_layout.setContentsMargins(0,0,0,0)
+        reset_rgb_value_button_layout.setSpacing(0)
     
-        rgba_color_screen_layout.addWidget(self.r_input)
-        rgba_color_screen_layout.addWidget(self.g_input)
-        rgba_color_screen_layout.addWidget(self.b_input)
-        rgba_color_screen_layout.addWidget(self.a_input)
-        rgba_color_screen_layout.addWidget(self.rgba_valid_input_widget)
-        rgba_color_screen_layout.addWidget(self.rgba_invalid_input_widget)
+        #Add all the widgets to the layout 
+        rgb_color_section_layout.addWidget(self.r_input)
+        rgb_color_section_layout.addWidget(self.g_input)
+        rgb_color_section_layout.addWidget(self.b_input)
+        rgb_color_section_layout.addWidget(self.valid_rgb_color_input_widget)
+        rgb_color_section_layout.addWidget(self.invalid_rgb_color_input_widget)
 
-        rgba_color_screen_layout.setContentsMargins(10,10,10,10)
-        rgba_color_screen_layout.setSpacing(10)
-        rgba_color_screen_layout.addStretch()
+        #Add the contents margins, spacing, and stretch to the layout
+        rgb_color_section_layout.setContentsMargins(10,10,10,10)
+        rgb_color_section_layout.setSpacing(10)
+        rgb_color_section_layout.addStretch()
 
-    def create_grayscale_color_screen(self):
-        grayscale_color_screen_layout = QVBoxLayout(self.grayscale_color_screen)
+        #Add the reset rgba value button to the layout
+        rgb_color_section_layout.addWidget(self.reset_rgb_value_button)
 
-        self.grayscale_input = QLineEdit()
-        self.grayscale_input.setObjectName("grayscale")
-        self.grayscale_input.setPlaceholderText("Grayscale:")
-        self.grayscale_input.setStyleSheet("""
-            QLineEdit#grayscale{
+    def create_grayscale_color_section(self):
+        #Create a layout for the grayscale color section
+        grayscale_color_section_layout = QVBoxLayout(self.grayscale_color_section)
+
+        #Create QLineEdit object to take in the user input
+        self.grayscale_color_input = QLineEdit()
+        self.grayscale_color_input.setObjectName("grayscale_color_input")
+        self.grayscale_color_input.setPlaceholderText("Grayscale:")
+        self.grayscale_color_input.setStyleSheet("""
+            QLineEdit#grayscale_color_input{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -4143,32 +4837,19 @@ class legend_face_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-        self.grayscale_input.setMinimumHeight(60)
+        self.grayscale_color_input.setMinimumHeight(60)
 
-        self.grayscale_input.textChanged.connect(self.change_grayscale_color)
+        #Let the grayscale automatically change when the user enters something 
+        self.grayscale_color_input.textChanged.connect(self.change_grayscale_color)
 
-        self.grayscale_valid_input_widget = QWidget()
-        self.grayscale_valid_input_widget.setObjectName("grayscale_valid_input")
-        self.grayscale_valid_input_widget.setStyleSheet("""
-            QWidget#grayscale_valid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),   
-                    stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1)
-                    stop:1 rgba(180, 200, 255, 1)  
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.grayscale_valid_input_label = QLabel("Valid Input")
-        self.grayscale_valid_input_label.setWordWrap(True)
-        self.grayscale_valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.grayscale_valid_input_label.setObjectName("grayscale_valid_input_label")
-        self.grayscale_valid_input_label.setStyleSheet("""
-            QLabel#grayscale_valid_input_label{
+        #Create a reset grayscale value label for the reset grayscale button
+        self.reset_grayscale_value_label = QLabel("Reset Grayscale")
+        self.reset_grayscale_value_label.setObjectName("reset_grayscale_value_label")
+        self.reset_grayscale_value_label.setWordWrap(True)
+        self.reset_grayscale_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_grayscale_value_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents,True)
+        self.reset_grayscale_value_label.setStyleSheet("""
+            QLabel#reset_grayscale_value_label{
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
@@ -4179,68 +4860,78 @@ class legend_face_color_adjustment_section(QWidget):
             }
         """)
 
-        grayscale_valid_input_layout = QVBoxLayout(self.grayscale_valid_input_widget)
-        grayscale_valid_input_layout.addWidget(self.grayscale_valid_input_label)
-        grayscale_valid_input_layout.setSpacing(0)
-        grayscale_valid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.grayscale_invalid_input_widget = QWidget()
-        self.grayscale_invalid_input_widget.setObjectName("grayscale_invalid_input")
-        self.grayscale_invalid_input_widget.setStyleSheet("""
-            QWidget#grayscale_invalid_input{
+        #Create the reset grayscale value button
+        self.reset_grayscale_value_button = QPushButton()
+        self.reset_grayscale_value_button.setObjectName("reset_grayscale_value_button")
+        self.reset_grayscale_value_button.setStyleSheet("""
+            QPushButton#reset_grayscale_value_button{
                 background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 100, 100, 1),   
-                    stop:0.4 rgba(255, 130, 120, 1), 
-                    stop:0.7 rgba(200, 90, 150, 1), 
-                    stop:1 rgba(180, 60, 140, 1)     
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
                 );
                 border: 2px solid black;
                 border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
             }
-        """)
-
-        self.grayscale_invalid_input_label = QLabel("Invalid Input")
-        self.grayscale_invalid_input_label.setWordWrap(True)
-        self.grayscale_invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.grayscale_invalid_input_label.setObjectName("grayscale_invalid_input_label")
-        self.grayscale_invalid_input_label.setStyleSheet("""
-            QLabel#grayscale_invalid_input_label{
+            QPushButton#reset_grayscale_value_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
                 padding: 6px;
                 color: black;
-                border: none;
-                background: transparent;
             }
         """)
+        self.reset_grayscale_value_button.setMinimumHeight(50)
+        self.reset_grayscale_value_button.clicked.connect(self.reset_face_color)
 
-        grayscale_invalid_input_layout = QVBoxLayout(self.grayscale_invalid_input_widget)
-        grayscale_invalid_input_layout.addWidget(self.grayscale_invalid_input_label)
-        grayscale_invalid_input_layout.setSpacing(0)
-        grayscale_invalid_input_layout.setContentsMargins(0,0,0,0)
+        #Add the label to the button
+        reset_grayscale_value_button_layout = QVBoxLayout(self.reset_grayscale_value_button)
+        reset_grayscale_value_button_layout.addWidget(self.reset_grayscale_value_label)
+        reset_grayscale_value_button_layout.setContentsMargins(0,0,0,0)
+        reset_grayscale_value_button_layout.setSpacing(0)
 
-        self.grayscale_valid_input_widget.setMaximumHeight(50)
-        self.grayscale_invalid_input_widget.setMaximumHeight(50)
+        #Add the widgets to the layout and adjust the margins, spacing, and add stretch
+        grayscale_color_section_layout.addWidget(self.grayscale_color_input)
+        grayscale_color_section_layout.addWidget(self.valid_grayscale_color_input_widget)
+        grayscale_color_section_layout.addWidget(self.invalid_grayscale_color_input_widget)
+        grayscale_color_section_layout.setContentsMargins(10,10,10,10)
+        grayscale_color_section_layout.setSpacing(10)
+        grayscale_color_section_layout.addStretch()
 
-        self.grayscale_valid_input_widget.hide()
-        self.grayscale_invalid_input_widget.hide()
+        #Add the reset grayscale value button to the layout
+        grayscale_color_section_layout.addWidget(self.reset_grayscale_value_button)
 
-        grayscale_color_screen_layout.addWidget(self.grayscale_input)
-        grayscale_color_screen_layout.addWidget(self.grayscale_valid_input_widget)
-        grayscale_color_screen_layout.addWidget(self.grayscale_invalid_input_widget)
-        grayscale_color_screen_layout.setContentsMargins(10,10,10,10)
-        grayscale_color_screen_layout.setSpacing(10)
-        grayscale_color_screen_layout.addStretch()
-
-    def create_short_code_color_screen(self):
-        short_code_color_screen_layout = QVBoxLayout(self.short_code_color_screen)
+    def create_short_code_color_section(self):
+        #Create the layout for the short code color section
+        short_code_color_section_layout = QVBoxLayout(self.short_code_color_section)
     
+        #Create a list view for the section and create a model with the short code colors
         self.short_code_color_list_view = QListView()
         self.short_code_color_model = QStringListModel(self.short_code_colors)
+
+        #Add the model with the short code colors to the list view 
+        #Ban the user from being able to edit it
         self.short_code_color_list_view.setModel(self.short_code_color_model)
         self.short_code_color_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        #Customizations for the list view
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -4249,8 +4940,10 @@ class legend_face_color_adjustment_section(QWidget):
                 option.font = font
                 super().paint(painter, option, index)
         
+        #Apply the customization to the list view
         self.short_code_color_list_view.setItemDelegate(CustomDelegate())
 
+        #Give the list view a name and edit the item, background, select and hover effect
         self.short_code_color_list_view.setObjectName("short_code_color_list_view")
         self.short_code_color_list_view.setStyleSheet("""
             QListView#short_code_color_list_view{
@@ -4304,77 +4997,194 @@ class legend_face_color_adjustment_section(QWidget):
                 min-height: 41px;
             }
         """)
+
+        #Control the scroll bar for the list view and add spacing between each item
         self.short_code_color_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.short_code_color_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.short_code_color_list_view.setSpacing(3)
 
+        #Connect the list view to automatically update the selected item 
         self.short_code_color_list_view.clicked.connect(self.change_short_code_color)
 
-        short_code_color_screen_layout.addWidget(self.short_code_color_list_view)
+        #Add the list view to the layout
+        short_code_color_section_layout.addWidget(self.short_code_color_list_view)
 
         # Add margins and spacing to make it look good and push content to the top
-        short_code_color_screen_layout.setContentsMargins(10, 10, 10, 10)
+        short_code_color_section_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_reset_face_color_section(self):
+        #Create a layout for the reset face color section
+        reset_face_color_section_layout = QVBoxLayout(self.reset_face_color_section)
+
+        #Create the reset face color label for the button
+        self.reset_face_color_label = QLabel("Reset Facecolor")
+        self.reset_face_color_label.setWordWrap(True)
+        self.reset_face_color_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_face_color_label.setObjectName("reset_face_color_label")
+        self.reset_face_color_label.setStyleSheet("""
+            QLabel#reset_face_color_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.reset_face_color_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+        #Create the reset face color button
+        self.reset_face_color_button = QPushButton()
+        self.reset_face_color_button.setObjectName("reset_face_color_button")
+        self.reset_face_color_button.setStyleSheet("""
+            QPushButton#reset_face_color_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#reset_face_color_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.reset_face_color_button.setMinimumHeight(50)
+
+        #Connect the button to automatically reset the face color when clicked on
+        self.reset_face_color_button.clicked.connect(self.reset_face_color)
+
+        #Add the label onto the button
+        reset_face_color_button_layout = QVBoxLayout(self.reset_face_color_button)
+        reset_face_color_button_layout.addWidget(self.reset_face_color_label)
+        reset_face_color_button_layout.setContentsMargins(0,0,0,0)
+        reset_face_color_button_layout.setSpacing(0)
+
+        #Add the button created to the reset face color section
+        reset_face_color_section_layout.addWidget(self.reset_face_color_button)
+        reset_face_color_section_layout.setContentsMargins(10,10,10,10)
+        reset_face_color_section_layout.addStretch()
+
+    def change_current_parameter_screen(self,index):
+        #Get the associated screen name based on the item the user clicked on in the list view
+        screen_name = self.legend_face_color_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
+        
+        #If the screen name is Named Color change to the named color section
+        if (screen_name == "Named Color"):
+            self.change_to_named_color_section()
+
+        #If the screen name is Hex Code change to the hex code section
+        if (screen_name == "Hex Code"):
+            self.change_to_hex_code_section()
+        
+        #If the screen name is RGBA Color change to the rgba color section
+        if (screen_name == "RGB Color"):
+            self.change_to_rgb_color_section()
+        
+        #If the screen name is Grayscale Color change to the grayscale color section
+        if (screen_name == "Grayscale Color"):
+            self.change_to_grayscale_colors_section()
+
+        #If the screen name is Short Code Color change to the short code color section
+        if (screen_name == "Short Code Color"):
+            self.change_to_short_code_color_section()
+
+        #If the screen name is Reset Face Color change to the reset face color section
+        if (screen_name == "Reset Face Color"):
+            self.change_to_reset_face_color_section()
 
     def change_to_original_screen(self):
+        #Hide the current screen, change the screen idx, display the new screen
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 0
-        self.face_color_adjustment_homescreen.show()
+        self.available_screens[self.current_screen_idx].show()
 
-    def change_to_named_color_screen(self):
+    def change_to_named_color_section(self):
+        #Hide the current screen, change the screen idx, display the new screen
         self.available_screens[self.current_screen_idx].hide()
-        self.previous_screen_idx = self.current_screen_idx
         self.current_screen_idx = 1
-        self.named_color_screen.show()
+        self.available_screens[self.current_screen_idx].show()
 
-    def change_to_hex_code_screen(self):
+    def change_to_hex_code_section(self):
+        #Hide the current screen, change the screen idx, display the new screen
         self.available_screens[self.current_screen_idx].hide()
-        self.previous_screen_idx = self.current_screen_idx
         self.current_screen_idx = 2
-        self.hex_code_color_screen.show()
+        self.available_screens[self.current_screen_idx].show()
 
-    def change_to_rgba_color_screen(self):
+    def change_to_rgb_color_section(self):
+        #Hide the current screen, change the screen idx, display the new screen
         self.available_screens[self.current_screen_idx].hide()
-        self.previous_screen_idx = self.current_screen_idx
         self.current_screen_idx = 3
-        self.rgba_color_screen.show()
+        self.available_screens[self.current_screen_idx].show()
 
-    def change_to_grayscale_colors_screen(self):
+    def change_to_grayscale_colors_section(self):
+        #Hide the current screen, change the screen idx, display the new screen
         self.available_screens[self.current_screen_idx].hide()
-        self.previous_screen_idx = self.current_screen_idx
         self.current_screen_idx = 4
-        self.grayscale_color_screen.show()
+        self.available_screens[self.current_screen_idx].show()
 
-    def change_to_short_code_color_screen(self):
+    def change_to_short_code_color_section(self):
+        #Hide the current screen, change the screen idx, display the new screen
         self.available_screens[self.current_screen_idx].hide()
-        self.previous_screen_idx = self.current_screen_idx
         self.current_screen_idx = 5
-        self.short_code_color_screen.show()
+        self.available_screens[self.current_screen_idx].show()
 
-    def set_color_to_none(self):
-        self.current_facecolor = None
-        self.update_color()
+    def change_to_reset_face_color_section(self):
+        #Hide the current screen, change the screen idx, display the new screen
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 6
+        self.available_screens[self.current_screen_idx].show()
 
     def change_named_color(self,index):
+        #Using the index acquired by the filter proxy and get the associated index in the model
         source_index = self.filter_proxy.mapToSource(index)
+
+        #Get the specific color in the model based on the index
         self.current_facecolor = self.named_color_model.data(source_index, Qt.ItemDataRole.DisplayRole)
 
+        #Check if the color is one of the special ones and add the prefix if it is 
         if (self.current_facecolor in self.xkcd_colors):
             self.current_facecolor = "xkcd:" + self.current_facecolor
         if (self.current_facecolor in self.tableau_colors):
             self.current_facecolor = "tab:" + self.current_facecolor
 
-        self.update_color()
+        #Update the facecolor for the plot config
+        self.update_facecolor()
 
     def change_hex_code_color(self):
+        #Get the hex code the user inputs
         hex_code = self.hex_code_input.text().strip()
 
+        #Hide both validity check widgets when the user clears the input
         if (hex_code == ""):
-            self.hex_valid_input_widget.hide()
-            self.hex_invalid_input_widget.hide()
-            self.current_facecolor = None
-            self.update_color()
+            self.valid_hex_code_input_widget.hide()
+            self.invalid_hex_code_input_widget.hide()
             return
 
+        #Checks if the hex code is valid or not
         def check_valid_hex_code(hex_code):
             if (hex_code[0] != "#"):
                 new_hex_code = "#" + hex_code
@@ -4385,98 +5195,178 @@ class legend_face_color_adjustment_section(QWidget):
             try:
                 int(hex_code,16)
                 return True
-            except:
+            except ValueError:
                 return False
         
-        if (hex_code != ""):
-            validity = check_valid_hex_code(hex_code)
-            if (validity):
-                self.hex_valid_input_widget.show()
-                self.hex_invalid_input_widget.hide()
-                self.current_facecolor = hex_code if hex_code[0] == "#" else "#" + hex_code
-                self.update_color()
-            else:
-                self.hex_valid_input_widget.hide()
-                self.hex_invalid_input_widget.show()
+        #Checks if the current hex code is valid or not 
+        validity = check_valid_hex_code(hex_code)
 
-    def change_rgba_color(self):
-        r_value = self.r_input.text().strip()
-        g_value = self.g_input.text().strip()
-        b_value = self.b_input.text().strip()
-        a_value = self.a_input.text().strip()
-
-        if (not(r_value or g_value or b_value or a_value)):
-            self.rgba_valid_input_widget.hide()
-            self.rgba_invalid_input_widget.hide()
-            self.current_facecolor = None
-            self.update_color()
-            return 
-
-        valid = None
-
-        try:
-            r_value = int(r_value) if r_value != "" else self.initial_rgba[0]
-            g_value = int(g_value) if g_value != "" else self.initial_rgba[1]
-            b_value = int(b_value) if b_value != "" else self.initial_rgba[2]
-            a_value = int(a_value) if a_value != "" else self.initial_rgba[3]
-            valid = True
-        except:
-            valid = False
-
-        if (valid):
-            self.initial_rgba[0] = r_value 
-            self.initial_rgba[1] = g_value
-            self.initial_rgba[2] = b_value 
-            self.initial_rgba[3] = a_value
-
-            self.rgba_valid_input_widget.show()
-            self.rgba_invalid_input_widget.hide()
-
-            self.current_facecolor = self.initial_rgba
-
-            self.update_color()
+        #if the hex code is valid show the valid widget and update the plot config with the new hex code
+        if (validity):
+            self.valid_hex_code_input_widget.show()
+            self.invalid_hex_code_input_widget.hide()
+            self.current_facecolor = hex_code if hex_code[0] == "#" else "#" + hex_code
+            self.update_facecolor()
+        #if the hex code is invalid show the invalid widget
         else:
-            self.rgba_valid_input_widget.hide()
-            self.rgba_invalid_input_widget.show()
+            self.valid_hex_code_input_widget.hide()
+            self.invalid_hex_code_input_widget.show()
+
+    def change_r_value(self):
+        #Get the r value from the input
+        r_input = self.r_input.text().strip()
+
+        #Check if the value is empty or not
+        if (r_input == ""):
+            self.r_value = 1
+            return True
+
+        #Check if the value is valid or not
+        try:
+            r_value = int(r_input)
+            if (0 > r_value or r_value > 255):
+                raise ValueError
+        except ValueError:
+            return False
+        self.r_value = r_value / 255
+        return True
+
+    def change_g_value(self):
+        #Get the g value from the input
+        g_input = self.g_input.text().strip()
+
+        #Check if the value is empty or not
+        if (g_input == ""):
+            self.g_value = 1
+            return True
+
+        #Check if the value is valid or not
+        try:
+            g_value = int(g_input)
+            if (0 > g_value or g_value > 255):
+                raise ValueError
+        except ValueError:
+            return False
+        self.g_value = g_value / 255
+        return True
+
+    def change_b_value(self):
+        #Get the b value from the input
+        b_input = self.b_input.text().strip()
+
+        #Check if the value is empty or not
+        if (b_input == ""):
+            self.b_value = 1
+            return True
+
+        #Check if the value is valid or not
+        try:
+            b_value = int(b_input)
+            if (0 > b_value or b_value > 255):
+                raise ValueError
+        except ValueError:
+            return False
+        self.b_value = b_value / 255
+        return True
+ 
+    def change_rgb_color(self):
+        #Check if the values are valid
+        valid_r = self.change_r_value()
+        valid_g = self.change_g_value()
+        valid_b = self.change_b_value()
+
+        #Hide all the validity widgets
+        self.valid_rgb_color_input_widget.hide()
+        self.invalid_rgb_color_input_widget.hide()
+
+        #Show the first validity widget that associates to the valid values we found earlier
+        if (not valid_r):
+            self.invalid_rgb_color_input_label.setText("Invalid R Value")
+            self.invalid_rgb_color_input_widget.show()
+        elif (not valid_g):
+            self.invalid_rgb_color_input_label.setText("Invalid G Value")
+            self.invalid_rgb_color_input_widget.show()
+        elif (not valid_b):
+            self.invalid_rgb_color_input_label.setText("Invalid B Value")
+            self.invalid_rgb_color_input_widget.show()
+        else:
+            #Get the text values from the input
+            r_value = self.r_input.text().strip()
+            g_value = self.g_input.text().strip()
+            b_value = self.b_input.text().strip()
+
+            #Show the valid widget if at least one isn't blank
+            if (r_value or g_value or b_value):
+                self.valid_rgb_color_input_widget.show()
+                self.invalid_rgb_color_input_widget.hide()
+
+            #Update the facecolor
+            self.current_facecolor = (self.r_value,self.g_value,self.b_value)
+            self.update_facecolor()
 
     def change_grayscale_color(self):
-        grayscale_value = self.grayscale_input.text().strip()
+        #Get the grayscale color value from the user
+        grayscale_color_value = self.grayscale_color_input.text().strip()
 
-        if (grayscale_value == ""): 
-            self.grayscale_valid_input_widget.hide() 
-            self.grayscale_invalid_input_widget.hide()
-            self.current_facecolor = None
-            self.update_color()
+        #Check if the input is empty and if it is hide all the validity check widgets and return
+        if (grayscale_color_value == ""): 
+            self.valid_grayscale_color_input_widget.hide() 
+            self.invalid_grayscale_color_input_widget.hide()
             return
 
+        #Check to see if the input can be turned into a float and between 0 and 1
+        #Show the valid widget and hide the invalid widget
         try: 
-            grayscale_value = float(grayscale_value)
-            if (0 > grayscale_value or grayscale_value > 1):
-                raise Exception
-            self.grayscale_valid_input_widget.show()
-            self.grayscale_invalid_input_widget.hide()
-        except:
-            self.grayscale_valid_input_widget.hide()
-            self.grayscale_invalid_input_widget.show()
-
-        self.current_facecolor = grayscale_value
-        self.update_color()
+            grayscale_color_value = float(grayscale_color_value)
+            if (0 > grayscale_color_value or grayscale_color_value > 1):
+                raise ValueError
+            self.valid_grayscale_color_input_widget.show()
+            self.invalid_grayscale_color_input_widget.hide()
+        #Show the invalid widget and hide the invalid widget
+        except ValueError:
+            self.valid_grayscale_color_input_widget.hide()
+            self.invalid_grayscale_color_input_widget.show()
+        else:
+            #Update the current facecolor and update it in the plot config too
+            self.current_facecolor = str(grayscale_color_value)
+            self.update_facecolor()
 
     def change_short_code_color(self,index):
+        #Change the current facecolor to the one selected by the user based on the index and update it
         self.current_facecolor = self.short_code_color_model.data(index, Qt.ItemDataRole.DisplayRole)
-        self.update_color()
+        self.update_facecolor()
 
-    def update_color(self):
+    def reset_face_color(self):
+        #Change the facecolor to None and update it
+        if (self.current_screen_idx == 2):
+            self.hex_code_input.clear()
+        if (self.current_screen_idx == 3):
+            self.r_input.clear()
+            self.g_input.clear()
+            self.b_input.clear()
+        if (self.current_screen_idx == 4):
+            self.grayscale_color_input.clear()
+
+        self.current_facecolor = None
+        self.update_facecolor()
+
+    def update_facecolor(self):
+        #Get the newest plot config from the plot config json
         db = self.plot_manager.get_db()
+
+        #if there is a plot config then update it in the newest plot config
         if (db != []):
             self.plot_manager.update_legend("facecolor",self.current_facecolor)
+        #if there is no plot config available then create a new one with the default and add the new value in
         else:
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["facecolor"] = self.current_facecolor
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        #Update the graph with the newest plot config
         self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
+        #Check where the cursor clicks and clear the focus if it's not in the input area
         if not self.color_search_bar.geometry().contains(event.position().toPoint()):
             self.color_search_bar.clearFocus()
         if not self.hex_code_input.geometry().contains(event.position().toPoint()):
@@ -4487,34 +5377,299 @@ class legend_face_color_adjustment_section(QWidget):
             self.g_input.clearFocus()
         if not self.b_input.geometry().contains(event.position().toPoint()):
             self.b_input.clearFocus()
-        if not self.a_input.geometry().contains(event.position().toPoint()):
-            self.a_input.clearFocus()
-        if not self.grayscale_input.geometry().contains(event.position().toPoint()):
-            self.grayscale_input.clearFocus()
+        if not self.grayscale_color_input.geometry().contains(event.position().toPoint()):
+            self.grayscale_color_input.clearFocus()
         super().mousePressEvent(event)
 
 class legend_edge_color_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
 
+        self.plot_manager = PlotManager() 
+        self.selected_graph = selected_graph
         self.graph_display = graph_display
 
-        self.plot_manager = PlotManager()
-        self.selected_graph = selected_graph
+        #Set the object name for the widget
+        self.setObjectName("legend_edge_color_adjustment_section")
+
+        #Get all the named colors and the short code colors
         self.named_colors = list(mcolors.get_named_colors_mapping().keys())
         self.short_code_colors = self.named_colors[-8:]
         self.named_colors = [c.replace("xkcd:","") for c in self.named_colors]
         self.named_colors = [c.replace("tab:","") for c in self.named_colors]
         self.named_colors = self.named_colors[:-8]
 
-        self.current_edge_color = ""
+        #Get the xkcd colors and store it in a list
+        self.xkcd_colors = [color.replace("xkcd:","") for color in list(mcolors.XKCD_COLORS)]
+        #Get the tableau colors and store it in a list
+        self.tableau_colors = [color.replace("tab:","") for color in list(mcolors.TABLEAU_COLORS)]
 
-        #-----Home Screen-----
+        #Initialize the color types for the edge color
+        self.edgecolor_types = ["Named Color","Hex Code","RGBA Color","Grayscale Color","Short Code Color","Reset Edge Color"]
 
-        self.edge_color_adjustment_homescreen = QWidget()
-        self.edge_color_adjustment_homescreen.setObjectName("face_color_adjustment")
-        self.edge_color_adjustment_homescreen.setStyleSheet("""
-            QWidget#face_color_adjustment{
+        #Initialize the Initial RGBA Value
+        self.r_value = 1
+        self.g_value = 1
+        self.b_value = 1
+        self.a_value = 1
+
+        #Initialize the current edgecolor
+        self.current_edgecolor = None
+
+        #-----Validity Check Widget for Hex Code-----
+        self.valid_hex_code_input_widget = QWidget()
+        self.valid_hex_code_input_widget.setObjectName("valid_hex_code_input_widget")
+        self.valid_hex_code_input_widget.setStyleSheet("""
+            QWidget#valid_hex_code_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_hex_code_input_label = QLabel("Valid Hex Code")
+        self.valid_hex_code_input_label.setWordWrap(True)
+        self.valid_hex_code_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_hex_code_input_label.setObjectName("valid_hex_code_input_label")
+        self.valid_hex_code_input_label.setStyleSheet("""
+            QLabel#valid_hex_code_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_hex_code_input_widget_layout = QVBoxLayout(self.valid_hex_code_input_widget)
+        valid_hex_code_input_widget_layout.addWidget(self.valid_hex_code_input_label)
+        valid_hex_code_input_widget_layout.setSpacing(0)
+        valid_hex_code_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        self.invalid_hex_code_input_widget = QWidget()
+        self.invalid_hex_code_input_widget.setObjectName("invalid_hex_code_input_widget")
+        self.invalid_hex_code_input_widget.setStyleSheet("""
+            QWidget#invalid_hex_code_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_hex_code_input_label = QLabel("Invalid Hex Code")
+        self.invalid_hex_code_input_label.setWordWrap(True)
+        self.invalid_hex_code_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_hex_code_input_label.setObjectName("invalid_hex_code_input_label")
+        self.invalid_hex_code_input_label.setStyleSheet("""
+            QLabel#invalid_hex_code_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        invalid_hex_code_input_widget_layout = QVBoxLayout(self.invalid_hex_code_input_widget)
+        invalid_hex_code_input_widget_layout.addWidget(self.invalid_hex_code_input_label)
+        invalid_hex_code_input_widget_layout.setSpacing(0)
+        invalid_hex_code_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        #-----Set the size for the Hex Code Validity Check Widgets-----
+        self.valid_hex_code_input_widget.setMaximumHeight(50)
+        self.invalid_hex_code_input_widget.setMaximumHeight(50)
+
+        #-----Hide the Hex Code Validity Check Widgets-----
+        self.valid_hex_code_input_widget.hide()
+        self.invalid_hex_code_input_widget.hide()
+
+        #-----Validity Check Widgets For RGBA Color-----
+        self.valid_rgba_color_input_widget = QWidget()
+        self.valid_rgba_color_input_widget.setObjectName("valid_rgba_color_input_widget")
+        self.valid_rgba_color_input_widget.setStyleSheet("""
+            QWidget#valid_rgba_color_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_rgba_color_input_label = QLabel("Valid RBGA Color")
+        self.valid_rgba_color_input_label.setWordWrap(True)
+        self.valid_rgba_color_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_rgba_color_input_label.setObjectName("valid_rgba_color_input_label")
+        self.valid_rgba_color_input_label.setStyleSheet("""
+            QLabel#valid_rgba_color_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_rgba_color_input_widget_layout = QVBoxLayout(self.valid_rgba_color_input_widget)
+        valid_rgba_color_input_widget_layout.addWidget(self.valid_rgba_color_input_label)
+        valid_rgba_color_input_widget_layout.setSpacing(0)
+        valid_rgba_color_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        self.invalid_rgba_color_input_widget = QWidget()
+        self.invalid_rgba_color_input_widget.setObjectName("invalid_rgba_color_input_widget")
+        self.invalid_rgba_color_input_widget.setStyleSheet("""
+            QWidget#invalid_rgba_color_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_rgba_color_input_label = QLabel("Invalid RGBA Color")
+        self.invalid_rgba_color_input_label.setWordWrap(True)
+        self.invalid_rgba_color_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_rgba_color_input_label.setObjectName("invalid_rgba_color_input_label")
+        self.invalid_rgba_color_input_label.setStyleSheet("""
+            QLabel#invalid_rgba_color_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        invalid_rgba_color_input_widget_layout = QVBoxLayout(self.invalid_rgba_color_input_widget)
+        invalid_rgba_color_input_widget_layout.addWidget(self.invalid_rgba_color_input_label)
+        invalid_rgba_color_input_widget_layout.setSpacing(0)
+        invalid_rgba_color_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        #-----Set the height for the RGBA Color Validity Check Widgets-----
+        self.valid_rgba_color_input_widget.setMaximumHeight(50)
+        self.invalid_rgba_color_input_widget.setMaximumHeight(50)
+
+        #----Hide the RBGA Color Validity Check Widgets-----
+        self.valid_rgba_color_input_widget.hide()
+        self.invalid_rgba_color_input_widget.hide()
+
+        #-----Validity Check Widget for Grayscale Color-----
+        self.valid_grayscale_color_input_widget = QWidget()
+        self.valid_grayscale_color_input_widget.setObjectName("valid_grayscale_color_input_widget")
+        self.valid_grayscale_color_input_widget.setStyleSheet("""
+            QWidget#valid_grayscale_color_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_grayscale_color_input_label = QLabel("Valid Grayscale")
+        self.valid_grayscale_color_input_label.setWordWrap(True)
+        self.valid_grayscale_color_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_grayscale_color_input_label.setObjectName("valid_grayscale_color_input_label")
+        self.valid_grayscale_color_input_label.setStyleSheet("""
+            QLabel#valid_grayscale_color_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_grayscale_color_input_layout = QVBoxLayout(self.valid_grayscale_color_input_widget)
+        valid_grayscale_color_input_layout.addWidget(self.valid_grayscale_color_input_label)
+        valid_grayscale_color_input_layout.setSpacing(0)
+        valid_grayscale_color_input_layout.setContentsMargins(0,0,0,0)
+
+        self.invalid_grayscale_color_input_widget = QWidget()
+        self.invalid_grayscale_color_input_widget.setObjectName("invalid_grayscale_color_input_widget")
+        self.invalid_grayscale_color_input_widget.setStyleSheet("""
+            QWidget#invalid_grayscale_color_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_grayscale_color_input_label = QLabel("Invalid Grayscale")
+        self.invalid_grayscale_color_input_label.setWordWrap(True)
+        self.invalid_grayscale_color_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_grayscale_color_input_label.setObjectName("invalid_grayscale_color_input_label")
+        self.invalid_grayscale_color_input_label.setStyleSheet("""
+            QLabel#invalid_grayscale_color_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        invalid_grayscale_color_input_layout = QVBoxLayout(self.invalid_grayscale_color_input_widget)
+        invalid_grayscale_color_input_layout.addWidget(self.invalid_grayscale_color_input_label)
+        invalid_grayscale_color_input_layout.setSpacing(0)
+        invalid_grayscale_color_input_layout.setContentsMargins(0,0,0,0)
+
+        #-----Set the height for the Grayscale Color Validity Check Widgets-----
+        self.valid_grayscale_color_input_widget.setMaximumHeight(50)
+        self.invalid_grayscale_color_input_widget.setMaximumHeight(50)
+
+        #----Hide the Grayscale Color Validity Check Widgets-----
+        self.valid_grayscale_color_input_widget.hide()
+        self.invalid_grayscale_color_input_widget.hide()
+
+        #-----Create the Face Color Adjustment Section-----
+        self.legend_edge_color_adjustment_section = QWidget()
+        self.legend_edge_color_adjustment_section.setObjectName("legend_edge_color_adjustment_section")
+        self.legend_edge_color_adjustment_section.setStyleSheet("""
+            QWidget#legend_edge_color_adjustment_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -4525,259 +5680,13 @@ class legend_edge_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }            
         """)
+        self.create_legend_edge_color_adjustment_section()
 
-        self.named_color_button = QPushButton("Named Colors")
-        self.named_color_button.setObjectName("named_color")
-        self.named_color_button.setStyleSheet("""
-            QPushButton#named_color{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#named_color:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.hex_code_button = QPushButton("Hex Code Color")
-        self.hex_code_button.setObjectName("hex_code")
-        self.hex_code_button.setStyleSheet("""
-            QPushButton#hex_code{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#hex_code:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.rgba_color_button = QPushButton("RGBA Color")
-        self.rgba_color_button.setObjectName("rgba_color")
-        self.rgba_color_button.setStyleSheet("""
-            QPushButton#rgba_color{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#rgba_color:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.grayscale_color_button = QPushButton("Grayscale Color")
-        self.grayscale_color_button.setObjectName("grayscale")
-        self.grayscale_color_button.setStyleSheet("""
-            QPushButton#grayscale{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#grayscale:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.short_code_color_button = QPushButton("Short Code Color")
-        self.short_code_color_button.setObjectName("short_code_color")
-        self.short_code_color_button.setStyleSheet("""
-            QPushButton#short_code_color{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#short_code_color:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.none_button = QPushButton("None")
-        self.none_button.setObjectName("none")
-        self.none_button.setStyleSheet("""
-            QPushButton#none{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#none:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.named_color_button.clicked.connect(self.change_to_named_color_screen)
-        self.hex_code_button.clicked.connect(self.change_to_hex_code_screen)
-        self.rgba_color_button.clicked.connect(self.change_to_rgba_color_screen)
-        self.grayscale_color_button.clicked.connect(self.change_to_grayscale_colors_screen)
-        self.short_code_color_button.clicked.connect(self.change_to_short_code_color_screen)
-        self.none_button.clicked.connect(self.set_color_to_none)
-
-        button_layout = QVBoxLayout(self.edge_color_adjustment_homescreen)
-        button_layout.addWidget(self.named_color_button)
-        button_layout.addWidget(self.hex_code_button)
-        button_layout.addWidget(self.rgba_color_button)
-        button_layout.addWidget(self.grayscale_color_button)
-        button_layout.addWidget(self.short_code_color_button)
-        button_layout.addWidget(self.none_button)
-        button_layout.setContentsMargins(10,10,10,10)
-        button_layout.setSpacing(5)
-        button_layout.addStretch()
-
-        #-----Named Color Screen-----
-
-        self.named_color_screen = QWidget()
-        self.named_color_screen.setObjectName("named_color_screen")
-        self.named_color_screen.setStyleSheet("""
-            QWidget#named_color_screen{
+        #-----Named Color Section-----
+        self.named_color_section = QWidget()
+        self.named_color_section.setObjectName("named_color_section")
+        self.named_color_section.setStyleSheet("""
+            QWidget#named_color_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -4788,15 +5697,14 @@ class legend_edge_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }   
         """)
-        self.create_named_color_screen()
-        self.named_color_screen.hide()
+        self.create_named_color_section()
+        self.named_color_section.hide()
 
-        #-----Hex Code Color Screen-----
-
-        self.hex_code_color_screen = QWidget()
-        self.hex_code_color_screen.setObjectName("hex_code_color_screen")
-        self.hex_code_color_screen.setStyleSheet("""
-            QWidget#hex_code_color_screen{
+        #-----Hex Code Color Section-----
+        self.hex_code_color_section = QWidget()
+        self.hex_code_color_section.setObjectName("hex_code_color_section")
+        self.hex_code_color_section.setStyleSheet("""
+            QWidget#hex_code_color_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -4807,15 +5715,14 @@ class legend_edge_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }  
         """)
-        self.create_hex_code_screen()
-        self.hex_code_color_screen.hide()
+        self.create_hex_code_section()
+        self.hex_code_color_section.hide()
 
-        #------RGBA Color Screen-----
-
-        self.rgba_color_screen = QWidget()
-        self.rgba_color_screen.setObjectName("rgba_color_screen")
-        self.rgba_color_screen.setStyleSheet("""
-            QWidget#rgba_color_screen{
+        #------RGBA Color Section-----
+        self.rgba_color_section = QWidget()
+        self.rgba_color_section.setObjectName("rgba_color_section")
+        self.rgba_color_section.setStyleSheet("""
+            QWidget#rgba_color_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -4826,17 +5733,14 @@ class legend_edge_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }  
         """)
-        self.create_rgba_color_screen()
-        self.rgba_color_screen.hide()
+        self.create_rgba_color_section()
+        self.rgba_color_section.hide()
 
-        self.initial_rgba = [0,0,0,1]
-
-        #------Grayscale Color Screen-----
-
-        self.grayscale_color_screen = QWidget()
-        self.grayscale_color_screen.setObjectName("grayscale_color_screen")
-        self.grayscale_color_screen.setStyleSheet("""
-            QWidget#grayscale_color_screen{
+        #------Grayscale Color Section-----
+        self.grayscale_color_section = QWidget()
+        self.grayscale_color_section.setObjectName("grayscale_color_section")
+        self.grayscale_color_section.setStyleSheet("""
+            QWidget#grayscale_color_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -4847,15 +5751,14 @@ class legend_edge_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }  
         """)
-        self.create_grayscale_color_screen()
-        self.grayscale_color_screen.hide()
+        self.create_grayscale_color_section()
+        self.grayscale_color_section.hide()
 
-        #-----Short Code Colors-----
-
-        self.short_code_color_screen = QWidget()
-        self.short_code_color_screen.setObjectName("short_code_color")
-        self.short_code_color_screen.setStyleSheet("""
-            QWidget#short_code_color{
+        #-----Short Code Colors Section-----
+        self.short_code_color_section = QWidget()
+        self.short_code_color_section.setObjectName("short_code_color_section")
+        self.short_code_color_section.setStyleSheet("""
+            QWidget#short_code_color_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -4866,37 +5769,150 @@ class legend_edge_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }  
         """)
-        self.create_short_code_color_screen()
-        self.short_code_color_screen.hide()
+        self.create_short_code_color_section()
+        self.short_code_color_section.hide()
 
-        #-----Initialize Screen Value-----
+        #-----Reset Edge Color Section-----
+        self.reset_edge_color_section = QWidget()
+        self.reset_edge_color_section.setObjectName("reset_edgecolor_section")
+        self.reset_edge_color_section.setStyleSheet("""
+            QWidget#reset_edgecolor_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.create_reset_edge_color_section()
+        self.reset_edge_color_section.hide()
 
-        self.available_screens = [self.edge_color_adjustment_homescreen,self.named_color_screen,
-                                self.hex_code_color_screen,self.rgba_color_screen,
-                                self.grayscale_color_screen,self.short_code_color_screen]
-        self.previous_screen_idx = 0
+        #-----Available Screens-----
+        self.available_screens = [self.legend_edge_color_adjustment_section,self.named_color_section,
+                                self.hex_code_color_section,self.rgba_color_section,
+                                self.grayscale_color_section,self.short_code_color_section,
+                                self.reset_edge_color_section]
         self.current_screen_idx = 0
+        self.available_screens[self.current_screen_idx].show()
 
         #-----Main Screen-----
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.edge_color_adjustment_homescreen)
-        main_layout.addWidget(self.named_color_screen)
-        main_layout.addWidget(self.hex_code_color_screen)
-        main_layout.addWidget(self.rgba_color_screen)
-        main_layout.addWidget(self.grayscale_color_screen)
-        main_layout.addWidget(self.short_code_color_screen)
+        main_layout.addWidget(self.legend_edge_color_adjustment_section)
+        main_layout.addWidget(self.named_color_section)
+        main_layout.addWidget(self.hex_code_color_section)
+        main_layout.addWidget(self.rgba_color_section)
+        main_layout.addWidget(self.grayscale_color_section)
+        main_layout.addWidget(self.short_code_color_section)
+        main_layout.addWidget(self.reset_edge_color_section)
         main_layout.setContentsMargins(0,0,0,0)
         main_layout.setSpacing(0)
 
         #-----Shortcuts-----
-        original_screen_shortcut = QShortcut(QKeySequence("left"),self)
+        original_screen_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left),self)
+        original_screen_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         original_screen_shortcut.activated.connect(self.change_to_original_screen)
 
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+    def create_legend_edge_color_adjustment_section(self):
+        #Create the layout for the legend edge color adjustment section
+        legend_edge_color_adjustment_section_layout = QVBoxLayout(self.legend_edge_color_adjustment_section)
+    
+        #Create the list view and model for the edge color adjustment section
+        self.legend_edge_color_parameter_list_view = QListView()
+        self.legend_edge_color_parameter_model = QStringListModel(self.edgecolor_types)
 
-    def create_named_color_screen(self):
-        named_color_screen_layout = QVBoxLayout(self.named_color_screen)
+        #Add the model to the list view and disable editting for the list view
+        self.legend_edge_color_parameter_list_view.setModel(self.legend_edge_color_parameter_model)
+        self.legend_edge_color_parameter_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        
+        #Customization for the list view
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        #Apply the customization to the list view
+        self.legend_edge_color_parameter_list_view.setItemDelegate(CustomDelegate())
 
+        #Set the object name and style the list view's background, item, select and hover effects. 
+        self.legend_edge_color_parameter_list_view.setObjectName("legend_edge_color_parameter_list_view")
+        self.legend_edge_color_parameter_list_view.setStyleSheet("""
+            QListView#legend_edge_color_parameter_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#legend_edge_color_parameter_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#legend_edge_color_parameter_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#legend_edge_color_parameter_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+        
+        #Hide the scroll bar for the list view and control the spacing for each item
+        self.legend_edge_color_parameter_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.legend_edge_color_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.legend_edge_color_parameter_list_view.setSpacing(3)
+
+        #Automatically update the edgecolor based on the selected parameter
+        self.legend_edge_color_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+
+        #Add the list view to the edge color adjustment section layout
+        legend_edge_color_adjustment_section_layout.addWidget(self.legend_edge_color_parameter_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        legend_edge_color_adjustment_section_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_named_color_section(self):
+        #Create a layout for the named color section
+        named_color_section_layout = QVBoxLayout(self.named_color_section)
+
+        #Create a search bar for the named colors
         self.color_search_bar = QLineEdit()
         self.color_search_bar.setObjectName("search_bar")
         self.color_search_bar.setPlaceholderText("Search: ")
@@ -4915,23 +5931,30 @@ class legend_edge_color_adjustment_section(QWidget):
             }
         """)
         self.color_search_bar.setMinimumHeight(60)
-        named_color_screen_layout.addWidget(self.color_search_bar)
-        named_color_screen_layout.addSpacing(15)
+
+        #Add the search bar to the layout and control the spacing for it
+        named_color_section_layout.addWidget(self.color_search_bar)
+        named_color_section_layout.addSpacing(15)
     
+        #Create the list view and model for the named colors
         self.named_color_list_view = QListView()
         self.named_color_model = QStringListModel(self.named_colors)
 
+        #Create a filter proxy and applied the model to mimic filter by input
         self.filter_proxy = QSortFilterProxyModel()
         self.filter_proxy.setSourceModel(self.named_color_model)
         self.filter_proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive) 
         self.filter_proxy.setFilterKeyColumn(0)  
 
+        #Connect the filter proxy to the search bar
         self.color_search_bar.textChanged.connect(self.filter_proxy.setFilterFixedString)
 
+        #Add the filter model to the list view and give the list view an object name and restrict editting the item
         self.named_color_list_view.setModel(self.filter_proxy)
         self.named_color_list_view.setObjectName("named_color_list_view")
         self.named_color_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
+        #Customization for the list view
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -4940,8 +5963,10 @@ class legend_edge_color_adjustment_section(QWidget):
                 option.font = font
                 super().paint(painter, option, index)
         
+        #Apply the customization to the list view
         self.named_color_list_view.setItemDelegate(CustomDelegate())
 
+        #Style the list view's background, item, select and hover effects
         self.named_color_list_view.setStyleSheet("""
             QListView#named_color_list_view{
                 background: qlineargradient(
@@ -4995,20 +6020,25 @@ class legend_edge_color_adjustment_section(QWidget):
             }
         """)
 
+        #Hide the scroll bars and set the spacing for the items
         self.named_color_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.named_color_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.named_color_list_view.setSpacing(3)
 
+        #Connect the list view to automatically update the edge color based on the named color clicked on
         self.named_color_list_view.clicked.connect(self.change_named_color)
 
-        named_color_screen_layout.addWidget(self.named_color_list_view)
+        #Add the list view to the layout
+        named_color_section_layout.addWidget(self.named_color_list_view)
 
         # Add margins and spacing to make it look good and push content to the top
-        named_color_screen_layout.setContentsMargins(10, 10, 10, 10)
+        named_color_section_layout.setContentsMargins(10, 10, 10, 10)
 
-    def create_hex_code_screen(self):
-        hex_code_color_screen_layout = QVBoxLayout(self.hex_code_color_screen)
+    def create_hex_code_section(self):
+        #Create the layout for the hex code section
+        hex_code_color_section_layout = QVBoxLayout(self.hex_code_color_section)
 
+        #Create a line edit widget to take in the input
         self.hex_code_input = QLineEdit()
         self.hex_code_input.setObjectName("hex_code")
         self.hex_code_input.setPlaceholderText("Hex Code:")
@@ -5028,30 +6058,17 @@ class legend_edge_color_adjustment_section(QWidget):
         """)
         self.hex_code_input.setMinimumHeight(60)
 
+        #Connect the hex code input widget to automatically update when the text changes 
         self.hex_code_input.textChanged.connect(self.change_hex_code_color)
 
-        self.hex_valid_input_widget = QWidget()
-        self.hex_valid_input_widget.setObjectName("hex_valid_input")
-        self.hex_valid_input_widget.setStyleSheet("""
-            QWidget#hex_valid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),   
-                    stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1)
-                    stop:1 rgba(180, 200, 255, 1)  
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.hex_valid_input_label = QLabel("Valid Input")
-        self.hex_valid_input_label.setWordWrap(True)
-        self.hex_valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.hex_valid_input_label.setObjectName("hex_valid_input_label")
-        self.hex_valid_input_label.setStyleSheet("""
-            QLabel#hex_valid_input_label{
+        #Create a reset hex code label for the reset hex code button
+        self.reset_hex_code_value_label = QLabel("Reset Hexcode")
+        self.reset_hex_code_value_label.setObjectName("reset_hex_code_value_label")
+        self.reset_hex_code_value_label.setWordWrap(True)
+        self.reset_hex_code_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_hex_code_value_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents,True)
+        self.reset_hex_code_value_label.setStyleSheet("""
+            QLabel#reset_hex_code_value_label{
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
@@ -5062,64 +6079,71 @@ class legend_edge_color_adjustment_section(QWidget):
             }
         """)
 
-        hex_valid_input_layout = QVBoxLayout(self.hex_valid_input_widget)
-        hex_valid_input_layout.addWidget(self.hex_valid_input_label)
-        hex_valid_input_layout.setSpacing(0)
-        hex_valid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.hex_invalid_input_widget = QWidget()
-        self.hex_invalid_input_widget.setObjectName("hex_invalid_input")
-        self.hex_invalid_input_widget.setStyleSheet("""
-            QWidget#hex_invalid_input{
+        #Create the reset hex code button
+        self.reset_hex_code_value_button = QPushButton()
+        self.reset_hex_code_value_button.setObjectName("reset_hex_code_value_button")
+        self.reset_hex_code_value_button.setStyleSheet("""
+            QPushButton#reset_hex_code_value_button{
                 background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 100, 100, 1),   
-                    stop:0.4 rgba(255, 130, 120, 1), 
-                    stop:0.7 rgba(200, 90, 150, 1), 
-                    stop:1 rgba(180, 60, 140, 1)     
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
                 );
                 border: 2px solid black;
                 border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
             }
-        """)
-
-        self.hex_invalid_input_label = QLabel("Invalid Input")
-        self.hex_invalid_input_label.setWordWrap(True)
-        self.hex_invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.hex_invalid_input_label.setObjectName("hex_invalid_input_label")
-        self.hex_invalid_input_label.setStyleSheet("""
-            QLabel#hex_invalid_input_label{
+            QPushButton#reset_hex_code_value_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
                 padding: 6px;
                 color: black;
-                border: none;
-                background: transparent;
             }
         """)
+        self.reset_hex_code_value_button.setMinimumHeight(50)
+        self.reset_hex_code_value_button.clicked.connect(self.reset_edge_color)
 
-        hex_invalid_input_layout = QVBoxLayout(self.hex_invalid_input_widget)
-        hex_invalid_input_layout.addWidget(self.hex_invalid_input_label)
-        hex_invalid_input_layout.setSpacing(0)
-        hex_invalid_input_layout.setContentsMargins(0,0,0,0)
+        #Add the label onto the button
+        reset_hex_code_value_button_layout = QVBoxLayout(self.reset_hex_code_value_button)
+        reset_hex_code_value_button_layout.addWidget(self.reset_hex_code_value_label)
+        reset_hex_code_value_button_layout.setContentsMargins(0,0,0,0)
+        reset_hex_code_value_button_layout.setSpacing(0)
 
-        self.hex_valid_input_widget.setMaximumHeight(50)
-        self.hex_invalid_input_widget.setMaximumHeight(50)
+        #Add the widgets to the layout
+        hex_code_color_section_layout.addWidget(self.hex_code_input)
+        hex_code_color_section_layout.addWidget(self.valid_hex_code_input_widget)
+        hex_code_color_section_layout.addWidget(self.invalid_hex_code_input_widget)
+        
+        #Add the contents margins, spacing, and stretch to the layout
+        hex_code_color_section_layout.setContentsMargins(10,10,10,10)
+        hex_code_color_section_layout.setSpacing(10)
+        hex_code_color_section_layout.addStretch()
 
-        self.hex_valid_input_widget.hide()
-        self.hex_invalid_input_widget.hide()
+        #Add the reset hex code value button
+        hex_code_color_section_layout.addWidget(self.reset_hex_code_value_button)
 
-        hex_code_color_screen_layout.addWidget(self.hex_code_input)
-        hex_code_color_screen_layout.addWidget(self.hex_valid_input_widget)
-        hex_code_color_screen_layout.addWidget(self.hex_invalid_input_widget)
-        hex_code_color_screen_layout.setContentsMargins(10,10,10,10)
-        hex_code_color_screen_layout.setSpacing(10)
-        hex_code_color_screen_layout.addStretch()
+    def create_rgba_color_section(self):
+        #Create the rgba color section layout
+        rgba_color_section_layout = QVBoxLayout(self.rgba_color_section)
 
-    def create_rgba_color_screen(self):
-        rgba_color_screen_layout = QVBoxLayout(self.rgba_color_screen)
-
+        #Create a line edit widget for r,g,b,a
         self.r_input = QLineEdit()
         self.r_input.setObjectName("r_input")
         self.r_input.setPlaceholderText("r:")
@@ -5192,38 +6216,26 @@ class legend_edge_color_adjustment_section(QWidget):
             }
         """)
 
+        #Set the height for the four (r,g,b,a) line edit widgets 
         self.r_input.setMinimumHeight(60)
         self.g_input.setMinimumHeight(60)
         self.b_input.setMinimumHeight(60)
         self.a_input.setMinimumHeight(60)
 
+        #Automatically update the r,g,b,a whenever the text changes for the line edit widget
         self.r_input.textChanged.connect(self.change_rgba_color)
         self.g_input.textChanged.connect(self.change_rgba_color)
         self.b_input.textChanged.connect(self.change_rgba_color)
         self.a_input.textChanged.connect(self.change_rgba_color)
 
-        self.rgba_valid_input_widget = QWidget()
-        self.rgba_valid_input_widget.setObjectName("rgba_valid_input")
-        self.rgba_valid_input_widget.setStyleSheet("""
-            QWidget#rgba_valid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),   
-                    stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1)
-                    stop:1 rgba(180, 200, 255, 1)  
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.rgba_valid_input_label = QLabel("Valid Input")
-        self.rgba_valid_input_label.setWordWrap(True)
-        self.rgba_valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.rgba_valid_input_label.setObjectName("rgba_valid_input_label")
-        self.rgba_valid_input_label.setStyleSheet("""
-            QLabel#rgba_valid_input_label{
+        #Create a reset rgba value label for the reset rgba value button
+        self.reset_rgba_value_label = QLabel("Reset RGBA Value")
+        self.reset_rgba_value_label.setObjectName("reset_rgba_value_label")
+        self.reset_rgba_value_label.setWordWrap(True)
+        self.reset_rgba_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_rgba_value_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents,True)
+        self.reset_rgba_value_label.setStyleSheet("""
+            QLabel#reset_rgba_value_label{
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
@@ -5234,73 +6246,78 @@ class legend_edge_color_adjustment_section(QWidget):
             }
         """)
 
-        rgba_valid_input_layout = QVBoxLayout(self.rgba_valid_input_widget)
-        rgba_valid_input_layout.addWidget(self.rgba_valid_input_label)
-        rgba_valid_input_layout.setSpacing(0)
-        rgba_valid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.rgba_invalid_input_widget = QWidget()
-        self.rgba_invalid_input_widget.setObjectName("rgba_invalid_input")
-        self.rgba_invalid_input_widget.setStyleSheet("""
-            QWidget#rgba_invalid_input{
+        #Create the reset rgba value button
+        self.reset_rgba_value_button = QPushButton()
+        self.reset_rgba_value_button.setObjectName("reset_rgba_value_button")
+        self.reset_rgba_value_button.setStyleSheet("""
+            QPushButton#reset_rgba_value_button{
                 background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 100, 100, 1),   
-                    stop:0.4 rgba(255, 130, 120, 1), 
-                    stop:0.7 rgba(200, 90, 150, 1), 
-                    stop:1 rgba(180, 60, 140, 1)     
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
                 );
                 border: 2px solid black;
                 border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
             }
-        """)
-
-        self.rgba_invalid_input_label = QLabel("Invalid Input")
-        self.rgba_invalid_input_label.setWordWrap(True)
-        self.rgba_invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.rgba_invalid_input_label.setObjectName("rgba_invalid_input_label")
-        self.rgba_invalid_input_label.setStyleSheet("""
-            QLabel#rgba_invalid_input_label{
+            QPushButton#reset_rgba_value_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
                 padding: 6px;
                 color: black;
-                border: none;
-                background: transparent;
             }
         """)
-
-        rgba_invalid_input_layout = QVBoxLayout(self.rgba_invalid_input_widget)
-        rgba_invalid_input_layout.addWidget(self.rgba_invalid_input_label)
-        rgba_invalid_input_layout.setSpacing(0)
-        rgba_invalid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.rgba_valid_input_widget.setMaximumHeight(50)
-        self.rgba_invalid_input_widget.setMaximumHeight(50)
-
-        self.rgba_valid_input_widget.hide()
-        self.rgba_invalid_input_widget.hide()
+        self.reset_rgba_value_button.setMinimumHeight(50)
+        self.reset_rgba_value_button.clicked.connect(self.reset_edge_color)
     
-        rgba_color_screen_layout.addWidget(self.r_input)
-        rgba_color_screen_layout.addWidget(self.g_input)
-        rgba_color_screen_layout.addWidget(self.b_input)
-        rgba_color_screen_layout.addWidget(self.a_input)
-        rgba_color_screen_layout.addWidget(self.rgba_valid_input_widget)
-        rgba_color_screen_layout.addWidget(self.rgba_invalid_input_widget)
+        #Add the label to the button
+        reset_rgba_value_button_layout = QVBoxLayout(self.reset_rgba_value_button)
+        reset_rgba_value_button_layout.addWidget(self.reset_rgba_value_label)
+        reset_rgba_value_button_layout.setContentsMargins(0,0,0,0)
+        reset_rgba_value_button_layout.setSpacing(0)
 
-        rgba_color_screen_layout.setContentsMargins(10,10,10,10)
-        rgba_color_screen_layout.setSpacing(10)
-        rgba_color_screen_layout.addStretch()
+        #Add all the widgets to the layout 
+        rgba_color_section_layout.addWidget(self.r_input)
+        rgba_color_section_layout.addWidget(self.g_input)
+        rgba_color_section_layout.addWidget(self.b_input)
+        rgba_color_section_layout.addWidget(self.a_input)
+        rgba_color_section_layout.addWidget(self.valid_rgba_color_input_widget)
+        rgba_color_section_layout.addWidget(self.invalid_rgba_color_input_widget)
 
-    def create_grayscale_color_screen(self):
-        grayscale_color_screen_layout = QVBoxLayout(self.grayscale_color_screen)
+        #Add the contents margins, spacing, and stretch to the layout
+        rgba_color_section_layout.setContentsMargins(10,10,10,10)
+        rgba_color_section_layout.setSpacing(10)
+        rgba_color_section_layout.addStretch()
 
-        self.grayscale_input = QLineEdit()
-        self.grayscale_input.setObjectName("grayscale")
-        self.grayscale_input.setPlaceholderText("Grayscale:")
-        self.grayscale_input.setStyleSheet("""
-            QLineEdit#grayscale{
+        #Add the reset rgba value button to the layout
+        rgba_color_section_layout.addWidget(self.reset_rgba_value_button)
+
+    def create_grayscale_color_section(self):
+        #Create a layout for the grayscale color section
+        grayscale_color_section_layout = QVBoxLayout(self.grayscale_color_section)
+
+        self.grayscale_color_input = QLineEdit()
+        self.grayscale_color_input.setObjectName("grayscale_color_input")
+        self.grayscale_color_input.setPlaceholderText("Grayscale:")
+        self.grayscale_color_input.setStyleSheet("""
+            QLineEdit#grayscale_color_input{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -5313,32 +6330,19 @@ class legend_edge_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-        self.grayscale_input.setMinimumHeight(60)
+        self.grayscale_color_input.setMinimumHeight(60)
 
-        self.grayscale_input.textChanged.connect(self.change_grayscale_color)
+        #Let the grayscale automatically change when the user enters something
+        self.grayscale_color_input.textChanged.connect(self.change_grayscale_color)
 
-        self.grayscale_valid_input_widget = QWidget()
-        self.grayscale_valid_input_widget.setObjectName("grayscale_valid_input")
-        self.grayscale_valid_input_widget.setStyleSheet("""
-            QWidget#grayscale_valid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),   
-                    stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1)
-                    stop:1 rgba(180, 200, 255, 1)  
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.grayscale_valid_input_label = QLabel("Valid Input")
-        self.grayscale_valid_input_label.setWordWrap(True)
-        self.grayscale_valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.grayscale_valid_input_label.setObjectName("grayscale_valid_input_label")
-        self.grayscale_valid_input_label.setStyleSheet("""
-            QLabel#grayscale_valid_input_label{
+        #Create a reset grayscale value label for the reset grayscale button
+        self.reset_grayscale_value_label = QLabel("Reset Grayscale")
+        self.reset_grayscale_value_label.setObjectName("reset_grayscale_value_label")
+        self.reset_grayscale_value_label.setWordWrap(True)
+        self.reset_grayscale_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_grayscale_value_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents,True)
+        self.reset_grayscale_value_label.setStyleSheet("""
+            QLabel#reset_grayscale_value_label{
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
@@ -5349,69 +6353,78 @@ class legend_edge_color_adjustment_section(QWidget):
             }
         """)
 
-        grayscale_valid_input_layout = QVBoxLayout(self.grayscale_valid_input_widget)
-        grayscale_valid_input_layout.addWidget(self.grayscale_valid_input_label)
-        grayscale_valid_input_layout.setSpacing(0)
-        grayscale_valid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.grayscale_invalid_input_widget = QWidget()
-        self.grayscale_invalid_input_widget.setObjectName("grayscale_invalid_input")
-        self.grayscale_invalid_input_widget.setStyleSheet("""
-            QWidget#grayscale_invalid_input{
+        #Create the reset grayscale value button
+        self.reset_grayscale_value_button = QPushButton()
+        self.reset_grayscale_value_button.setObjectName("reset_grayscale_value_button")
+        self.reset_grayscale_value_button.setStyleSheet("""
+            QPushButton#reset_grayscale_value_button{
                 background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 100, 100, 1),   
-                    stop:0.4 rgba(255, 130, 120, 1), 
-                    stop:0.7 rgba(200, 90, 150, 1), 
-                    stop:1 rgba(180, 60, 140, 1)     
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
                 );
                 border: 2px solid black;
                 border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
             }
-        """)
-
-        self.grayscale_invalid_input_label = QLabel("Invalid Input")
-        self.grayscale_invalid_input_label.setWordWrap(True)
-        self.grayscale_invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.grayscale_invalid_input_label.setObjectName("grayscale_invalid_input_label")
-        self.grayscale_invalid_input_label.setStyleSheet("""
-            QLabel#grayscale_invalid_input_label{
+            QPushButton#reset_grayscale_value_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
                 padding: 6px;
                 color: black;
-                border: none;
-                background: transparent;
             }
         """)
+        self.reset_grayscale_value_button.setMinimumHeight(50)
+        self.reset_grayscale_value_button.clicked.connect(self.reset_edge_color)
 
-        grayscale_invalid_input_layout = QVBoxLayout(self.grayscale_invalid_input_widget)
-        grayscale_invalid_input_layout.addWidget(self.grayscale_invalid_input_label)
-        grayscale_invalid_input_layout.setSpacing(0)
-        grayscale_invalid_input_layout.setContentsMargins(0,0,0,0)
+        #Add the label to the button
+        reset_grayscale_value_button_layout = QVBoxLayout(self.reset_grayscale_value_button)
+        reset_grayscale_value_button_layout.addWidget(self.reset_grayscale_value_label)
+        reset_grayscale_value_button_layout.setContentsMargins(0,0,0,0)
+        reset_grayscale_value_button_layout.setSpacing(0)
 
-        self.grayscale_valid_input_widget.setMaximumHeight(50)
-        self.grayscale_invalid_input_widget.setMaximumHeight(50)
+        #Add the widgets to the layout and adjust the margins, spacing, and add stretch
+        grayscale_color_section_layout.addWidget(self.grayscale_color_input)
+        grayscale_color_section_layout.addWidget(self.valid_grayscale_color_input_widget)
+        grayscale_color_section_layout.addWidget(self.invalid_grayscale_color_input_widget)
+        grayscale_color_section_layout.setContentsMargins(10,10,10,10)
+        grayscale_color_section_layout.setSpacing(10)
+        grayscale_color_section_layout.addStretch()
 
-        self.grayscale_valid_input_widget.hide()
-        self.grayscale_invalid_input_widget.hide()
+        #Add the reset grayscale value button to the layout
+        grayscale_color_section_layout.addWidget(self.reset_grayscale_value_button)
 
-        grayscale_color_screen_layout.addWidget(self.grayscale_input)
-        grayscale_color_screen_layout.addWidget(self.grayscale_valid_input_widget)
-        grayscale_color_screen_layout.addWidget(self.grayscale_invalid_input_widget)
-        grayscale_color_screen_layout.setContentsMargins(10,10,10,10)
-        grayscale_color_screen_layout.setSpacing(10)
-        grayscale_color_screen_layout.addStretch()
-
-    def create_short_code_color_screen(self):
-        short_code_color_screen_layout = QVBoxLayout(self.short_code_color_screen)
+    def create_short_code_color_section(self):
+        #Create the layout for the short code color section 
+        short_code_color_section_layout = QVBoxLayout(self.short_code_color_section)
     
+        #Create a list view for the section and create a model with the short code colors
         self.short_code_color_list_view = QListView()
         self.short_code_color_model = QStringListModel(self.short_code_colors)
+
+        #Add the model with the short code colors to the list view
+        #Ban the user from being able to edit it
         self.short_code_color_list_view.setModel(self.short_code_color_model)
         self.short_code_color_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
+        #Customization for the list view
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -5420,8 +6433,10 @@ class legend_edge_color_adjustment_section(QWidget):
                 option.font = font
                 super().paint(painter, option, index)
         
+        #Apply the customization to the list view
         self.short_code_color_list_view.setItemDelegate(CustomDelegate())
 
+        #Give the list view a name and edit the item, background, select and hover effect
         self.short_code_color_list_view.setObjectName("short_code_color_list_view")
         self.short_code_color_list_view.setStyleSheet("""
             QListView#short_code_color_list_view{
@@ -5475,71 +6490,194 @@ class legend_edge_color_adjustment_section(QWidget):
                 min-height: 41px;
             }
         """)
+
+        #Control the scroll bar for the list view and add spacing between each item
         self.short_code_color_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.short_code_color_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.short_code_color_list_view.setSpacing(3)
 
+        #Connect the list view to automatically update the selected item
         self.short_code_color_list_view.clicked.connect(self.change_short_code_color)
 
-        short_code_color_screen_layout.addWidget(self.short_code_color_list_view)
+        #Add the list view to the layout
+        short_code_color_section_layout.addWidget(self.short_code_color_list_view)
 
         # Add margins and spacing to make it look good and push content to the top
-        short_code_color_screen_layout.setContentsMargins(10, 10, 10, 10)
+        short_code_color_section_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_reset_edge_color_section(self):
+        #Create a layout for the reset edge color section 
+        reset_edge_color_section_layout = QVBoxLayout(self.reset_edge_color_section)
+
+        #Create the reset face color label for the button
+        self.reset_edge_color_label = QLabel("Reset Edgecolor")
+        self.reset_edge_color_label.setWordWrap(True)
+        self.reset_edge_color_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_edge_color_label.setObjectName("reset_edge_color_label")
+        self.reset_edge_color_label.setStyleSheet("""
+            QLabel#reset_edge_color_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.reset_edge_color_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+        #Create the reset edge color button
+        self.reset_edge_color_button = QPushButton()
+        self.reset_edge_color_button.setObjectName("reset_edge_color_button")
+        self.reset_edge_color_button.setStyleSheet("""
+            QPushButton#reset_edge_color_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#reset_edge_color_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.reset_edge_color_button.setMinimumHeight(50)
+
+        #Connect the button to automatically reset the edge color when clicked on
+        self.reset_edge_color_button.clicked.connect(self.reset_edge_color)
+
+        #Add the label onto the button
+        reset_edge_color_button_layout = QVBoxLayout(self.reset_edge_color_button)
+        reset_edge_color_button_layout.addWidget(self.reset_edge_color_label)
+        reset_edge_color_button_layout.setContentsMargins(0,0,0,0)
+        reset_edge_color_button_layout.setSpacing(0)
+
+        #Add the button created to the reset edge color section
+        reset_edge_color_section_layout.addWidget(self.reset_edge_color_button)
+        reset_edge_color_section_layout.setContentsMargins(10,10,10,10)
+        reset_edge_color_section_layout.addStretch()
+
+    def change_current_parameter_screen(self,index):
+        #Get the associated screen name based on the item the user clicked on in the list view
+        screen_name = self.legend_edge_color_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
+        
+        #If the screen name is Named Color change to the named color section
+        if (screen_name == "Named Color"):
+            self.change_to_named_color_section()
+
+        #If the screen name is Hex Code change to the hex code section
+        if (screen_name == "Hex Code"):
+            self.change_to_hex_code_section()
+        
+        #If the screen name is RGBA Color change to the rgba color section
+        if (screen_name == "RGBA Color"):
+            self.change_to_rgba_color_section()
+        
+        #If the screen name is Grayscale Color change to the grayscale color section
+        if (screen_name == "Grayscale Color"):
+            self.change_to_grayscale_colors_section()
+
+        #If the screen name is Short Code Color change to the short code color section
+        if (screen_name == "Short Code Color"):
+            self.change_to_short_code_color_section()
+
+        #If the screen name is Reset Face Color change to the reset face color section
+        if (screen_name == "Reset Face Color"):
+            self.change_to_reset_face_color_section()
 
     def change_to_original_screen(self):
+        #Hide the current screen, change the screen idx, display the new screen
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 0
-        self.edge_color_adjustment_homescreen.show()
+        self.available_screens[self.current_screen_idx].show()
 
-    def change_to_named_color_screen(self):
+    def change_to_named_color_section(self):
+        #Hide the current screen, change the screen idx, display the new screen
         self.available_screens[self.current_screen_idx].hide()
-        self.previous_screen_idx = self.current_screen_idx
         self.current_screen_idx = 1
-        self.named_color_screen.show()
+        self.available_screens[self.current_screen_idx].show()
 
-    def change_to_hex_code_screen(self):
+    def change_to_hex_code_section(self):
+        #Hide the current screen, change the screen idx, display the new screen
         self.available_screens[self.current_screen_idx].hide()
-        self.previous_screen_idx = self.current_screen_idx
         self.current_screen_idx = 2
-        self.hex_code_color_screen.show()
+        self.available_screens[self.current_screen_idx].show()
 
-    def change_to_rgba_color_screen(self):
+    def change_to_rgba_color_section(self):
+        #Hide the current screen, change the screen idx, display the new screen
         self.available_screens[self.current_screen_idx].hide()
-        self.previous_screen_idx = self.current_screen_idx
         self.current_screen_idx = 3
-        self.rgba_color_screen.show()
+        self.available_screens[self.current_screen_idx].show()
 
-    def change_to_grayscale_colors_screen(self):
+    def change_to_grayscale_colors_section(self):
+        #Hide the current screen, change the screen idx, display the new screen
         self.available_screens[self.current_screen_idx].hide()
-        self.previous_screen_idx = self.current_screen_idx
         self.current_screen_idx = 4
-        self.grayscale_color_screen.show()
+        self.available_screens[self.current_screen_idx].show()
 
-    def change_to_short_code_color_screen(self):
+    def change_to_short_code_color_section(self):
+        #Hide the current screen, change the screen idx, display the new screen
         self.available_screens[self.current_screen_idx].hide()
-        self.previous_screen_idx = self.current_screen_idx
         self.current_screen_idx = 5
-        self.short_code_color_screen.show()
+        self.available_screens[self.current_screen_idx].show()
 
-    def set_color_to_none(self):
-        self.current_edge_color = None
-        self.update_color()
+    def change_to_reset_edge_color_section(self):
+        #Hide the current screen, change the screen idx, display the new screen
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 6
+        self.available_screens[self.current_screen_idx].show()
 
     def change_named_color(self,index):
+        #Using the index acquired by the filter proxy and get the associated index in the model
         source_index = self.filter_proxy.mapToSource(index)
-        self.current_edge_color = self.named_color_model.data(source_index, Qt.ItemDataRole.DisplayRole)
-        self.update_color()
+
+        #Get the specific color in the model based on the index
+        self.current_edgecolor = self.named_color_model.data(source_index, Qt.ItemDataRole.DisplayRole)
+
+        #Check if the color is one of the special ones and add the prefix if it is 
+        if (self.current_edgecolor in self.xkcd_colors):
+            self.current_edgecolor = "xkcd:" + self.current_edgecolor
+        if (self.current_edgecolor in self.tableau_colors):
+            self.current_edgecolor = "tab:" + self.current_edgecolor
+
+        #Update the edgecolor for the plot config
+        self.update_edgecolor()
 
     def change_hex_code_color(self):
+        #Get the hex code the user inputs
         hex_code = self.hex_code_input.text().strip()
 
+        #Hide both validity check widgets when the user clears the input
         if (hex_code == ""):
             self.hex_valid_input_widget.hide()
             self.hex_invalid_input_widget.hide()
-            self.current_edge_color = None
-            self.update_color
             return
 
+        #Checks if the hex code is valid or not
         def check_valid_hex_code(hex_code):
             if (hex_code[0] != "#"):
                 new_hex_code = "#" + hex_code
@@ -5550,98 +6688,203 @@ class legend_edge_color_adjustment_section(QWidget):
             try:
                 int(hex_code,16)
                 return True
-            except:
+            except ValueError:
                 return False
         
-        if (hex_code != ""):
-            validity = check_valid_hex_code(hex_code)
-            if (validity):
-                self.hex_valid_input_widget.show()
-                self.hex_invalid_input_widget.hide()
-                self.current_edge_color = hex_code if hex_code[0] == "#" else "#" + hex_code
-                self.update_color()
-            else:
-                self.hex_valid_input_widget.hide()
-                self.hex_invalid_input_widget.show()
+        #Checks if the current hex code is valid or not
+        validity = check_valid_hex_code(hex_code)
 
-    def change_rgba_color(self):
-        r_value = self.r_input.text().strip()
-        g_value = self.g_input.text().strip()
-        b_value = self.b_input.text().strip()
-        a_value = self.a_input.text().strip()
-
-        if (not(r_value or g_value or b_value or a_value)):
-            self.rgba_valid_input_widget.hide()
-            self.rgba_invalid_input_widget.hide()
-            self.current_edge_color = None
-            self.update_color()
-            return 
-
-        valid = None
-
-        try:
-            r_value = int(r_value) if r_value != "" else self.initial_rgba[0]
-            g_value = int(g_value) if g_value != "" else self.initial_rgba[1]
-            b_value = int(b_value) if b_value != "" else self.initial_rgba[2]
-            a_value = int(a_value) if a_value != "" else self.initial_rgba[3]
-            valid = True
-        except:
-            valid = False
-
-        if (valid):
-            self.initial_rgba[0] = r_value 
-            self.initial_rgba[1] = g_value
-            self.initial_rgba[2] = b_value 
-            self.initial_rgba[3] = a_value
-
-            self.rgba_valid_input_widget.show()
-            self.rgba_invalid_input_widget.hide()
-
-            self.current_edge_color = self.initial_rgba
-
-            self.update_color()
+        #If the hex code is valid show the valid widget and update the plot config with the new hex code
+        if (validity):
+            self.valid_hex_code_input_widget.show()
+            self.invalid_hex_code_input_widget.hide()
+            self.current_edgecolor = hex_code if hex_code[0] == "#" else "#" + hex_code
+            self.update_edgecolor()
+        #if the hex code is invalid show the invalid widget
         else:
-            self.rgba_valid_input_widget.hide()
-            self.rgba_invalid_input_widget.show()
+            self.valid_hex_code_input_widget.hide()
+            self.invalid_hex_code_input_widget.show()
+
+    def change_r_value(self):
+        #Get the r value from the input
+        r_input = self.r_input.text().strip()
+
+        #Check if the value is empty or not
+        if (r_input == ""):
+            self.r_value = 1
+            return True
+
+        #Check if the value is valid or not
+        try:
+            r_value = int(r_input)
+            if (0 > r_value or r_value > 255):
+                raise ValueError
+        except ValueError:
+            return False
+        self.r_value = r_value / 255
+        return True
+
+    def change_g_value(self):
+        #Get the g value from the input
+        g_input = self.g_input.text().strip()
+
+        #Check if the value is empty or not
+        if (g_input == ""):
+            self.g_value = 1
+            return True
+
+        #Check if the value is valid or not
+        try:
+            g_value = int(g_input)
+            if (0 > g_value or g_value > 255):
+                raise ValueError
+        except ValueError:
+            return False
+        self.g_value = g_value / 255
+        return True
+
+    def change_b_value(self):
+        #Get the b value from the input
+        b_input = self.b_input.text().strip()
+
+        #Check if the value is empty or not
+        if (b_input == ""):
+            self.b_value = 1
+            return True
+
+        #Check if the value is valid or not
+        try:
+            b_value = int(b_input)
+            if (0 > b_value or b_value > 255):
+                raise ValueError
+        except ValueError:
+            return False
+        self.b_value = b_value / 255
+        return True
+
+    def change_a_value(self):
+        #Get the a value from the input
+        a_input = self.a_input.text().strip()
+
+        #Check if the value is empty or not
+        if (a_input == ""):
+            self.a_value = 1
+            return True
+
+        #Check if the value is valid or not
+        try:
+            a_value = int(a_input)
+            if (0 > a_value or a_value > 100):
+                raise ValueError
+        except ValueError:
+            return False
+        self.a_value = a_value / 255
+        return True
+ 
+    def change_rgba_color(self):
+        #Check if the values are valid
+        valid_r = self.change_r_value()
+        valid_g = self.change_g_value()
+        valid_b = self.change_b_value()
+        valid_a = self.change_a_value()
+
+        #Hide all the validity widgets
+        self.valid_rgba_color_input_widget.hide()
+        self.invalid_rgba_color_input_widget.hide()
+
+        #Show the first validity widget that associates to the valid values we found earlier
+        if (not valid_r):
+            self.invalid_rgba_color_input_label.setText("Invalid R Value")
+            self.invalid_rgba_color_input_widget.show()
+        elif (not valid_g):
+            self.invalid_rgba_color_input_label.setText("Invalid G Value")
+            self.invalid_rgba_color_input_widget.show()
+        elif (not valid_b):
+            self.invalid_rgba_color_input_label.setText("Invalid B Value")
+            self.invalid_rgba_color_input_widget.show()
+        elif (not valid_a):
+            self.invalid_rgba_color_input_label.setText("Invalid A Value")
+            self.invalid_rgba_color_input_widget.show()
+        else:
+            #Get the text values from the input
+            r_value = self.r_input.text().strip()
+            g_value = self.g_input.text().strip()
+            b_value = self.b_input.text().strip()
+            a_value = self.a_input.text().strip()
+
+            #Show the valid widget if at least one isn't blank
+            if (r_value or g_value or b_value or a_value):
+                self.valid_rgba_color_input_widget.show()
+                self.invalid_rgba_color_input_widget.hide()
+
+            #Update the facecolor
+            self.current_edgecolor = (self.r_value,self.g_value,self.b_value,self.a_value)
+            self.update_edgecolor()
 
     def change_grayscale_color(self):
-        grayscale_value = self.grayscale_input.text().strip()
+        #Get the grayscale color value from the user
+        grayscale_color_value = self.grayscale_color_input.text().strip()
 
-        if (grayscale_value == ""): 
-            self.grayscale_valid_input_widget.hide() 
-            self.grayscale_invalid_input_widget.hide()
-            self.current_edge_color = None
-            self.update_color()
+        #Check if the input is empty and if it is hide all the validity check widgets and return
+        if (grayscale_color_value == ""): 
+            self.valid_grayscale_color_input_widget.hide() 
+            self.invalid_grayscale_color_input_widget.hide()
             return
 
+        #Check to see if the input can be turned into a float and between 0 and 1
+        #Show the valid widget and hide the invalid widget
         try: 
-            grayscale_value = float(grayscale_value)
-            if (0 > grayscale_value or grayscale_value > 1):
-                raise Exception
-            self.grayscale_valid_input_widget.show()
-            self.grayscale_invalid_input_widget.hide()
-        except:
-            self.grayscale_valid_input_widget.hide()
-            self.grayscale_invalid_input_widget.show()
-
-        self.current_edge_color = grayscale_value
-        self.update_color()
+            grayscale_color_value = float(grayscale_color_value)
+            if (0 > grayscale_color_value or grayscale_color_value > 1):
+                raise ValueError
+            self.valid_grayscale_color_input_widget.show()
+            self.invalid_grayscale_color_input_widget.hide()
+        #Show the invalid widget and hide the invalid widget
+        except ValueError:
+            self.valid_grayscale_color_input_widget.hide()
+            self.invalid_grayscale_color_input_widget.show()
+        else:
+            #Update the current edgecolor and update it in the plot config too
+            self.current_edgecolor = str(grayscale_color_value)
+            self.update_edgecolor()
 
     def change_short_code_color(self,index):
-        self.current_edge_color = self.short_code_color_model.data(index, Qt.ItemDataRole.DisplayRole)
-        self.update_color()
+        #Change the current facecolor to the one selected by the user based on the index and update it
+        self.current_edgecolor = self.short_code_color_model.data(index, Qt.ItemDataRole.DisplayRole)
+        self.update_edgecolor()
 
-    def update_color(self):
+    def reset_edge_color(self):
+        #Change the edgecolor to None and update it
+        if (self.current_screen_idx == 2):
+            self.hex_code_input.clear()
+        if (self.current_screen_idx == 3):
+            self.r_input.clear()
+            self.g_input.clear()
+            self.b_input.clear()
+            self.a_input.clear()
+        if (self.current_screen_idx == 4):
+            self.grayscale_color_input.clear()
+
+        self.current_edgecolor = None
+        self.update_edgecolor()
+
+    def update_edgecolor(self):
+        #Get the newest plot config from the plot config json
         db = self.plot_manager.get_db()
+
+        #if there is a plot config then update it in the newest plot config
         if (db != []):
-            self.plot_manager.update_legend("edgecolor",self.current_edge_color)
+            self.plot_manager.update_legend("edgecolor",self.current_edgecolor)
+        #if there is no plot config available then create a new one with the default and add the new value in
         else:
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["edgecolor"] = self.current_edge_color
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        #Update the graph with the newest plot config
         self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
+        #Check where the cursor clicks and clear the focus if it's not in the input area
         if not self.color_search_bar.geometry().contains(event.position().toPoint()):
             self.color_search_bar.clearFocus()
         if not self.hex_code_input.geometry().contains(event.position().toPoint()):
@@ -5654,66 +6897,29 @@ class legend_edge_color_adjustment_section(QWidget):
             self.b_input.clearFocus()
         if not self.a_input.geometry().contains(event.position().toPoint()):
             self.a_input.clearFocus()
-        if not self.grayscale_input.geometry().contains(event.position().toPoint()):
-            self.grayscale_input.clearFocus()
+        if not self.grayscale_color_input.geometry().contains(event.position().toPoint()):
+            self.grayscale_color_input.clearFocus()
         super().mousePressEvent(event)
 
 class legend_framealpha_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
         
+        self.plot_manager = PlotManager()
+        self.selected_graph = selected_graph
         self.graph_display = graph_display
 
-        self.plot_manager = PlotManager()
-        
-        self.selected_graph = selected_graph
-
-        #Create a section to display the loc section and style it
-        self.framealpha_adjustment_section = QWidget()
-        self.framealpha_adjustment_section.setObjectName("framealpha_adjustment_section")
-        self.framealpha_adjustment_section.setStyleSheet("""
-            QWidget#framealpha_adjustment_section{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-            QLineEdit{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                color: black;
-                font-size: 24pt;
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
+        #Set the object name for the widget
+        self.setObjectName("legend_framealpha_adjustment_section")
 
         #Initialize the ncol value to be 0
         self.framealpha_value = None
 
-        #Create a line edit object for the user to input the ncol
-        self.framealpha_input = QLineEdit()
-        self.framealpha_input.setPlaceholderText("framealpha: ")
-
-        #Set the height of the line edit object to make it look good
-        self.framealpha_input.setFixedHeight(60)
-
-        #Connect any changes with the text to an update function
-        self.framealpha_input.textChanged.connect(self.change_framealpha)
-
-        #Create two widget to display valid and invalid inputs
-        self.valid_input_widget = QWidget()
-        self.valid_input_widget.setObjectName("valid_input")
-        self.valid_input_widget.setStyleSheet("""
-            QWidget#valid_input{
+        #-----Validity Check Widget for framealpha------
+        self.valid_framealpha_input_widget = QWidget()
+        self.valid_framealpha_input_widget.setObjectName("valid_framealpha_input_widget")
+        self.valid_framealpha_input_widget.setStyleSheet("""
+            QWidget#valid_framealpha_input_widget{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 rgba(94, 255, 234, 1),   
@@ -5726,12 +6932,12 @@ class legend_framealpha_adjustment_section(QWidget):
             }
         """)
 
-        self.valid_input_label = QLabel("Valid Input")
-        self.valid_input_label.setWordWrap(True)
-        self.valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.valid_input_label.setObjectName("valid_input_label")
-        self.valid_input_label.setStyleSheet("""
-            QLabel#valid_input_label{
+        self.valid_framealpha_input_label = QLabel("Valid Framealpha")
+        self.valid_framealpha_input_label.setWordWrap(True)
+        self.valid_framealpha_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_framealpha_input_label.setObjectName("valid_framealpha_input_label")
+        self.valid_framealpha_input_label.setStyleSheet("""
+            QLabel#valid_framealpha_input_label{
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
@@ -5742,15 +6948,15 @@ class legend_framealpha_adjustment_section(QWidget):
             }
         """)
 
-        valid_input_layout = QVBoxLayout(self.valid_input_widget)
-        valid_input_layout.addWidget(self.valid_input_label)
-        valid_input_layout.setSpacing(0)
-        valid_input_layout.setContentsMargins(0,0,0,0)
+        valid_framealpha_input_widget_layout = QVBoxLayout(self.valid_framealpha_input_widget)
+        valid_framealpha_input_widget_layout.addWidget(self.valid_framealpha_input_label)
+        valid_framealpha_input_widget_layout.setSpacing(0)
+        valid_framealpha_input_widget_layout.setContentsMargins(0,0,0,0)
 
-        self.invalid_input_widget = QWidget()
-        self.invalid_input_widget.setObjectName("invalid_input")
-        self.invalid_input_widget.setStyleSheet("""
-            QWidget#invalid_input{
+        self.invalid_framealpha_input_widget = QWidget()
+        self.invalid_framealpha_input_widget.setObjectName("invalid_framealpha_input_widget")
+        self.invalid_framealpha_input_widget.setStyleSheet("""
+            QWidget#invalid_framealpha_input_widget{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 rgba(255, 100, 100, 1),   
@@ -5763,12 +6969,12 @@ class legend_framealpha_adjustment_section(QWidget):
             }
         """)
 
-        self.invalid_input_label = QLabel("Invalid Input")
-        self.invalid_input_label.setWordWrap(True)
-        self.invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.invalid_input_label.setObjectName("invalid_input_label")
-        self.invalid_input_label.setStyleSheet("""
-            QLabel#invalid_input_label{
+        self.invalid_framealpha_input_label = QLabel("Invalid Framealpha")
+        self.invalid_framealpha_input_label.setWordWrap(True)
+        self.invalid_framealpha_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_framealpha_input_label.setObjectName("invalid_framealpha_input_label")
+        self.invalid_framealpha_input_label.setStyleSheet("""
+            QLabel#invalid_framealpha_input_label{
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
@@ -5779,74 +6985,199 @@ class legend_framealpha_adjustment_section(QWidget):
             }
         """)
 
-        invalid_input_layout = QVBoxLayout(self.invalid_input_widget)
-        invalid_input_layout.addWidget(self.invalid_input_label)
-        invalid_input_layout.setSpacing(0)
-        invalid_input_layout.setContentsMargins(0,0,0,0)
+        invalid_framealpha_input_widget_layout = QVBoxLayout(self.invalid_framealpha_input_widget)
+        invalid_framealpha_input_widget_layout.addWidget(self.invalid_framealpha_input_label)
+        invalid_framealpha_input_widget_layout.setSpacing(0)
+        invalid_framealpha_input_widget_layout.setContentsMargins(0,0,0,0)
 
-        self.valid_input_widget.setMaximumHeight(50)
-        self.invalid_input_widget.setMaximumHeight(50)
+        #-----Set the size for the Framealpha Validity Check Widgets-----
+        self.valid_framealpha_input_widget.setMaximumHeight(50)
+        self.invalid_framealpha_input_widget.setMaximumHeight(50)
 
-        self.valid_input_widget.hide()
-        self.invalid_input_widget.hide()
+        #-----Hide the Framealpha Validity Check Widgets-----
+        self.valid_framealpha_input_widget.hide()
+        self.invalid_framealpha_input_widget.hide()
 
-        #Create a layout for the ncol adjustment section and add the line edit object to it
-        framealpha_section_layout = QVBoxLayout(self.framealpha_adjustment_section)
-        framealpha_section_layout.addWidget(self.framealpha_input)
-        framealpha_section_layout.addWidget(self.valid_input_widget)
-        framealpha_section_layout.addWidget(self.invalid_input_widget)
+        #-----Create the Framealpha Adjustment Section-----
+        self.legend_framealpha_adjustment_section = QWidget()
+        self.legend_framealpha_adjustment_section.setObjectName("legend_framealpha_adjustment_section")
+        self.legend_framealpha_adjustment_section.setStyleSheet("""
+            QWidget#legend_framealpha_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.create_legend_framealpha_adjustment_section()
+
+        #-----Main Screen-----
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.legend_framealpha_adjustment_section)
+        main_layout.setContentsMargins(0,0,0,0)
+        main_layout.setSpacing(0)
+    
+    def create_legend_framealpha_adjustment_section(self):
+        #Create the layout for the framealpha section
+        legend_framealpha_adjustment_section_layout = QVBoxLayout(self.legend_framealpha_adjustment_section)
+
+        #Create a line edit widget to take in the framealpha input
+        self.framealpha_input = QLineEdit()
+        self.framealpha_input.setObjectName("framealpha")
+        self.framealpha_input.setPlaceholderText("framealpha: ")
+        self.framealpha_input.setStyleSheet("""
+            QLineEdit#framealpha{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.framealpha_input.setMinimumHeight(60)
+
+        #Connect the framealpha input widget to automatically update the frame alpha
+        self.framealpha_input.textChanged.connect(self.change_framealpha)
+
+        #Create a reset framealpah label
+        self.reset_framealpha_label = QLabel("Reset framealpha")
+        self.reset_framealpha_label.setObjectName("reset_framealpha_label")
+        self.reset_framealpha_label.setWordWrap(True)
+        self.reset_framealpha_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_framealpha_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents,True)
+        self.reset_framealpha_label.setStyleSheet("""
+            QLabel#reset_framealpha_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        #Create the reset framealpha value button
+        self.reset_framealpha_button = QPushButton()
+        self.reset_framealpha_button.setObjectName("reset_framealpha_button")
+        self.reset_framealpha_button.setStyleSheet("""
+            QPushButton#reset_framealpha_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#reset_framealpha_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.reset_framealpha_button.setMinimumHeight(50)
+        self.reset_framealpha_button.clicked.connect(self.reset_framealpha)
+
+        #Add the label onto the button
+        reset_framealpha_button_layout = QVBoxLayout(self.reset_framealpha_button)
+        reset_framealpha_button_layout.addWidget(self.reset_framealpha_label)
+        reset_framealpha_button_layout.setContentsMargins(0,0,0,0)
+        reset_framealpha_button_layout.setSpacing(0)
+
+        #Add the line edit widget, validity check widgets to the layout. 
+        legend_framealpha_adjustment_section_layout.addWidget(self.framealpha_input)
+        legend_framealpha_adjustment_section_layout.addWidget(self.valid_framealpha_input_widget)
+        legend_framealpha_adjustment_section_layout.addWidget(self.invalid_framealpha_input_widget)
     
         #Add the margins, spacing, and stretch to the layout to make it look good
-        framealpha_section_layout.setContentsMargins(10,10,10,10)
-        framealpha_section_layout.setSpacing(10)
-        framealpha_section_layout.addStretch()
+        legend_framealpha_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        legend_framealpha_adjustment_section_layout.setSpacing(10)
+        legend_framealpha_adjustment_section_layout.addStretch()
 
-        #Add the ncol adjustment section to the main widget
-        main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.framealpha_adjustment_section)
-        
-        #Set both the spacing and margins for the main widget to make sure it fits nicely
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0,0,0,0)
+        #Add the reset framealpha value button to the layout
+        legend_framealpha_adjustment_section_layout.addWidget(self.reset_framealpha_button)
 
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-    
+    def change_to_original_screen(self):
+        pass
+
     def change_framealpha(self):
         #Extract the ncol input from the user and remove any excess text from it
         framealpha_input = self.framealpha_input.text().strip()
 
+        #If the framealpha input is empty then hide the validity check widgets
         if (framealpha_input == ""):
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.hide()
-            self.framealpha_value = None
-            self.update_framealpha()
+            self.valid_framealpha_input_widget.hide()
+            self.invalid_framealpha_input_widget.hide()
             return
 
-        #Only update the ncol value in the json file if the input is valid
+        #Try to turn the framelpha input into a float if possible
+        #Show the valid widget if it's in the proper interval else show the invalid widget
         try:
             framealpha_input = float(framealpha_input)
             if (0 > framealpha_input or framealpha_input > 1):
-                raise Exception
-            self.valid_input_widget.show()
-            self.invalid_input_widget.hide()
-        except:
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.show()
+                raise ValueError
+            self.valid_framealpha_input_widget.show()
+            self.invalid_framealpha_input_widget.hide()
+        except ValueError:
+            self.valid_framealpha_input_widget.hide()
+            self.invalid_framealpha_input_widget.show()
         else:
+            #Update the framealpha
             self.framealpha_value = framealpha_input
             self.update_framealpha()
 
+    def reset_framealpha(self):
+        #Clear the current input, change the framealpha value, and update it
+        self.framealpha_input.clear()
+        self.framealpha_value = None
+        self.update_framealpha()
+
     def update_framealpha(self):
+        #Get the newest plot config from the plot config json
         db = self.plot_manager.get_db()
+
+        #if there is a plot config then update it in the newest plot config
         if (db != []):
             self.plot_manager.update_legend("framealpha",self.framealpha_value)
+        #if there is no plot config available then create a new one with the default and add the new value in
         else:
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["framealpha"] = self.framealpha_value
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        #Update the graph with the newest plot config
         self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
+        #Check where the cursor clicks and clear the focus if it's not in the input area
         if not self.framealpha_input.geometry().contains(event.position().toPoint()):
             self.framealpha_input.clearFocus()
         super().mousePressEvent(event)
@@ -5855,20 +7186,21 @@ class legend_shadow_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
 
-        self.graph_display = graph_display
-
-        self.plot_manager = PlotManager()
-        
         self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
         
         #Initialize the shadow state
         self.shadow_state = False
+
+        #Set the object name for the widget
+        self.setObjectName("legend_shadow_adjustment_section")
         
         #Create a widget to display the shadow adjustment section and style it for consistency
-        self.shadow_adjustment_section = QWidget()
-        self.shadow_adjustment_section.setObjectName("shadow_adjustment_section")
-        self.shadow_adjustment_section.setStyleSheet("""
-            QWidget#shadow_adjustment_section{
+        self.legend_shadow_adjustment_section = QWidget()
+        self.legend_shadow_adjustment_section.setObjectName("legend_shadow_adjustment_section")
+        self.legend_shadow_adjustment_section.setStyleSheet("""
+            QWidget#legend_shadow_adjustment_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -5879,9 +7211,19 @@ class legend_shadow_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
+        self.create_legend_shadow_adjustment_section()
 
+        #Create a layout for the main widget and store the frameon adjustment section in
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.legend_shadow_adjustment_section)
+
+        #Add the spacing and margins to make sure that the section fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+    def create_legend_shadow_adjustment_section(self):
         #Create a label to put on top of the QPushButton
-        self.shadow_label = QLabel("Shadow Off")
+        self.shadow_label = QLabel("Shadow On")
         self.shadow_label.setWordWrap(True)
         self.shadow_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.shadow_label.setObjectName("shadow_label")
@@ -5898,7 +7240,7 @@ class legend_shadow_adjustment_section(QWidget):
         """)
         self.shadow_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
     
-        #Create a button to allow the user to switch between shadow
+        #Create a button to allow the user to switch between Frameon
         self.shadow_button = QPushButton()
         self.shadow_button.setObjectName("shadow_button")
         self.shadow_button.setStyleSheet("""
@@ -5936,45 +7278,41 @@ class legend_shadow_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.shadow_button.setMinimumHeight(45)
+        self.shadow_button.setMinimumHeight(50)
         
         #Put the label on top of the button we created for control frameon
-        shadow_button_layout = QVBoxLayout(self.shadow_button)
-        shadow_button_layout.addWidget(self.shadow_label)
-        shadow_button_layout.setContentsMargins(0,0,0,0)
-        shadow_button_layout.setSpacing(0)
+        legend_shadow_button_layout = QVBoxLayout(self.shadow_button)
+        legend_shadow_button_layout.addWidget(self.shadow_label)
+        legend_shadow_button_layout.setContentsMargins(0,0,0,0)
+        legend_shadow_button_layout.setSpacing(0)
 
         #Connect the frameon button to a function to switch between the two states
-        self.shadow_button.clicked.connect(self.switch_shadow_state)
+        self.shadow_button.clicked.connect(self.change_shadow_state)
 
-        #Create a button layout for the frameon adjustment section
-        button_layout = QVBoxLayout(self.shadow_adjustment_section)
+        #Create a layout for the frameon adjustment section
+        legend_shadow_adjustment_section_layout = QVBoxLayout(self.legend_shadow_adjustment_section)
 
         #Add the frameon button to the layout
-        button_layout.addWidget(self.shadow_button)
+        legend_shadow_adjustment_section_layout.addWidget(self.shadow_button)
 
         #Set the spacing, margins, and stretch to make it look good
-        button_layout.setSpacing(0)
-        button_layout.setContentsMargins(10,10,10,10)
-        button_layout.addStretch()
+        legend_shadow_adjustment_section_layout.setSpacing(0)
+        legend_shadow_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        legend_shadow_adjustment_section_layout.addStretch()
 
-        #Create a layout for the main widget and store the frameon adjustment section in
-        main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.shadow_adjustment_section)
+    def change_to_original_screen(self):
+        pass
 
-        #Add the spacing and margins to make sure that the section fits nicely
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0,0,0,0)
-
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-
-    def switch_shadow_state(self):
+    def change_shadow_state(self):
         #Change the frameon_state to be the opposite of the current state and update it in the json
         self.shadow_state = not self.shadow_state
         if (self.shadow_state):
-            self.shadow_label.setText("Shadow On")
-        else:
+            #Set the text to shadow off if the state is true
             self.shadow_label.setText("Shadow Off")
+        else:
+            #Set the text to shadow on if the state is false 
+            self.shadow_label.setText("Shadow On")
+        #Update the shadow state on the plot config
         self.update_shadow()
 
     def update_shadow(self):
@@ -5993,20 +7331,21 @@ class legend_fancybox_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
 
-        self.graph_display = graph_display
-
-        self.plot_manager = PlotManager()
-        
         self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
         
         #Initialize the fancybox state
         self.fancybox_state = True
+
+        #Set the object name for the widget
+        self.setObjectName("legend_fancybox_adjustment_section")
         
         #Create a widget to display the fancybox adjustment section and style it for consistency
-        self.fancybox_adjustment_section = QWidget()
-        self.fancybox_adjustment_section.setObjectName("fancybox_adjustment_section")
-        self.fancybox_adjustment_section.setStyleSheet("""
-            QWidget#fancybox_adjustment_section{
+        self.legend_fancybox_adjustment_section = QWidget()
+        self.legend_fancybox_adjustment_section.setObjectName("legend_fancybox_adjustment_section")
+        self.legend_fancybox_adjustment_section.setStyleSheet("""
+            QWidget#legend_fancybox_adjustment_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -6017,7 +7356,17 @@ class legend_fancybox_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
+        self.create_legend_fancybox_adjustment_section()
 
+        #Create a layout for the main widget and store the frameon adjustment section in
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.legend_fancybox_adjustment_section)
+
+        #Add the spacing and margins to make sure that the section fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+    def create_legend_fancybox_adjustment_section(self):
         #Create a label to put on top of the QPushButton
         self.fancybox_label = QLabel("Fancybox On")
         self.fancybox_label.setWordWrap(True)
@@ -6074,7 +7423,7 @@ class legend_fancybox_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.fancybox_button.setMinimumHeight(45)
+        self.fancybox_button.setMinimumHeight(50)
         
         #Put the label on top of the button we created for control frameon
         fancybox_button_layout = QVBoxLayout(self.fancybox_button)
@@ -6083,36 +7432,32 @@ class legend_fancybox_adjustment_section(QWidget):
         fancybox_button_layout.setSpacing(0)
 
         #Connect the frameon button to a function to switch between the two states
-        self.fancybox_button.clicked.connect(self.switch_fancybox_state)
+        self.fancybox_button.clicked.connect(self.change_fancybox_state)
 
         #Create a button layout for the frameon adjustment section
-        button_layout = QVBoxLayout(self.fancybox_adjustment_section)
+        legend_fancybox_button_layout = QVBoxLayout(self.legend_fancybox_adjustment_section)
 
         #Add the frameon button to the layout
-        button_layout.addWidget(self.fancybox_button)
+        legend_fancybox_button_layout.addWidget(self.fancybox_button)
 
         #Set the spacing, margins, and stretch to make it look good
-        button_layout.setSpacing(0)
-        button_layout.setContentsMargins(10,10,10,10)
-        button_layout.addStretch()
+        legend_fancybox_button_layout.setSpacing(0)
+        legend_fancybox_button_layout.setContentsMargins(10,10,10,10)
+        legend_fancybox_button_layout.addStretch()
 
-        #Create a layout for the main widget and store the frameon adjustment section in
-        main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.fancybox_adjustment_section)
+    def change_to_original_screen(self):
+        pass
 
-        #Add the spacing and margins to make sure that the section fits nicely
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0,0,0,0)
-
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-
-    def switch_fancybox_state(self):
+    def change_fancybox_state(self):
         #Change the frameon_state to be the opposite of the current state and update it in the json
         self.fancybox_state = not self.fancybox_state
         if (self.fancybox_state):
-            self.fancybox_label.setText("Fancybox On")
-        else:
+            #Set the text to Fancybox Off if the state is true
             self.fancybox_label.setText("Fancybox Off")
+        else:
+            #Set the text to Fancybox On if the state is true
+            self.fancybox_label.setText("Fancybox On")
+        #Update the fancybox state on the plot config
         self.update_fancybox()
 
     def update_fancybox(self):
@@ -6131,16 +7476,103 @@ class legend_borderpad_adjustment_section(QWidget):
     def __init__(self, selected_graph,graph_display):
         super().__init__()
 
-        self.graph_display = graph_display
-
-        self.plot_manager = PlotManager()
-        
         self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        #Initialize the bordpad value to be 0.4
+        self.borderpad = 0.4
+
+        #Set the object name for the widget
+        self.setObjectName("legend_borderpad_adjustment_section")
+
+        #-----Create the Validity Check Widgets-----
+        self.valid_borderpad_input_widget = QWidget()
+        self.valid_borderpad_input_widget.setObjectName("valid_borderpad_input_widget")
+        self.valid_borderpad_input_widget.setStyleSheet("""
+            QWidget#valid_borderpad_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_borderpad_input_label = QLabel("Valid Borderpad")
+        self.valid_borderpad_input_label.setWordWrap(True)
+        self.valid_borderpad_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_borderpad_input_label.setObjectName("valid_borderpad_input_label")
+        self.valid_borderpad_input_label.setStyleSheet("""
+            QLabel#valid_borderpad_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_borderpad_input_widget_layout = QVBoxLayout(self.valid_borderpad_input_widget)
+        valid_borderpad_input_widget_layout.addWidget(self.valid_borderpad_input_label)
+        valid_borderpad_input_widget_layout.setSpacing(0)
+        valid_borderpad_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        self.invalid_borderpad_input_widget = QWidget()
+        self.invalid_borderpad_input_widget.setObjectName("invalid_borderpad_input_widget")
+        self.invalid_borderpad_input_widget.setStyleSheet("""
+            QWidget#invalid_borderpad_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_borderpad_input_label = QLabel("Invalid Borderpad")
+        self.invalid_borderpad_input_label.setWordWrap(True)
+        self.invalid_borderpad_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_borderpad_input_label.setObjectName("invalid_borderpad_input_label")
+        self.invalid_borderpad_input_label.setStyleSheet("""
+            QLabel#invalid_borderpad_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        invalid_borderpad_input_widget_layout = QVBoxLayout(self.invalid_borderpad_input_widget)
+        invalid_borderpad_input_widget_layout.addWidget(self.invalid_borderpad_input_label)
+        invalid_borderpad_input_widget_layout.setSpacing(0)
+        invalid_borderpad_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        #-----Set the height for the widgets-----
+        self.valid_borderpad_input_widget.setMaximumHeight(50)
+        self.invalid_borderpad_input_widget.setMaximumHeight(50)
+
+        #-----Hide the Validity Check Widgets-----
+        self.valid_borderpad_input_widget.hide()
+        self.invalid_borderpad_input_widget.hide()
 
         #Create a section to display the borderpad section and style it
-        self.borderpad_adjustment_section = QWidget()
-        self.borderpad_adjustment_section.setObjectName("borderpad_adjustment_section")
-        self.borderpad_adjustment_section.setStyleSheet("""
+        self.legend_borderpad_adjustment_section = QWidget()
+        self.legend_borderpad_adjustment_section.setObjectName("borderpad_adjustment_section")
+        self.legend_borderpad_adjustment_section.setStyleSheet("""
             QWidget#borderpad_adjustment_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
@@ -6164,9 +7596,18 @@ class legend_borderpad_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
+        self.create_legend_borderpad_adjustment_section()
 
-        #Initialize the bordpad value to be 0.4
-        self.borderpad_value = 0.4
+        #Add the borderpad adjustment section to the main widget
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.legend_borderpad_adjustment_section)
+        
+        #Set both the spacing and margins for the main widget to make sure it fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+    def create_legend_borderpad_adjustment_section(self):
+        legend_borderpad_adjustment_section_layout = QVBoxLayout(self.legend_borderpad_adjustment_section)
 
         #Create a line edit object for the user to input the borderpad
         self.borderpad_input = QLineEdit()
@@ -6178,29 +7619,14 @@ class legend_borderpad_adjustment_section(QWidget):
         #Connect any changes with the text to an update function
         self.borderpad_input.textChanged.connect(self.change_borderpad)
 
-        #Create two widget to display valid and invalid inputs
-        self.valid_input_widget = QWidget()
-        self.valid_input_widget.setObjectName("valid_input")
-        self.valid_input_widget.setStyleSheet("""
-            QWidget#valid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),   
-                    stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1)
-                    stop:1 rgba(180, 200, 255, 1)  
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.valid_input_label = QLabel("Valid Input")
-        self.valid_input_label.setWordWrap(True)
-        self.valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.valid_input_label.setObjectName("valid_input_label")
-        self.valid_input_label.setStyleSheet("""
-            QLabel#valid_input_label{
+        #Create a reset ncol button and connect the reset function to it
+        self.reset_borderpad_label = QLabel("Reset Borderpad")
+        self.reset_borderpad_label.setObjectName("reset_borderpad_label")
+        self.reset_borderpad_label.setWordWrap(True)
+        self.reset_borderpad_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_borderpad_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents,True)
+        self.reset_borderpad_label.setStyleSheet("""
+            QLabel#reset_borderpad_label{
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
@@ -6211,96 +7637,93 @@ class legend_borderpad_adjustment_section(QWidget):
             }
         """)
 
-        valid_input_layout = QVBoxLayout(self.valid_input_widget)
-        valid_input_layout.addWidget(self.valid_input_label)
-        valid_input_layout.setSpacing(0)
-        valid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.invalid_input_widget = QWidget()
-        self.invalid_input_widget.setObjectName("invalid_input")
-        self.invalid_input_widget.setStyleSheet("""
-            QWidget#invalid_input{
+        #Create a reset borderpad button and connect the reset function to it
+        self.reset_borderpad_button = QPushButton()
+        self.reset_borderpad_button.setObjectName("reset_borderpad_button")
+        self.reset_borderpad_button.setStyleSheet("""
+            QPushButton#reset_borderpad_button{
                 background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 100, 100, 1),   
-                    stop:0.4 rgba(255, 130, 120, 1), 
-                    stop:0.7 rgba(200, 90, 150, 1), 
-                    stop:1 rgba(180, 60, 140, 1)     
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
                 );
                 border: 2px solid black;
                 border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
             }
-        """)
-
-        self.invalid_input_label = QLabel("Invalid Input")
-        self.invalid_input_label.setWordWrap(True)
-        self.invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.invalid_input_label.setObjectName("invalid_input_label")
-        self.invalid_input_label.setStyleSheet("""
-            QLabel#invalid_input_label{
+            QPushButton#reset_borderpad_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
                 padding: 6px;
                 color: black;
-                border: none;
-                background: transparent;
             }
         """)
+        self.reset_borderpad_button.clicked.connect(self.reset_borderpad)
+        self.reset_borderpad_button.setMinimumHeight(50)
 
-        invalid_input_layout = QVBoxLayout(self.invalid_input_widget)
-        invalid_input_layout.addWidget(self.invalid_input_label)
-        invalid_input_layout.setSpacing(0)
-        invalid_input_layout.setContentsMargins(0,0,0,0)
+        #Add the label onto the button
+        reset_borderpad_button_layout = QVBoxLayout(self.reset_borderpad_button)
+        reset_borderpad_button_layout.addWidget(self.reset_borderpad_label)
+        reset_borderpad_button_layout.setContentsMargins(0,0,0,0)
+        reset_borderpad_button_layout.setSpacing(0)
 
-        self.valid_input_widget.setMaximumHeight(50)
-        self.invalid_input_widget.setMaximumHeight(50)
-
-        self.valid_input_widget.hide()
-        self.invalid_input_widget.hide()
-
-        #Create a layout for the ncol adjustment section and add the line edit object to it
-        borderpad_section_layout = QVBoxLayout(self.borderpad_adjustment_section)
-        borderpad_section_layout.addWidget(self.borderpad_input)
-        borderpad_section_layout.addWidget(self.valid_input_widget)
-        borderpad_section_layout.addWidget(self.invalid_input_widget)
+        #Create a layout for the borderpad adjustment section and add the line edit object to it
+        legend_borderpad_adjustment_section_layout.addWidget(self.borderpad_input)
+        legend_borderpad_adjustment_section_layout.addWidget(self.valid_borderpad_input_widget)
+        legend_borderpad_adjustment_section_layout.addWidget(self.invalid_borderpad_input_widget)
     
         #Add the margins, spacing, and stretch to the layout to make it look good
-        borderpad_section_layout.setContentsMargins(10,10,10,10)
-        borderpad_section_layout.setSpacing(10)
-        borderpad_section_layout.addStretch()
+        legend_borderpad_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        legend_borderpad_adjustment_section_layout.setSpacing(10)
+        legend_borderpad_adjustment_section_layout.addStretch()
 
-        #Add the borderpad adjustment section to the main widget
-        main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.borderpad_adjustment_section)
-        
-        #Set both the spacing and margins for the main widget to make sure it fits nicely
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0,0,0,0)
+    def change_to_original_screen(self):
+        pass
 
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-    
     def change_borderpad(self):
         #Extract the borderpad input from the user and remove any excess text from it
         borderpad_input = self.borderpad_input.text().strip()
 
         if (borderpad_input == ""):
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.hide()
-            self.borderpad_value = 0.4
-            self.update_borderpad()
+            self.valid_borderpad_input_widget.hide()
+            self.invalid_borderpad_input_widget.hide()
             return 
 
         #Only update the borderpad value in the json file if the input is valid
         try:
-            self.borderpad_value = float(borderpad_input)
-            self.valid_input_widget.show()
-            self.invalid_input_widget.hide()
-        except:
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.show()
+            self.borderpad = float(borderpad_input)
+            self.valid_borderpad_input_widget.show()
+            self.invalid_borderpad_input_widget.hide()
+        except ValueError:
+            self.valid_borderpad_input_widget.hide()
+            self.invalid_borderpad_input_widget.show()
         else:
             self.update_borderpad()
+
+    def reset_borderpad(self):
+        #Clear the input in the QLineEdit Widget
+        self.borderpad_input.clear()
+
+        #Set the borderpad to 0.4 (default value) then update it in the plot config
+        self.borderpad = 0.4
+        self.update_borderpad()
 
     def update_borderpad(self):
         #Get the newest json entries from the plot manager
@@ -6325,24 +7748,291 @@ class legend_label_color_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
 
-        self.graph_display = graph_display
-
         self.plot_manager = PlotManager()
         self.selected_graph = selected_graph
+        self.graph_display = graph_display
+
+        #Set the object name for the widget
+        self.setObjectName("legend_label_color_adjustment_section")
+
+        #Get all the named colors and the short code colors 
         self.named_colors = list(mcolors.get_named_colors_mapping().keys())
         self.short_code_colors = self.named_colors[-8:]
         self.named_colors = [c.replace("xkcd:","") for c in self.named_colors]
         self.named_colors = [c.replace("tab:","") for c in self.named_colors]
         self.named_colors = self.named_colors[:-8]
 
-        self.current_label_color = ""
+        #Get the xkcd colors and store it in a list
+        self.xkcd_colors = [color.replace("xkcd:","") for color in list(mcolors.XKCD_COLORS)]
+        #Get the tableau colors and store it in a list
+        self.tableau_colors = [color.replace("tab:","") for color in list(mcolors.TABLEAU_COLORS)]
 
-        #-----Home Screen-----
+        #Initialize the color types for the label color
+        self.label_color_types = ["Named Color", "Hex Code", "RGBA Color", "Grayscale Color", "Short Code Color", "Reset Label Color"]
 
-        self.label_color_adjustment_homescreen = QWidget()
-        self.label_color_adjustment_homescreen.setObjectName("label_color_adjustment")
-        self.label_color_adjustment_homescreen.setStyleSheet("""
-            QWidget#label_color_adjustment{
+        #Initialize the initial rgba values
+        self.r_value = 1
+        self.g_value = 1
+        self.b_value = 1
+        self.a_value = 1
+
+        #Initialize the current label color
+        self.current_label_color = "k"
+
+        #-----Validity Check Widget for Hex Code-----
+        self.valid_hex_code_input_widget = QWidget()
+        self.valid_hex_code_input_widget.setObjectName("valid_hex_code_input_widget")
+        self.valid_hex_code_input_widget.setStyleSheet("""
+            QWidget#valid_hex_code_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_hex_code_input_label = QLabel("Valid Hex Code")
+        self.valid_hex_code_input_label.setWordWrap(True)
+        self.valid_hex_code_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_hex_code_input_label.setObjectName("valid_hex_code_input_label")
+        self.valid_hex_code_input_label.setStyleSheet("""
+            QLabel#valid_hex_code_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_hex_code_input_widget_layout = QVBoxLayout(self.valid_hex_code_input_widget)
+        valid_hex_code_input_widget_layout.addWidget(self.valid_hex_code_input_label)
+        valid_hex_code_input_widget_layout.setSpacing(0)
+        valid_hex_code_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        self.invalid_hex_code_input_widget = QWidget()
+        self.invalid_hex_code_input_widget.setObjectName("invalid_hex_code_input_widget")
+        self.invalid_hex_code_input_widget.setStyleSheet("""
+            QWidget#invalid_hex_code_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_hex_code_input_label = QLabel("Invalid Hex Code")
+        self.invalid_hex_code_input_label.setWordWrap(True)
+        self.invalid_hex_code_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_hex_code_input_label.setObjectName("invalid_hex_code_input_label")
+        self.invalid_hex_code_input_label.setStyleSheet("""
+            QLabel#invalid_hex_code_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        invalid_hex_code_input_widget_layout = QVBoxLayout(self.invalid_hex_code_input_widget)
+        invalid_hex_code_input_widget_layout.addWidget(self.invalid_hex_code_input_label)
+        invalid_hex_code_input_widget_layout.setSpacing(0)
+        invalid_hex_code_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        #-----Set the size for the Hex Code Validity Check Widgets-----
+        self.valid_hex_code_input_widget.setMaximumHeight(50)
+        self.invalid_hex_code_input_widget.setMaximumHeight(50)
+
+        #-----Hide the Hex Code Validity Check Widgets-----
+        self.valid_hex_code_input_widget.hide()
+        self.invalid_hex_code_input_widget.hide()
+
+        #-----Validity Check Widgets For RGBA Color-----
+        self.valid_rgba_color_input_widget = QWidget()
+        self.valid_rgba_color_input_widget.setObjectName("valid_rgba_color_input_widget")
+        self.valid_rgba_color_input_widget.setStyleSheet("""
+            QWidget#valid_rgba_color_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_rgba_color_input_label = QLabel("Valid RBGA Color")
+        self.valid_rgba_color_input_label.setWordWrap(True)
+        self.valid_rgba_color_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_rgba_color_input_label.setObjectName("valid_rgba_color_input_label")
+        self.valid_rgba_color_input_label.setStyleSheet("""
+            QLabel#valid_rgba_color_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_rgba_color_input_widget_layout = QVBoxLayout(self.valid_rgba_color_input_widget)
+        valid_rgba_color_input_widget_layout.addWidget(self.valid_rgba_color_input_label)
+        valid_rgba_color_input_widget_layout.setSpacing(0)
+        valid_rgba_color_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        self.invalid_rgba_color_input_widget = QWidget()
+        self.invalid_rgba_color_input_widget.setObjectName("invalid_rgba_color_input_widget")
+        self.invalid_rgba_color_input_widget.setStyleSheet("""
+            QWidget#invalid_rgba_color_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_rgba_color_input_label = QLabel("Invalid RGBA Color")
+        self.invalid_rgba_color_input_label.setWordWrap(True)
+        self.invalid_rgba_color_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_rgba_color_input_label.setObjectName("invalid_rgba_color_input_label")
+        self.invalid_rgba_color_input_label.setStyleSheet("""
+            QLabel#invalid_rgba_color_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        invalid_rgba_color_input_widget_layout = QVBoxLayout(self.invalid_rgba_color_input_widget)
+        invalid_rgba_color_input_widget_layout.addWidget(self.invalid_rgba_color_input_label)
+        invalid_rgba_color_input_widget_layout.setSpacing(0)
+        invalid_rgba_color_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        #-----Set the height for the RGBA Color Validity Check Widgets-----
+        self.valid_rgba_color_input_widget.setMaximumHeight(50)
+        self.invalid_rgba_color_input_widget.setMaximumHeight(50)
+
+        #----Hide the RBGA Color Validity Check Widgets-----
+        self.valid_rgba_color_input_widget.hide()
+        self.invalid_rgba_color_input_widget.hide()
+
+        #-----Validity Check Widget for Grayscale Color-----
+        self.valid_grayscale_color_input_widget = QWidget()
+        self.valid_grayscale_color_input_widget.setObjectName("valid_grayscale_color_input_widget")
+        self.valid_grayscale_color_input_widget.setStyleSheet("""
+            QWidget#valid_grayscale_color_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_grayscale_color_input_label = QLabel("Valid Grayscale")
+        self.valid_grayscale_color_input_label.setWordWrap(True)
+        self.valid_grayscale_color_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_grayscale_color_input_label.setObjectName("valid_grayscale_color_input_label")
+        self.valid_grayscale_color_input_label.setStyleSheet("""
+            QLabel#valid_grayscale_color_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_grayscale_color_input_layout = QVBoxLayout(self.valid_grayscale_color_input_widget)
+        valid_grayscale_color_input_layout.addWidget(self.valid_grayscale_color_input_label)
+        valid_grayscale_color_input_layout.setSpacing(0)
+        valid_grayscale_color_input_layout.setContentsMargins(0,0,0,0)
+
+        self.invalid_grayscale_color_input_widget = QWidget()
+        self.invalid_grayscale_color_input_widget.setObjectName("invalid_grayscale_color_input_widget")
+        self.invalid_grayscale_color_input_widget.setStyleSheet("""
+            QWidget#invalid_grayscale_color_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_grayscale_color_input_label = QLabel("Invalid Grayscale")
+        self.invalid_grayscale_color_input_label.setWordWrap(True)
+        self.invalid_grayscale_color_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_grayscale_color_input_label.setObjectName("invalid_grayscale_color_input_label")
+        self.invalid_grayscale_color_input_label.setStyleSheet("""
+            QLabel#invalid_grayscale_color_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        invalid_grayscale_color_input_layout = QVBoxLayout(self.invalid_grayscale_color_input_widget)
+        invalid_grayscale_color_input_layout.addWidget(self.invalid_grayscale_color_input_label)
+        invalid_grayscale_color_input_layout.setSpacing(0)
+        invalid_grayscale_color_input_layout.setContentsMargins(0,0,0,0)
+
+        #-----Set the height for the Grayscale Color Validity Check Widgets-----
+        self.valid_grayscale_color_input_widget.setMaximumHeight(50)
+        self.invalid_grayscale_color_input_widget.setMaximumHeight(50)
+
+        #----Hide the Grayscale Color Validity Check Widgets-----
+        self.valid_grayscale_color_input_widget.hide()
+        self.invalid_grayscale_color_input_widget.hide()
+
+        #-----Create the Face Color Adjustment Section-----
+        self.legend_label_color_adjustment_section = QWidget()
+        self.legend_label_color_adjustment_section.setObjectName("legend_label_color_adjustment_section")
+        self.legend_label_color_adjustment_section.setStyleSheet("""
+            QWidget#legend_label_color_adjustment_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -6353,259 +8043,13 @@ class legend_label_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }            
         """)
+        self.create_legend_label_color_adjustment_section()
 
-        self.named_color_button = QPushButton("Named Colors")
-        self.named_color_button.setObjectName("named_color")
-        self.named_color_button.setStyleSheet("""
-            QPushButton#named_color{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#named_color:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.hex_code_button = QPushButton("Hex Code Color")
-        self.hex_code_button.setObjectName("hex_code")
-        self.hex_code_button.setStyleSheet("""
-            QPushButton#hex_code{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#hex_code:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.rgba_color_button = QPushButton("RGBA Color")
-        self.rgba_color_button.setObjectName("rgba_color")
-        self.rgba_color_button.setStyleSheet("""
-            QPushButton#rgba_color{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#rgba_color:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.grayscale_color_button = QPushButton("Grayscale Color")
-        self.grayscale_color_button.setObjectName("grayscale")
-        self.grayscale_color_button.setStyleSheet("""
-            QPushButton#grayscale{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#grayscale:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.short_code_color_button = QPushButton("Short Code Color")
-        self.short_code_color_button.setObjectName("short_code_color")
-        self.short_code_color_button.setStyleSheet("""
-            QPushButton#short_code_color{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#short_code_color:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.none_button = QPushButton("None")
-        self.none_button.setObjectName("none")
-        self.none_button.setStyleSheet("""
-            QPushButton#none{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#none:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.named_color_button.clicked.connect(self.change_to_named_color_screen)
-        self.hex_code_button.clicked.connect(self.change_to_hex_code_screen)
-        self.rgba_color_button.clicked.connect(self.change_to_rgba_color_screen)
-        self.grayscale_color_button.clicked.connect(self.change_to_grayscale_colors_screen)
-        self.short_code_color_button.clicked.connect(self.change_to_short_code_color_screen)
-        self.none_button.clicked.connect(self.set_color_to_none)
-
-        button_layout = QVBoxLayout(self.label_color_adjustment_homescreen)
-        button_layout.addWidget(self.named_color_button)
-        button_layout.addWidget(self.hex_code_button)
-        button_layout.addWidget(self.rgba_color_button)
-        button_layout.addWidget(self.grayscale_color_button)
-        button_layout.addWidget(self.short_code_color_button)
-        button_layout.addWidget(self.none_button)
-        button_layout.setContentsMargins(10,10,10,10)
-        button_layout.setSpacing(5)
-        button_layout.addStretch()
-
-        #-----Named Color Screen-----
-
-        self.named_color_screen = QWidget()
-        self.named_color_screen.setObjectName("named_color_screen")
-        self.named_color_screen.setStyleSheet("""
-            QWidget#named_color_screen{
+        #-----Named Color Section-----
+        self.named_color_section = QWidget()
+        self.named_color_section.setObjectName("named_color_section")
+        self.named_color_section.setStyleSheet("""
+            QWidget#named_color_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -6616,15 +8060,14 @@ class legend_label_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }   
         """)
-        self.create_named_color_screen()
-        self.named_color_screen.hide()
+        self.create_named_color_section()
+        self.named_color_section.hide()
 
-        #-----Hex Code Color Screen-----
-
-        self.hex_code_color_screen = QWidget()
-        self.hex_code_color_screen.setObjectName("hex_code_color_screen")
-        self.hex_code_color_screen.setStyleSheet("""
-            QWidget#hex_code_color_screen{
+        #-----Hex Code Color Section-----
+        self.hex_code_color_section = QWidget()
+        self.hex_code_color_section.setObjectName("hex_code_color_section")
+        self.hex_code_color_section.setStyleSheet("""
+            QWidget#hex_code_color_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -6635,15 +8078,14 @@ class legend_label_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }  
         """)
-        self.create_hex_code_screen()
-        self.hex_code_color_screen.hide()
+        self.create_hex_code_section()
+        self.hex_code_color_section.hide()
 
-        #------RGBA Color Screen-----
-
-        self.rgba_color_screen = QWidget()
-        self.rgba_color_screen.setObjectName("rgba_color_screen")
-        self.rgba_color_screen.setStyleSheet("""
-            QWidget#rgba_color_screen{
+        #------RGBA Color Section-----
+        self.rgba_color_section = QWidget()
+        self.rgba_color_section.setObjectName("rgba_color_section")
+        self.rgba_color_section.setStyleSheet("""
+            QWidget#rgba_color_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -6654,17 +8096,14 @@ class legend_label_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }  
         """)
-        self.create_rgba_color_screen()
-        self.rgba_color_screen.hide()
+        self.create_rgba_color_section()
+        self.rgba_color_section.hide()
 
-        self.initial_rgba = [0,0,0,1]
-
-        #------Grayscale Color Screen-----
-
-        self.grayscale_color_screen = QWidget()
-        self.grayscale_color_screen.setObjectName("grayscale_color_screen")
-        self.grayscale_color_screen.setStyleSheet("""
-            QWidget#grayscale_color_screen{
+        #------Grayscale Color Section-----
+        self.grayscale_color_section = QWidget()
+        self.grayscale_color_section.setObjectName("grayscale_color_section")
+        self.grayscale_color_section.setStyleSheet("""
+            QWidget#grayscale_color_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -6675,15 +8114,14 @@ class legend_label_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }  
         """)
-        self.create_grayscale_color_screen()
-        self.grayscale_color_screen.hide()
+        self.create_grayscale_color_section()
+        self.grayscale_color_section.hide()
 
-        #-----Short Code Colors-----
-
-        self.short_code_color_screen = QWidget()
-        self.short_code_color_screen.setObjectName("short_code_color")
-        self.short_code_color_screen.setStyleSheet("""
-            QWidget#short_code_color{
+        #-----Short Code Colors Section-----
+        self.short_code_color_section = QWidget()
+        self.short_code_color_section.setObjectName("short_code_color_section")
+        self.short_code_color_section.setStyleSheet("""
+            QWidget#short_code_color_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -6694,36 +8132,150 @@ class legend_label_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }  
         """)
-        self.create_short_code_color_screen()
-        self.short_code_color_screen.hide()
+        self.create_short_code_color_section()
+        self.short_code_color_section.hide()
 
-        #-----Initialize Screen Value-----
+        #-----Reset Edge Color Section-----
+        self.reset_label_color_section = QWidget()
+        self.reset_label_color_section.setObjectName("reset_label_color_section")
+        self.reset_label_color_section.setStyleSheet("""
+            QWidget#reset_label_color_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.create_reset_label_color_section()
+        self.reset_label_color_section.hide()
 
-        self.available_screens = [self.label_color_adjustment_homescreen,self.named_color_screen,
-                                self.hex_code_color_screen,self.rgba_color_screen,
-                                self.grayscale_color_screen,self.short_code_color_screen]
+        #-----Available Screens-----
+        self.available_screens = [self.legend_label_color_adjustment_section,self.named_color_section,
+                                self.hex_code_color_section,self.rgba_color_section,
+                                self.grayscale_color_section,self.short_code_color_section,
+                                self.reset_label_color_section]
         self.current_screen_idx = 0
+        self.available_screens[self.current_screen_idx].show()
 
         #-----Main Screen-----
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.label_color_adjustment_homescreen)
-        main_layout.addWidget(self.named_color_screen)
-        main_layout.addWidget(self.hex_code_color_screen)
-        main_layout.addWidget(self.rgba_color_screen)
-        main_layout.addWidget(self.grayscale_color_screen)
-        main_layout.addWidget(self.short_code_color_screen)
+        main_layout.addWidget(self.legend_label_color_adjustment_section)
+        main_layout.addWidget(self.named_color_section)
+        main_layout.addWidget(self.hex_code_color_section)
+        main_layout.addWidget(self.rgba_color_section)
+        main_layout.addWidget(self.grayscale_color_section)
+        main_layout.addWidget(self.short_code_color_section)
+        main_layout.addWidget(self.reset_label_color_section)
         main_layout.setContentsMargins(0,0,0,0)
         main_layout.setSpacing(0)
 
         #-----Shortcuts-----
-        original_screen_shortcut = QShortcut(QKeySequence("left"),self)
+        original_screen_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left),self)
+        original_screen_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         original_screen_shortcut.activated.connect(self.change_to_original_screen)
 
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+    def create_legend_label_color_adjustment_section(self):
+        #Create the layout for the legend label color adjustment section
+        legend_label_color_adjustment_section_layout = QVBoxLayout(self.legend_label_color_adjustment_section)
 
-    def create_named_color_screen(self):
-        named_color_screen_layout = QVBoxLayout(self.named_color_screen)
+        #Create the list view and model for the label color adjustment section
+        self.legend_label_color_parameter_list_view = QListView()
+        self.legend_label_color_parameter_model = QStringListModel(self.label_color_types)
 
+        #Add the model to the list view and disable editting for the list view 
+        self.legend_label_color_parameter_list_view.setModel(self.legend_label_color_parameter_model)
+        self.legend_label_color_parameter_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        #Customization for the list view
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display",24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter,option,index)
+
+        #Apply the customization to the list view
+        self.legend_label_color_parameter_list_view.setItemDelegate(CustomDelegate())
+
+        #Set the object name and style the list view's background, item, select and hover effects.
+        self.legend_label_color_parameter_list_view.setObjectName("legend_label_color_parameter_list_view")
+        self.legend_label_color_parameter_list_view.setStyleSheet("""
+            QListView#legend_label_color_parameter_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#legend_label_color_parameter_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#legend_label_color_parameter_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#legend_label_color_parameter_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        #Hide the scroll bar for the list and control the spacing for each item
+        self.legend_label_color_parameter_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.legend_label_color_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.legend_label_color_parameter_list_view.setSpacing(3)
+
+        #Automatically update the label color based on the selected parameter
+        self.legend_label_color_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+
+        #Add the list view to the label color adjustment section layout
+        legend_label_color_adjustment_section_layout.addWidget(self.legend_label_color_parameter_list_view)
+
+        #Add margins and spacing to make it look good and push content to the top
+        legend_label_color_adjustment_section_layout.setContentsMargins(10,10,10,10)
+
+    def create_named_color_section(self):
+        #Create a layout for the named color section
+        named_color_section_layout = QVBoxLayout(self.named_color_section)
+
+        #Create a search bar for the named colors
         self.color_search_bar = QLineEdit()
         self.color_search_bar.setObjectName("search_bar")
         self.color_search_bar.setPlaceholderText("Search: ")
@@ -6742,23 +8294,30 @@ class legend_label_color_adjustment_section(QWidget):
             }
         """)
         self.color_search_bar.setMinimumHeight(60)
-        named_color_screen_layout.addWidget(self.color_search_bar)
-        named_color_screen_layout.addSpacing(15)
-    
+
+        #Add the search bar to the layout and control the spacing for it
+        named_color_section_layout.addWidget(self.color_search_bar)
+        named_color_section_layout.addSpacing(15)
+
+        #Create the list view and model for the named colors
         self.named_color_list_view = QListView()
         self.named_color_model = QStringListModel(self.named_colors)
 
+        #Create a filter proxy and applied the model to the mimic filter by input
         self.filter_proxy = QSortFilterProxyModel()
         self.filter_proxy.setSourceModel(self.named_color_model)
         self.filter_proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive) 
         self.filter_proxy.setFilterKeyColumn(0)  
 
+        #Connect the filter proxy to the search bar
         self.color_search_bar.textChanged.connect(self.filter_proxy.setFilterFixedString)
 
+        #Add the filter model to the list view and give the list view an object name and restrict edditing the item
         self.named_color_list_view.setModel(self.filter_proxy)
         self.named_color_list_view.setObjectName("named_color_list_view")
         self.named_color_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
+        #Customization for the list view
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -6767,8 +8326,10 @@ class legend_label_color_adjustment_section(QWidget):
                 option.font = font
                 super().paint(painter, option, index)
         
+        #Apply the customization to the list view
         self.named_color_list_view.setItemDelegate(CustomDelegate())
 
+        #Style the list view's background, item, select and hover effects
         self.named_color_list_view.setStyleSheet("""
             QListView#named_color_list_view{
                 background: qlineargradient(
@@ -6822,20 +8383,25 @@ class legend_label_color_adjustment_section(QWidget):
             }
         """)
 
+        #Hide the scroll bars and set the spacing for the items
         self.named_color_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.named_color_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.named_color_list_view.setSpacing(3)
 
+        #Connect the list view to automatically update the label color based on the named color clicked on
         self.named_color_list_view.clicked.connect(self.change_named_color)
 
-        named_color_screen_layout.addWidget(self.named_color_list_view)
+        #Add the list view to the layout
+        named_color_section_layout.addWidget(self.named_color_list_view)
 
         # Add margins and spacing to make it look good and push content to the top
-        named_color_screen_layout.setContentsMargins(10, 10, 10, 10)
+        named_color_section_layout.setContentsMargins(10, 10, 10, 10)
 
-    def create_hex_code_screen(self):
-        hex_code_color_screen_layout = QVBoxLayout(self.hex_code_color_screen)
+    def create_hex_code_section(self):
+        #Create the layout for the hex code section
+        hex_code_color_section_layout = QVBoxLayout(self.hex_code_color_section)
 
+        #Create a line edit widget to take in the input
         self.hex_code_input = QLineEdit()
         self.hex_code_input.setObjectName("hex_code")
         self.hex_code_input.setPlaceholderText("Hex Code:")
@@ -6855,30 +8421,17 @@ class legend_label_color_adjustment_section(QWidget):
         """)
         self.hex_code_input.setMinimumHeight(60)
 
+        #Connect the hex code input widget to automatically update when the text changes
         self.hex_code_input.textChanged.connect(self.change_hex_code_color)
 
-        self.hex_valid_input_widget = QWidget()
-        self.hex_valid_input_widget.setObjectName("hex_valid_input")
-        self.hex_valid_input_widget.setStyleSheet("""
-            QWidget#hex_valid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),   
-                    stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1)
-                    stop:1 rgba(180, 200, 255, 1)  
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.hex_valid_input_label = QLabel("Valid Input")
-        self.hex_valid_input_label.setWordWrap(True)
-        self.hex_valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.hex_valid_input_label.setObjectName("hex_valid_input_label")
-        self.hex_valid_input_label.setStyleSheet("""
-            QLabel#hex_valid_input_label{
+        #Create a reset hex code label for the reset hex code button
+        self.reset_hex_code_value_label = QLabel("Reset Hexcode")
+        self.reset_hex_code_value_label.setObjectName("reset_hex_code_value_label")
+        self.reset_hex_code_value_label.setWordWrap(True)
+        self.reset_hex_code_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_hex_code_value_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents,True)
+        self.reset_hex_code_value_label.setStyleSheet("""
+            QLabel#reset_hex_code_value_label{
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
@@ -6889,64 +8442,71 @@ class legend_label_color_adjustment_section(QWidget):
             }
         """)
 
-        hex_valid_input_layout = QVBoxLayout(self.hex_valid_input_widget)
-        hex_valid_input_layout.addWidget(self.hex_valid_input_label)
-        hex_valid_input_layout.setSpacing(0)
-        hex_valid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.hex_invalid_input_widget = QWidget()
-        self.hex_invalid_input_widget.setObjectName("hex_invalid_input")
-        self.hex_invalid_input_widget.setStyleSheet("""
-            QWidget#hex_invalid_input{
+        #Create the reset hex code button
+        self.reset_hex_code_value_button = QPushButton()
+        self.reset_hex_code_value_button.setObjectName("reset_hex_code_value_button")
+        self.reset_hex_code_value_button.setStyleSheet("""
+            QPushButton#reset_hex_code_value_button{
                 background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 100, 100, 1),   
-                    stop:0.4 rgba(255, 130, 120, 1), 
-                    stop:0.7 rgba(200, 90, 150, 1), 
-                    stop:1 rgba(180, 60, 140, 1)     
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
                 );
                 border: 2px solid black;
                 border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
             }
-        """)
-
-        self.hex_invalid_input_label = QLabel("Invalid Input")
-        self.hex_invalid_input_label.setWordWrap(True)
-        self.hex_invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.hex_invalid_input_label.setObjectName("hex_invalid_input_label")
-        self.hex_invalid_input_label.setStyleSheet("""
-            QLabel#hex_invalid_input_label{
+            QPushButton#reset_hex_code_value_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
                 padding: 6px;
                 color: black;
-                border: none;
-                background: transparent;
             }
         """)
+        self.reset_hex_code_value_button.setMinimumHeight(50)
+        self.reset_hex_code_value_button.clicked.connect(self.reset_label_color)
 
-        hex_invalid_input_layout = QVBoxLayout(self.hex_invalid_input_widget)
-        hex_invalid_input_layout.addWidget(self.hex_invalid_input_label)
-        hex_invalid_input_layout.setSpacing(0)
-        hex_invalid_input_layout.setContentsMargins(0,0,0,0)
+        #Add the label onto the button
+        reset_hex_code_value_button_layout = QVBoxLayout(self.reset_hex_code_value_button)
+        reset_hex_code_value_button_layout.addWidget(self.reset_hex_code_value_label)
+        reset_hex_code_value_button_layout.setContentsMargins(0,0,0,0)
+        reset_hex_code_value_button_layout.setSpacing(0)
 
-        self.hex_valid_input_widget.setMaximumHeight(50)
-        self.hex_invalid_input_widget.setMaximumHeight(50)
+        #Add the widgets to the layout
+        hex_code_color_section_layout.addWidget(self.hex_code_input)
+        hex_code_color_section_layout.addWidget(self.valid_hex_code_input_widget)
+        hex_code_color_section_layout.addWidget(self.invalid_hex_code_input_widget)
+        
+        #Add the contents margins, spacing, and stretch to the layout
+        hex_code_color_section_layout.setContentsMargins(10,10,10,10)
+        hex_code_color_section_layout.setSpacing(10)
+        hex_code_color_section_layout.addStretch()
 
-        self.hex_valid_input_widget.hide()
-        self.hex_invalid_input_widget.hide()
+        #Add the reset hex code value button
+        hex_code_color_section_layout.addWidget(self.reset_hex_code_value_button)
 
-        hex_code_color_screen_layout.addWidget(self.hex_code_input)
-        hex_code_color_screen_layout.addWidget(self.hex_valid_input_widget)
-        hex_code_color_screen_layout.addWidget(self.hex_invalid_input_widget)
-        hex_code_color_screen_layout.setContentsMargins(10,10,10,10)
-        hex_code_color_screen_layout.setSpacing(10)
-        hex_code_color_screen_layout.addStretch()
+    def create_rgba_color_section(self):
+        #Create the rgba color section layout
+        rgba_color_section_layout = QVBoxLayout(self.rgba_color_section)
 
-    def create_rgba_color_screen(self):
-        rgba_color_screen_layout = QVBoxLayout(self.rgba_color_screen)
-
+        #Create a line edit widget for r,g,b,a
         self.r_input = QLineEdit()
         self.r_input.setObjectName("r_input")
         self.r_input.setPlaceholderText("r:")
@@ -7019,38 +8579,26 @@ class legend_label_color_adjustment_section(QWidget):
             }
         """)
 
+        #Set the height for the four (r,g,b,a) line edit widgets 
         self.r_input.setMinimumHeight(60)
         self.g_input.setMinimumHeight(60)
         self.b_input.setMinimumHeight(60)
         self.a_input.setMinimumHeight(60)
 
+        #Automatically update the r,g,b,a whenever the text changes for the line edit widget
         self.r_input.textChanged.connect(self.change_rgba_color)
         self.g_input.textChanged.connect(self.change_rgba_color)
         self.b_input.textChanged.connect(self.change_rgba_color)
         self.a_input.textChanged.connect(self.change_rgba_color)
 
-        self.rgba_valid_input_widget = QWidget()
-        self.rgba_valid_input_widget.setObjectName("rgba_valid_input")
-        self.rgba_valid_input_widget.setStyleSheet("""
-            QWidget#rgba_valid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),   
-                    stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1)
-                    stop:1 rgba(180, 200, 255, 1)  
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.rgba_valid_input_label = QLabel("Valid Input")
-        self.rgba_valid_input_label.setWordWrap(True)
-        self.rgba_valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.rgba_valid_input_label.setObjectName("rgba_valid_input_label")
-        self.rgba_valid_input_label.setStyleSheet("""
-            QLabel#rgba_valid_input_label{
+        #Create a reset rgba value label for the reset rgba value button
+        self.reset_rgba_value_label = QLabel("Reset RGBA Value")
+        self.reset_rgba_value_label.setObjectName("reset_rgba_value_label")
+        self.reset_rgba_value_label.setWordWrap(True)
+        self.reset_rgba_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_rgba_value_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents,True)
+        self.reset_rgba_value_label.setStyleSheet("""
+            QLabel#reset_rgba_value_label{
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
@@ -7061,73 +8609,78 @@ class legend_label_color_adjustment_section(QWidget):
             }
         """)
 
-        rgba_valid_input_layout = QVBoxLayout(self.rgba_valid_input_widget)
-        rgba_valid_input_layout.addWidget(self.rgba_valid_input_label)
-        rgba_valid_input_layout.setSpacing(0)
-        rgba_valid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.rgba_invalid_input_widget = QWidget()
-        self.rgba_invalid_input_widget.setObjectName("rgba_invalid_input")
-        self.rgba_invalid_input_widget.setStyleSheet("""
-            QWidget#rgba_invalid_input{
+        #Create the reset rgba value button
+        self.reset_rgba_value_button = QPushButton()
+        self.reset_rgba_value_button.setObjectName("reset_rgba_value_button")
+        self.reset_rgba_value_button.setStyleSheet("""
+            QPushButton#reset_rgba_value_button{
                 background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 100, 100, 1),   
-                    stop:0.4 rgba(255, 130, 120, 1), 
-                    stop:0.7 rgba(200, 90, 150, 1), 
-                    stop:1 rgba(180, 60, 140, 1)     
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
                 );
                 border: 2px solid black;
                 border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
             }
-        """)
-
-        self.rgba_invalid_input_label = QLabel("Invalid Input")
-        self.rgba_invalid_input_label.setWordWrap(True)
-        self.rgba_invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.rgba_invalid_input_label.setObjectName("rgba_invalid_input_label")
-        self.rgba_invalid_input_label.setStyleSheet("""
-            QLabel#rgba_invalid_input_label{
+            QPushButton#reset_rgba_value_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
                 padding: 6px;
                 color: black;
-                border: none;
-                background: transparent;
             }
         """)
-
-        rgba_invalid_input_layout = QVBoxLayout(self.rgba_invalid_input_widget)
-        rgba_invalid_input_layout.addWidget(self.rgba_invalid_input_label)
-        rgba_invalid_input_layout.setSpacing(0)
-        rgba_invalid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.rgba_valid_input_widget.setMaximumHeight(50)
-        self.rgba_invalid_input_widget.setMaximumHeight(50)
-
-        self.rgba_valid_input_widget.hide()
-        self.rgba_invalid_input_widget.hide()
+        self.reset_rgba_value_button.setMinimumHeight(50)
+        self.reset_rgba_value_button.clicked.connect(self.reset_label_color)
     
-        rgba_color_screen_layout.addWidget(self.r_input)
-        rgba_color_screen_layout.addWidget(self.g_input)
-        rgba_color_screen_layout.addWidget(self.b_input)
-        rgba_color_screen_layout.addWidget(self.a_input)
-        rgba_color_screen_layout.addWidget(self.rgba_valid_input_widget)
-        rgba_color_screen_layout.addWidget(self.rgba_invalid_input_widget)
+        #Add the label to the button
+        reset_rgba_value_button_layout = QVBoxLayout(self.reset_rgba_value_button)
+        reset_rgba_value_button_layout.addWidget(self.reset_rgba_value_label)
+        reset_rgba_value_button_layout.setContentsMargins(0,0,0,0)
+        reset_rgba_value_button_layout.setSpacing(0)
 
-        rgba_color_screen_layout.setContentsMargins(10,10,10,10)
-        rgba_color_screen_layout.setSpacing(10)
-        rgba_color_screen_layout.addStretch()
+        #Add all the widgets to the layout 
+        rgba_color_section_layout.addWidget(self.r_input)
+        rgba_color_section_layout.addWidget(self.g_input)
+        rgba_color_section_layout.addWidget(self.b_input)
+        rgba_color_section_layout.addWidget(self.a_input)
+        rgba_color_section_layout.addWidget(self.valid_rgba_color_input_widget)
+        rgba_color_section_layout.addWidget(self.invalid_rgba_color_input_widget)
 
-    def create_grayscale_color_screen(self):
-        grayscale_color_screen_layout = QVBoxLayout(self.grayscale_color_screen)
+        #Add the contents margins, spacing, and stretch to the layout
+        rgba_color_section_layout.setContentsMargins(10,10,10,10)
+        rgba_color_section_layout.setSpacing(10)
+        rgba_color_section_layout.addStretch()
 
-        self.grayscale_input = QLineEdit()
-        self.grayscale_input.setObjectName("grayscale")
-        self.grayscale_input.setPlaceholderText("Grayscale:")
-        self.grayscale_input.setStyleSheet("""
-            QLineEdit#grayscale{
+        #Add the reset rgba value button to the layout
+        rgba_color_section_layout.addWidget(self.reset_rgba_value_button)
+
+    def create_grayscale_color_section(self):
+        #Create a layout for the grayscale color section
+        grayscale_color_section_layout = QVBoxLayout(self.grayscale_color_section)
+
+        self.grayscale_color_input = QLineEdit()
+        self.grayscale_color_input.setObjectName("grayscale_color_input")
+        self.grayscale_color_input.setPlaceholderText("Grayscale:")
+        self.grayscale_color_input.setStyleSheet("""
+            QLineEdit#grayscale_color_input{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -7140,32 +8693,19 @@ class legend_label_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-        self.grayscale_input.setMinimumHeight(60)
+        self.grayscale_color_input.setMinimumHeight(60)
 
-        self.grayscale_input.textChanged.connect(self.change_grayscale_color)
+        #Let the grayscale automatically change when the user enters something
+        self.grayscale_color_input.textChanged.connect(self.change_grayscale_color)
 
-        self.grayscale_valid_input_widget = QWidget()
-        self.grayscale_valid_input_widget.setObjectName("grayscale_valid_input")
-        self.grayscale_valid_input_widget.setStyleSheet("""
-            QWidget#grayscale_valid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),   
-                    stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1)
-                    stop:1 rgba(180, 200, 255, 1)  
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.grayscale_valid_input_label = QLabel("Valid Input")
-        self.grayscale_valid_input_label.setWordWrap(True)
-        self.grayscale_valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.grayscale_valid_input_label.setObjectName("grayscale_valid_input_label")
-        self.grayscale_valid_input_label.setStyleSheet("""
-            QLabel#grayscale_valid_input_label{
+        #Create a reset grayscale value label for the reset grayscale button
+        self.reset_grayscale_value_label = QLabel("Reset Grayscale")
+        self.reset_grayscale_value_label.setObjectName("reset_grayscale_value_label")
+        self.reset_grayscale_value_label.setWordWrap(True)
+        self.reset_grayscale_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_grayscale_value_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents,True)
+        self.reset_grayscale_value_label.setStyleSheet("""
+            QLabel#reset_grayscale_value_label{
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
@@ -7176,68 +8716,78 @@ class legend_label_color_adjustment_section(QWidget):
             }
         """)
 
-        grayscale_valid_input_layout = QVBoxLayout(self.grayscale_valid_input_widget)
-        grayscale_valid_input_layout.addWidget(self.grayscale_valid_input_label)
-        grayscale_valid_input_layout.setSpacing(0)
-        grayscale_valid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.grayscale_invalid_input_widget = QWidget()
-        self.grayscale_invalid_input_widget.setObjectName("grayscale_invalid_input")
-        self.grayscale_invalid_input_widget.setStyleSheet("""
-            QWidget#grayscale_invalid_input{
+        #Create the reset grayscale value button
+        self.reset_grayscale_value_button = QPushButton()
+        self.reset_grayscale_value_button.setObjectName("reset_grayscale_value_button")
+        self.reset_grayscale_value_button.setStyleSheet("""
+            QPushButton#reset_grayscale_value_button{
                 background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 100, 100, 1),   
-                    stop:0.4 rgba(255, 130, 120, 1), 
-                    stop:0.7 rgba(200, 90, 150, 1), 
-                    stop:1 rgba(180, 60, 140, 1)     
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
                 );
                 border: 2px solid black;
                 border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
             }
-        """)
-
-        self.grayscale_invalid_input_label = QLabel("Invalid Input")
-        self.grayscale_invalid_input_label.setWordWrap(True)
-        self.grayscale_invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.grayscale_invalid_input_label.setObjectName("grayscale_invalid_input_label")
-        self.grayscale_invalid_input_label.setStyleSheet("""
-            QLabel#grayscale_invalid_input_label{
+            QPushButton#reset_grayscale_value_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
                 padding: 6px;
                 color: black;
-                border: none;
-                background: transparent;
             }
         """)
+        self.reset_grayscale_value_button.setMinimumHeight(50)
+        self.reset_grayscale_value_button.clicked.connect(self.reset_label_color)
 
-        grayscale_invalid_input_layout = QVBoxLayout(self.grayscale_invalid_input_widget)
-        grayscale_invalid_input_layout.addWidget(self.grayscale_invalid_input_label)
-        grayscale_invalid_input_layout.setSpacing(0)
-        grayscale_invalid_input_layout.setContentsMargins(0,0,0,0)
+        #Add the label to the button
+        reset_grayscale_value_button_layout = QVBoxLayout(self.reset_grayscale_value_button)
+        reset_grayscale_value_button_layout.addWidget(self.reset_grayscale_value_label)
+        reset_grayscale_value_button_layout.setContentsMargins(0,0,0,0)
+        reset_grayscale_value_button_layout.setSpacing(0)
 
-        self.grayscale_valid_input_widget.setMaximumHeight(50)
-        self.grayscale_invalid_input_widget.setMaximumHeight(50)
+        #Add the widgets to the layout and adjust the margins, spacing, and add stretch
+        grayscale_color_section_layout.addWidget(self.grayscale_color_input)
+        grayscale_color_section_layout.addWidget(self.valid_grayscale_color_input_widget)
+        grayscale_color_section_layout.addWidget(self.invalid_grayscale_color_input_widget)
+        grayscale_color_section_layout.setContentsMargins(10,10,10,10)
+        grayscale_color_section_layout.setSpacing(10)
+        grayscale_color_section_layout.addStretch()
 
-        self.grayscale_valid_input_widget.hide()
-        self.grayscale_invalid_input_widget.hide()
+        #Add the reset grayscale value button to the layout
+        grayscale_color_section_layout.addWidget(self.reset_grayscale_value_button)
 
-        grayscale_color_screen_layout.addWidget(self.grayscale_input)
-        grayscale_color_screen_layout.addWidget(self.grayscale_valid_input_widget)
-        grayscale_color_screen_layout.addWidget(self.grayscale_invalid_input_widget)
-        grayscale_color_screen_layout.setContentsMargins(10,10,10,10)
-        grayscale_color_screen_layout.setSpacing(10)
-        grayscale_color_screen_layout.addStretch()
-
-    def create_short_code_color_screen(self):
-        short_code_color_screen_layout = QVBoxLayout(self.short_code_color_screen)
+    def create_short_code_color_section(self):
+        #Create the layout for the short code color section 
+        short_code_color_section_layout = QVBoxLayout(self.short_code_color_section)
     
+        #Create a list view for the section and create a model with the short code colors
         self.short_code_color_list_view = QListView()
         self.short_code_color_model = QStringListModel(self.short_code_colors)
+
+        #Add the model with the short code colors to the list view
+        #Ban the user from being able to edit it
         self.short_code_color_list_view.setModel(self.short_code_color_model)
         self.short_code_color_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        #Customization for the list view
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -7246,8 +8796,10 @@ class legend_label_color_adjustment_section(QWidget):
                 option.font = font
                 super().paint(painter, option, index)
         
+        #Apply the cusotmization to the list view
         self.short_code_color_list_view.setItemDelegate(CustomDelegate())
 
+        #Give the list view a name and edit the item, background, select and hover effect
         self.short_code_color_list_view.setObjectName("short_code_color_list_view")
         self.short_code_color_list_view.setStyleSheet("""
             QListView#short_code_color_list_view{
@@ -7301,66 +8853,194 @@ class legend_label_color_adjustment_section(QWidget):
                 min-height: 41px;
             }
         """)
+
+        #Control the scroll bar for the list view and add spacing between each item
         self.short_code_color_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.short_code_color_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.short_code_color_list_view.setSpacing(3)
 
+        #Connect the list view to automatically update the selected item
         self.short_code_color_list_view.clicked.connect(self.change_short_code_color)
 
-        short_code_color_screen_layout.addWidget(self.short_code_color_list_view)
+        #Add the list view to the layout
+        short_code_color_section_layout.addWidget(self.short_code_color_list_view)
 
         # Add margins and spacing to make it look good and push content to the top
-        short_code_color_screen_layout.setContentsMargins(10, 10, 10, 10)
+        short_code_color_section_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_reset_label_color_section(self):
+        #Create a layout for the reset edge color section 
+        reset_label_color_section_layout = QVBoxLayout(self.reset_label_color_section)
+
+        #Create the reset face color label for the button
+        self.reset_label_color_label = QLabel("Reset Label Color")
+        self.reset_label_color_label.setWordWrap(True)
+        self.reset_label_color_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_label_color_label.setObjectName("reset_label_color_label")
+        self.reset_label_color_label.setStyleSheet("""
+            QLabel#reset_label_color_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.reset_label_color_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+        #Create the reset edge color button
+        self.reset_label_color_button = QPushButton()
+        self.reset_label_color_button.setObjectName("reset_label_color_button")
+        self.reset_label_color_button.setStyleSheet("""
+            QPushButton#reset_label_color_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#reset_label_color_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.reset_label_color_button.setMinimumHeight(50)
+
+        #Connect the button to automatically reset the edge color when clicked on
+        self.reset_label_color_button.clicked.connect(self.reset_label_color)
+
+        #Add the label onto the button
+        reset_label_color_button_layout = QVBoxLayout(self.reset_label_color_button)
+        reset_label_color_button_layout.addWidget(self.reset_label_color_label)
+        reset_label_color_button_layout.setContentsMargins(0,0,0,0)
+        reset_label_color_button_layout.setSpacing(0)
+
+        #Add the button created to the reset edge color section
+        reset_label_color_section_layout.addWidget(self.reset_label_color_button)
+        reset_label_color_section_layout.setContentsMargins(10,10,10,10)
+        reset_label_color_section_layout.addStretch()
+
+    def change_current_parameter_screen(self,index):
+        #Get the associated screen name based on the item the user clicked on in the list view
+        screen_name = self.legend_label_color_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
+
+        #If the screen name is Named Color change to the named color section
+        if (screen_name == "Named Color"):
+            self.change_to_named_color_section()
+
+        #If the screen name is Hex Code change to the hex code color section
+        if (screen_name == "Hex Code"):
+            self.change_to_hex_code_section()
+
+        #If the screen name is RGBA Color change to the rgba color section
+        if (screen_name == "RGBA Color"):
+            self.change_to_rgba_color_section()
+
+        #If the screen name is Grayscale Color change to the grayscale color section
+        if (screen_name == "Grayscale Color"):
+            self.change_to_grayscale_color_section()
+
+        #If the screen is Short Code Color change to the short code color section
+        if (screen_name == "Short Code Color"):
+            self.change_to_short_code_color_section()
+
+        #If the screen name is Reset Face Color change to the reset face color section
+        if (screen_name == "Reset Face Color"):
+            self.change_to_reset_face_color_section()
 
     def change_to_original_screen(self):
+        #Hide the current screen, change the screen idx, display the new screen
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 0
-        self.label_color_adjustment_homescreen.show()
+        self.available_screens[self.current_screen_idx].show()
 
-    def change_to_named_color_screen(self):
+    def change_to_named_color_section(self):
+        #Hide the current screen, change the screen idx, display the new screen
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 1
-        self.named_color_screen.show()
+        self.available_screens[self.current_screen_idx].show()
 
-    def change_to_hex_code_screen(self):
+    def change_to_hex_code_section(self):
+        #Hide the current screen, change the screen idx, display the new screen
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 2
-        self.hex_code_color_screen.show()
+        self.available_screens[self.current_screen_idx].show()
 
-    def change_to_rgba_color_screen(self):
+    def change_to_rgba_color_section(self):
+        #Hide the current screen, change the screen idx, display the new screen
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 3
-        self.rgba_color_screen.show()
+        self.available_screens[self.current_screen_idx].show()
 
-    def change_to_grayscale_colors_screen(self):
+    def change_to_grayscale_color_section(self):
+        #Hide the current screen, change the screen idx, display the new screen
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 4
-        self.grayscale_color_screen.show()
+        self.available_screens[self.current_screen_idx].show()
 
-    def change_to_short_code_color_screen(self):
+    def change_to_short_code_color_section(self):
+        #Hide the current screen, change the screen idx, display the new screen
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 5
-        self.short_code_color_screen.show()
+        self.available_screens[self.current_screen_idx].show()
 
-    def set_color_to_none(self):
-        self.current_label_color = None
-        self.update_color()
+    def change_to_reset_label_color_section(self):
+        #Hide the current screen, change the screen idx, display the new screen
+        self.available_screens[self.current_screen_idx].hide()
+        self.current_screen_idx = 6
+        self.available_screens[self.current_screen_idx].show()
 
     def change_named_color(self,index):
+        #Using the index acquired by the filter proxy and get the associated index in the model
         source_index = self.filter_proxy.mapToSource(index)
+
+        #Get the specific color in the model based on the index
         self.current_label_color = self.named_color_model.data(source_index, Qt.ItemDataRole.DisplayRole)
-        self.update_color()
+
+        #Check if the color is one of the special ones and add the prefix if it is 
+        if (self.current_label_color in self.xkcd_colors):
+            self.current_label_color = "xkcd:" + self.current_label_color
+        if (self.current_label_color in self.tableau_colors):
+            self.current_label_color = "tab:" + self.current_label_color
+
+        #Update the label color for the plot config
+        self.update_label_color()
 
     def change_hex_code_color(self):
+        #Get the hex code the user inputs
         hex_code = self.hex_code_input.text().strip()
 
+        #Hide both validity check widgets when the user clears the input
         if (hex_code == ""):
             self.hex_valid_input_widget.hide()
             self.hex_invalid_input_widget.hide()
-            self.current_label_color = "k"
-            self.update_color()
             return
 
+        #Checks if the hex code is valid or not
         def check_valid_hex_code(hex_code):
             if (hex_code[0] != "#"):
                 new_hex_code = "#" + hex_code
@@ -7371,98 +9051,203 @@ class legend_label_color_adjustment_section(QWidget):
             try:
                 int(hex_code,16)
                 return True
-            except:
+            except ValueError:
                 return False
         
-        if (hex_code != ""):
-            validity = check_valid_hex_code(hex_code)
-            if (validity):
-                self.hex_valid_input_widget.show()
-                self.hex_invalid_input_widget.hide()
-                self.current_label_color = hex_code if hex_code[0] == "#" else "#" + hex_code
-                self.update_color()
-            else:
-                self.hex_valid_input_widget.hide()
-                self.hex_invalid_input_widget.show()
+        #Checks if the current hex code is valid or not
+        validity = check_valid_hex_code(hex_code)
+
+        #If the hex code is valid show the valid widget and update the plot config with the new hex code
+        if (validity):
+            self.valid_hex_code_input_widget.show()
+            self.invalid_hex_code_input_widget.hide()
+            self.current_label_color = hex_code if hex_code[0] == "#" else "#" + hex_code
+            self.update_label_color()
+        #if the hex code is invalid show the invalid widget
+        else:
+            self.valid_hex_code_input_widget.hide()
+            self.invalid_hex_code_input_widget.show()
+
+    def change_r_value(self):
+        #Get the r value from the input
+        r_input = self.r_input.text().strip()
+
+        #Check if the value is empty or not
+        if (r_input == ""):
+            self.r_value = 1
+            return True
+
+        #Check if the value is valid or not
+        try:
+            r_value = int(r_input)
+            if (0 > r_value or r_value > 255):
+                raise ValueError
+        except ValueError:
+            return False
+        self.r_value = r_value / 255
+        return True
+
+    def change_g_value(self):
+        #Get the g value from the input
+        g_input = self.g_input.text().strip()
+
+        #Check if the value is empty or not
+        if (g_input == ""):
+            self.g_value = 1
+            return True
+
+        #Check if the value is valid or not
+        try:
+            g_value = int(g_input)
+            if (0 > g_value or g_value > 255):
+                raise ValueError
+        except ValueError:
+            return False
+        self.g_value = g_value / 255
+        return True
+
+    def change_b_value(self):
+        #Get the b value from the input
+        b_input = self.b_input.text().strip()
+
+        #Check if the value is empty or not
+        if (b_input == ""):
+            self.b_value = 1
+            return True
+
+        #Check if the value is valid or not
+        try:
+            b_value = int(b_input)
+            if (0 > b_value or b_value > 255):
+                raise ValueError
+        except ValueError:
+            return False
+        self.b_value = b_value / 255
+        return True
+
+    def change_a_value(self):
+        #Get the a value from the input
+        a_input = self.a_input.text().strip()
+
+        #Check if the value is empty or not
+        if (a_input == ""):
+            self.a_value = 1
+            return True
+
+        #Check if the value is valid or not
+        try:
+            a_value = int(a_input)
+            if (0 > a_value or a_value > 100):
+                raise ValueError
+        except ValueError:
+            return False
+        self.a_value = a_value / 255
+        return True
 
     def change_rgba_color(self):
-        r_value = self.r_input.text().strip()
-        g_value = self.g_input.text().strip()
-        b_value = self.b_input.text().strip()
-        a_value = self.a_input.text().strip()
+        #Check if the values are valid
+        valid_r = self.change_r_value()
+        valid_g = self.change_g_value()
+        valid_b = self.change_b_value()
+        valid_a = self.change_a_value()
 
-        if (not(r_value or g_value or b_value or a_value)):
-            self.rgba_valid_input_widget.hide()
-            self.rgba_invalid_input_widget.hide()
-            self.current_label_color = "k"
-            self.update_color()
-            return 
+        #Hide all the validity widgets
+        self.valid_rgba_color_input_widget.hide()
+        self.invalid_rgba_color_input_widget.hide()
 
-        valid = None
-
-        try:
-            r_value = int(r_value) if r_value != "" else self.initial_rgba[0]
-            g_value = int(g_value) if g_value != "" else self.initial_rgba[1]
-            b_value = int(b_value) if b_value != "" else self.initial_rgba[2]
-            a_value = int(a_value) if a_value != "" else self.initial_rgba[3]
-            valid = True
-        except:
-            valid = False
-
-        if (valid):
-            self.initial_rgba[0] = r_value 
-            self.initial_rgba[1] = g_value
-            self.initial_rgba[2] = b_value 
-            self.initial_rgba[3] = a_value
-
-            self.rgba_valid_input_widget.show()
-            self.rgba_invalid_input_widget.hide()
-
-            self.current_label_color = self.initial_rgba
-
-            self.update_color()
+        #Show the first validity widget that associates to the valid values we found earlier
+        if (not valid_r):
+            self.invalid_rgba_color_input_label.setText("Invalid R Value")
+            self.invalid_rgba_color_input_widget.show()
+        elif (not valid_g):
+            self.invalid_rgba_color_input_label.setText("Invalid G Value")
+            self.invalid_rgba_color_input_widget.show()
+        elif (not valid_b):
+            self.invalid_rgba_color_input_label.setText("Invalid B Value")
+            self.invalid_rgba_color_input_widget.show()
+        elif (not valid_a):
+            self.invalid_rgba_color_input_label.setText("Invalid A Value")
+            self.invalid_rgba_color_input_widget.show()
         else:
-            self.rgba_valid_input_widget.hide()
-            self.rgba_invalid_input_widget.show()
+            #Get the text values from the input
+            r_value = self.r_input.text().strip()
+            g_value = self.g_input.text().strip()
+            b_value = self.b_input.text().strip()
+            a_value = self.a_input.text().strip()
+
+            #Show the valid widget if at least one isn't blank
+            if (r_value or g_value or b_value or a_value):
+                self.valid_rgba_color_input_widget.show()
+                self.invalid_rgba_color_input_widget.hide()
+
+            #Update the facecolor
+            self.current_label_color = (self.r_value,self.g_value,self.b_value,self.a_value)
+            self.update_label_color()
 
     def change_grayscale_color(self):
-        grayscale_value = self.grayscale_input.text().strip()
+        #Get the grayscale color value from the user
+        grayscale_color_value = self.grayscale_color_input.text().strip()
 
-        if (grayscale_value == ""): 
-            self.grayscale_valid_input_widget.hide() 
-            self.grayscale_invalid_input_widget.hide()
-            self.current_label_color = "k"
-            self.update_color()
+        #Check if the input is empty and if it is hide all the validity check widgets and return
+        if (grayscale_color_value == ""): 
+            self.valid_grayscale_color_input_widget.hide() 
+            self.invalid_grayscale_color_input_widget.hide()
             return
 
+        #Check to see if the input can be turned into a float and between 0 and 1
+        #Show the valid widget and hide the invalid widget
         try: 
-            grayscale_value = float(grayscale_value)
-            if (0 > grayscale_value or grayscale_value > 1):
-                raise Exception
-            self.grayscale_valid_input_widget.show()
-            self.grayscale_invalid_input_widget.hide()
-        except:
-            self.grayscale_valid_input_widget.hide()
-            self.grayscale_invalid_input_widget.show()
-
-        self.current_label_color = grayscale_value
-        self.update_color()
+            grayscale_color_value = float(grayscale_color_value)
+            if (0 > grayscale_color_value or grayscale_color_value > 1):
+                raise ValueError
+            self.valid_grayscale_color_input_widget.show()
+            self.invalid_grayscale_color_input_widget.hide()
+        #Show the invalid widget and hide the invalid widget
+        except ValueError:
+            self.valid_grayscale_color_input_widget.hide()
+            self.invalid_grayscale_color_input_widget.show()
+        else:
+            #Update the current edgecolor and update it in the plot config too
+            self.current_label_color = str(grayscale_color_value)
+            self.update_label_color()
 
     def change_short_code_color(self,index):
+        #Change the current facecolor to the one selected by the user based on the index and update it
         self.current_label_color = self.short_code_color_model.data(index, Qt.ItemDataRole.DisplayRole)
-        self.update_color()
+        self.update_label_color()
 
-    def update_color(self):
+    def reset_label_color(self):
+        #Change the edgecolor to None and update it
+        if (self.current_screen_idx == 2):
+            self.hex_code_input.clear()
+        if (self.current_screen_idx == 3):
+            self.r_input.clear()
+            self.g_input.clear()
+            self.b_input.clear()
+            self.a_input.clear()
+        if (self.current_screen_idx == 4):
+            self.grayscale_color_input.clear()
+
+        self.current_label_color = 'k'
+        self.update_label_color()
+
+    def update_label_color(self):
+        #Get the newest plot config from the plot config json
         db = self.plot_manager.get_db()
+
+        #if there is a plot config then update it in the newest plot config
         if (db != []):
             self.plot_manager.update_legend("labelcolor",self.current_label_color)
+        #if there is no plot config available then create a new one with the default and add the new value in
         else:
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["labelcolor"] = self.current_label_color
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        #Update the graph with the newest plot config
         self.graph_display.show_graph()
 
     def mousePressEvent(self, event):
+        #Check where the cursor clicks and clear the focus if it's not in the input area
         if not self.color_search_bar.geometry().contains(event.position().toPoint()):
             self.color_search_bar.clearFocus()
         if not self.hex_code_input.geometry().contains(event.position().toPoint()):
@@ -7475,26 +9260,29 @@ class legend_label_color_adjustment_section(QWidget):
             self.b_input.clearFocus()
         if not self.a_input.geometry().contains(event.position().toPoint()):
             self.a_input.clearFocus()
-        if not self.grayscale_input.geometry().contains(event.position().toPoint()):
-            self.grayscale_input.clearFocus()
+        if not self.grayscale_color_input.geometry().contains(event.position().toPoint()):
+            self.grayscale_color_input.clearFocus()
         super().mousePressEvent(event)
 
 class legend_alignment_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
 
-        self.graph_display = graph_display
-        
-        self.plot_manager = PlotManager()
         self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
 
+        #Initialize the options for the alignment
         self.available_alignments = ["left","center","right"]
+
+        #Set the initial/default alignment
         self.current_alignment = "center"
 
-        self.alignment_adjustment_screen = QWidget()
-        self.alignment_adjustment_screen.setObjectName("alignment_adjustment_screen")
-        self.alignment_adjustment_screen.setStyleSheet("""
-            QWidget#alignment_adjustment_screen{
+
+        self.legend_alignment_adjustment_section = QWidget()
+        self.legend_alignment_adjustment_section.setObjectName("legend_alignment_adjustment_section")
+        self.legend_alignment_adjustment_section.setStyleSheet("""
+            QWidget#legend_alignment_adjustment_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -7505,24 +9293,27 @@ class legend_alignment_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-        self.create_alignment_adjustment_screen()
+        self.create_legend_alignment_adjustment_section()
 
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.alignment_adjustment_screen)
+        main_layout.addWidget(self.legend_alignment_adjustment_section)
         main_layout.setContentsMargins(0,0,0,0)
         main_layout.setSpacing(0)
 
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground,True)
-
-    def create_alignment_adjustment_screen(self):
-        alignment_adjustment_screen_layout = QVBoxLayout(self.alignment_adjustment_screen)
+    def create_legend_alignment_adjustment_section(self):
+        #Created the alignment adjustment section layout
+        legend_alignment_adjustment_section_layout = QVBoxLayout(self.legend_alignment_adjustment_section)
     
+        #Created the list view and model with the available alignment arguments
         self.alignment_list_view = QListView()
         self.alignment_model = QStringListModel(self.available_alignments)
 
+        #Set the model for the list view to display the available alignments and block the possibility of editting them
         self.alignment_list_view.setModel(self.alignment_model)
         self.alignment_list_view.setObjectName("alignment_list_view")
         self.alignment_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        #Create customization for the list view
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -7531,8 +9322,10 @@ class legend_alignment_adjustment_section(QWidget):
                 option.font = font
                 super().paint(painter, option, index)
         
+        #Apply the customization on the list view
         self.alignment_list_view.setItemDelegate(CustomDelegate())
 
+        #Style the alignment background, item, select and hover effect
         self.alignment_list_view.setStyleSheet("""
             QListView#alignment_list_view{
                 background: qlineargradient(
@@ -7586,46 +9379,144 @@ class legend_alignment_adjustment_section(QWidget):
             }
         """)
 
+        #Hide the horizontal and vertical scrollbars and add spacing between the items in the list view
         self.alignment_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.alignment_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.alignment_list_view.setSpacing(3)
 
+        #Automatically update the font size based on what the user clicks on
         self.alignment_list_view.clicked.connect(self.change_alignment)
 
-        alignment_adjustment_screen_layout.addWidget(self.alignment_list_view)
+        legend_alignment_adjustment_section_layout.addWidget(self.alignment_list_view)
 
         # Add margins and spacing to make it look good and push content to the top
-        alignment_adjustment_screen_layout.setContentsMargins(10, 10, 10, 10)
+        legend_alignment_adjustment_section_layout.setContentsMargins(10, 10, 10, 10)
+
+    def change_to_original_screen():
+        pass
 
     def change_alignment(self,index):
+        #Find the name of the element in the model based on the index given then update it
         self.current_alignment = self.alignment_model.data(index,Qt.ItemDataRole.DisplayRole)
         self.update_alignment()
 
     def update_alignment(self): 
+        #Get the newest entry from the json file
         db = self.plot_manager.get_db()
+
+        #Check if the entry is empty or not.
+        #If the entry is empty then create one with the new fontsize else update the newest one with the new fontsize
         if (db != []):
             self.plot_manager.update_legend("alignment",self.current_alignment)
         else:
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["alignment"] = self.current_alignment
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        #Update the graph that's being displayed
         self.graph_display.show_graph()
 
 class legend_columnspacing_adjustment_section(QWidget):
     def __init__(self, selected_graph,graph_display):
         super().__init__()
 
-        self.graph_display = graph_display
-
-        self.plot_manager = PlotManager()
-        
         self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
 
-        #Create a section to display the loc section and style it
-        self.columnspacing_adjustment_section = QWidget()
-        self.columnspacing_adjustment_section.setObjectName("columnspacing_adjustment_section")
-        self.columnspacing_adjustment_section.setStyleSheet("""
-            QWidget#columnspacing_adjustment_section{
+        #Set the object name for the widget
+        self.setObjectName("legend_columnspacing_adjustment_section")
+
+        #Initialize the columnspacing value to be 2.0
+        self.columnspacing_value = 2.0
+
+        #-----Create the Validity Check Widgets-----
+        self.valid_columnspacing_input_widget = QWidget()
+        self.valid_columnspacing_input_widget.setObjectName("valid_columnspacing_input_widget")
+        self.valid_columnspacing_input_widget.setStyleSheet("""
+            QWidget#valid_columnspacing_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_columnspacing_input_label = QLabel("Valid Columnspacing")
+        self.valid_columnspacing_input_label.setWordWrap(True)
+        self.valid_columnspacing_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_columnspacing_input_label.setObjectName("valid_columnspacing_input_label")
+        self.valid_columnspacing_input_label.setStyleSheet("""
+            QLabel#valid_columnspacing_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        self.invalid_columnspacing_input_widget = QWidget()
+        self.invalid_columnspacing_input_widget.setObjectName("invalid_columnspacing_input_widget")
+        self.invalid_columnspacing_input_widget.setStyleSheet("""
+            QWidget#invalid_columnspacing_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_columnspacing_input_label = QLabel("Invalid Columnspacing")
+        self.invalid_columnspacing_input_label.setWordWrap(True)
+        self.invalid_columnspacing_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_columnspacing_input_label.setObjectName("invalid_columnspacing_input_label")
+        self.invalid_columnspacing_input_label.setStyleSheet("""
+            QLabel#invalid_columnspacing_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_columnspacing_input_widget_layout = QVBoxLayout(self.valid_columnspacing_input_widget)
+        valid_columnspacing_input_widget_layout.addWidget(self.valid_columnspacing_input_label)
+        valid_columnspacing_input_widget_layout.setSpacing(0)
+        valid_columnspacing_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        invalid_columnspacing_input_widget_layout = QVBoxLayout(self.invalid_columnspacing_input_widget)
+        invalid_columnspacing_input_widget_layout.addWidget(self.invalid_columnspacing_input_label)
+        invalid_columnspacing_input_widget_layout.setSpacing(0)
+        invalid_columnspacing_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        #-----Set the height for the widgets-----
+        self.valid_columnspacing_input_widget.setMaximumHeight(50)
+        self.invalid_columnspacing_input_widget.setMaximumHeight(50)
+
+        #-----Hide the Validity Check Widgets-----
+        self.valid_columnspacing_input_widget.hide()
+        self.invalid_columnspacing_input_widget.hide()
+
+        #-----Create the columnspacing adjustment section-----
+        self.legend_columnspacing_adjustment_section = QWidget()
+        self.legend_columnspacing_adjustment_section.setObjectName("legend_columnspacing_adjustment_section")
+        self.legend_columnspacing_adjustment_section.setStyleSheet("""
+            QWidget#legend_columnspacing_adjustment_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -7648,11 +9539,21 @@ class legend_columnspacing_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
+        self.create_legend_columnspacing_adjustment_section()
 
-        #Initialize the ncol value to be 0
-        self.columnspacing_value = 0
+        #Add the columnspacing adjustment section to the main widget
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.legend_columnspacing_adjustment_section)
+        
+        #Set both the spacing and margins for the main widget to make sure it fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+    
+    def create_legend_columnspacing_adjustment_section(self):
+        #Create a layout for the columnspacing adjustment section
+        legend_columnspacing_adjustment_section_layout = QVBoxLayout(self.legend_columnspacing_adjustment_section)
 
-        #Create a line edit object for the user to input the ncol
+        #Create a line edit object for the user to input the columnspacing
         self.columnspacing_input = QLineEdit()
         self.columnspacing_input.setPlaceholderText("columnspacing: ")
 
@@ -7662,29 +9563,14 @@ class legend_columnspacing_adjustment_section(QWidget):
         #Connect any changes with the text to an update function
         self.columnspacing_input.textChanged.connect(self.change_columnspacing)
 
-        #Create two widget to display valid and invalid inputs
-        self.valid_input_widget = QWidget()
-        self.valid_input_widget.setObjectName("valid_input")
-        self.valid_input_widget.setStyleSheet("""
-            QWidget#valid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),   
-                    stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1)
-                    stop:1 rgba(180, 200, 255, 1)  
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.valid_input_label = QLabel("Valid Input")
-        self.valid_input_label.setWordWrap(True)
-        self.valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.valid_input_label.setObjectName("valid_input_label")
-        self.valid_input_label.setStyleSheet("""
-            QLabel#valid_input_label{
+        #Create a reset columnspacing label
+        self.reset_columnspacing_label = QLabel("Reset columnspacing")
+        self.reset_columnspacing_label.setObjectName("reset_columnspacing_label")
+        self.reset_columnspacing_label.setWordWrap(True)
+        self.reset_columnspacing_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_columnspacing_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents,True)
+        self.reset_columnspacing_label.setStyleSheet("""
+            QLabel#reset_columnspacing_label{
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
@@ -7695,944 +9581,11 @@ class legend_columnspacing_adjustment_section(QWidget):
             }
         """)
 
-        valid_input_layout = QVBoxLayout(self.valid_input_widget)
-        valid_input_layout.addWidget(self.valid_input_label)
-        valid_input_layout.setSpacing(0)
-        valid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.invalid_input_widget = QWidget()
-        self.invalid_input_widget.setObjectName("invalid_input")
-        self.invalid_input_widget.setStyleSheet("""
-            QWidget#invalid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 100, 100, 1),   
-                    stop:0.4 rgba(255, 130, 120, 1), 
-                    stop:0.7 rgba(200, 90, 150, 1), 
-                    stop:1 rgba(180, 60, 140, 1)     
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.invalid_input_label = QLabel("Invalid Input")
-        self.invalid_input_label.setWordWrap(True)
-        self.invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.invalid_input_label.setObjectName("invalid_input_label")
-        self.invalid_input_label.setStyleSheet("""
-            QLabel#invalid_input_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        invalid_input_layout = QVBoxLayout(self.invalid_input_widget)
-        invalid_input_layout.addWidget(self.invalid_input_label)
-        invalid_input_layout.setSpacing(0)
-        invalid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.valid_input_widget.setMaximumHeight(50)
-        self.invalid_input_widget.setMaximumHeight(50)
-
-        self.valid_input_widget.hide()
-        self.invalid_input_widget.hide()
-
-        #Create a layout for the ncol adjustment section and add the line edit object to it
-        columnspacing_section_layout = QVBoxLayout(self.columnspacing_adjustment_section)
-        columnspacing_section_layout.addWidget(self.columnspacing_input)
-        columnspacing_section_layout.addWidget(self.valid_input_widget)
-        columnspacing_section_layout.addWidget(self.invalid_input_widget)
-    
-        #Add the margins, spacing, and stretch to the layout to make it look good
-        columnspacing_section_layout.setContentsMargins(10,10,10,10)
-        columnspacing_section_layout.setSpacing(10)
-        columnspacing_section_layout.addStretch()
-
-        #Add the ncol adjustment section to the main widget
-        main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.columnspacing_adjustment_section)
-        
-        #Set both the spacing and margins for the main widget to make sure it fits nicely
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0,0,0,0)
-
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-    
-    def change_columnspacing(self):
-        #Extract the ncol input from the user and remove any excess text from it
-        columnspacing_input = self.columnspacing_input.text().strip()
-
-        if (columnspacing_input == ""):
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.hide()
-            self.columnspacing_value = 2.0
-            self.update_columnspacing()
-            return 
-
-        #Only update the ncol value in the json file if the input is valid
-        try:
-            self.columnspacing_value = float(columnspacing_input)
-            self.valid_input_widget.show()
-            self.invalid_input_widget.hide()
-        except:
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.show()
-        else:
-            self.update_columnspacing()
-
-    def update_columnspacing(self):
-        #Get the newest json entries from the plot manager
-        db = self.plot_manager.get_db()
-
-        #Check if db is empty or not. If it is empty then create a new entry with the ncol value
-        #If the db isn't empty then update the db with the new ncol value.
-        if (db != []):
-            self.plot_manager.update_legend("columnspacing",self.columnspacing_value)
-        else:
-            plot_parameters = plot_json[self.selected_graph].copy()
-            plot_parameters["legend"]["columnspacing"] = self.columnspacing_value
-            self.plot_manager.insert_plot_parameter(plot_parameters)
-        self.graph_display.show_graph()
-
-    def mousePressEvent(self, event):
-        if not self.columnspacing_input.geometry().contains(event.position().toPoint()):
-            self.columnspacing_input.clearFocus()
-        super().mousePressEvent(event)
-
-class legend_handletextpad_adjustment_section(QWidget):
-    def __init__(self, selected_graph,graph_display):
-        super().__init__()
-
-        self.graph_display = graph_display
-
-        self.plot_manager = PlotManager()
-        
-        self.selected_graph = selected_graph
-
-        #Create a section to display the loc section and style it
-        self.handletextpad_adjustment_section = QWidget()
-        self.handletextpad_adjustment_section.setObjectName("handletextpad_adjustment_section")
-        self.handletextpad_adjustment_section.setStyleSheet("""
-            QWidget#handletextpad_adjustment_section{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-            QLineEdit{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                color: black;
-                font-size: 24pt;
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        #Initialize the ncol value to be 0
-        self.handletextpad_value = 0
-
-        #Create a line edit object for the user to input the ncol
-        self.handletextpad_input = QLineEdit()
-        self.handletextpad_input.setPlaceholderText("handletextpad: ")
-
-        #Set the height of the line edit object to make it look good
-        self.handletextpad_input.setFixedHeight(60)
-
-        #Connect any changes with the text to an update function
-        self.handletextpad_input.textChanged.connect(self.change_handletextpad)
-
-        #Create two widget to display valid and invalid inputs
-        self.valid_input_widget = QWidget()
-        self.valid_input_widget.setObjectName("valid_input")
-        self.valid_input_widget.setStyleSheet("""
-            QWidget#valid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),   
-                    stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1)
-                    stop:1 rgba(180, 200, 255, 1)  
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.valid_input_label = QLabel("Valid Input")
-        self.valid_input_label.setWordWrap(True)
-        self.valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.valid_input_label.setObjectName("valid_input_label")
-        self.valid_input_label.setStyleSheet("""
-            QLabel#valid_input_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        valid_input_layout = QVBoxLayout(self.valid_input_widget)
-        valid_input_layout.addWidget(self.valid_input_label)
-        valid_input_layout.setSpacing(0)
-        valid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.invalid_input_widget = QWidget()
-        self.invalid_input_widget.setObjectName("invalid_input")
-        self.invalid_input_widget.setStyleSheet("""
-            QWidget#invalid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 100, 100, 1),   
-                    stop:0.4 rgba(255, 130, 120, 1), 
-                    stop:0.7 rgba(200, 90, 150, 1), 
-                    stop:1 rgba(180, 60, 140, 1)     
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.invalid_input_label = QLabel("Invalid Input")
-        self.invalid_input_label.setWordWrap(True)
-        self.invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.invalid_input_label.setObjectName("invalid_input_label")
-        self.invalid_input_label.setStyleSheet("""
-            QLabel#invalid_input_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        invalid_input_layout = QVBoxLayout(self.invalid_input_widget)
-        invalid_input_layout.addWidget(self.invalid_input_label)
-        invalid_input_layout.setSpacing(0)
-        invalid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.valid_input_widget.setMaximumHeight(50)
-        self.invalid_input_widget.setMaximumHeight(50)
-
-        self.valid_input_widget.hide()
-        self.invalid_input_widget.hide()
-
-        #Create a layout for the ncol adjustment section and add the line edit object to it
-        handletextpad_section_layout = QVBoxLayout(self.handletextpad_adjustment_section)
-        handletextpad_section_layout.addWidget(self.handletextpad_input)
-        handletextpad_section_layout.addWidget(self.valid_input_widget)
-        handletextpad_section_layout.addWidget(self.invalid_input_widget)
-    
-        #Add the margins, spacing, and stretch to the layout to make it look good
-        handletextpad_section_layout.setContentsMargins(10,10,10,10)
-        handletextpad_section_layout.setSpacing(10)
-        handletextpad_section_layout.addStretch()
-
-        #Add the ncol adjustment section to the main widget
-        main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.handletextpad_adjustment_section)
-        
-        #Set both the spacing and margins for the main widget to make sure it fits nicely
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0,0,0,0)
-
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-    
-    def change_handletextpad(self):
-        #Extract the ncol input from the user and remove any excess text from it
-        handletextpad_input = self.handletextpad_input.text().strip()
-
-        if (handletextpad_input == ""):
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.hide()
-            self.handletextpad_value = 0.8
-            self.update_handletextpad()
-            return 
-
-        #Only update the ncol value in the json file if the input is valid
-        try:
-            self.handletextpad_value = float(handletextpad_input)
-            self.valid_input_widget.show()
-            self.invalid_input_widget.hide()
-        except:
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.show()
-        else:
-            self.update_handletextpad()
-
-    def update_handletextpad(self):
-        #Get the newest json entries from the plot manager
-        db = self.plot_manager.get_db()
-
-        #Check if db is empty or not. If it is empty then create a new entry with the ncol value
-        #If the db isn't empty then update the db with the new ncol value.
-        if (db != []):
-            self.plot_manager.update_legend("handletextpad",self.handletextpad_value)
-        else:
-            plot_parameters = plot_json[self.selected_graph].copy()
-            plot_parameters["legend"]["handletextpad"] = self.handletextpad_value
-            self.plot_manager.insert_plot_parameter(plot_parameters)
-        self.graph_display.show_graph()
-
-    def mousePressEvent(self, event):
-        if not self.handletextpad_input.geometry().contains(event.position().toPoint()):
-            self.handletextpad_input.clearFocus()
-        super().mousePressEvent(event)
-
-class legend_borderaxespad_adjustment_section(QWidget):
-    def __init__(self, selected_graph,graph_display):
-        super().__init__()
-
-        self.graph_display = graph_display
-
-        self.plot_manager = PlotManager()
-        
-        self.selected_graph = selected_graph
-
-        #Create a section to display the loc section and style it
-        self.borderaxespad_adjustment_section = QWidget()
-        self.borderaxespad_adjustment_section.setObjectName("borderaxespad_adjustment_section")
-        self.borderaxespad_adjustment_section.setStyleSheet("""
-            QWidget#borderaxespad_adjustment_section{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-            QLineEdit{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                color: black;
-                font-size: 24pt;
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        #Initialize the ncol value to be 0
-        self.borderaxespad_value = 0
-
-        #Create a line edit object for the user to input the ncol
-        self.borderaxespad_input = QLineEdit()
-        self.borderaxespad_input.setPlaceholderText("borderaxespad: ")
-
-        #Set the height of the line edit object to make it look good
-        self.borderaxespad_input.setFixedHeight(60)
-
-        #Connect any changes with the text to an update function
-        self.borderaxespad_input.textChanged.connect(self.change_borderaxespad)
-
-        #Create two widget to display valid and invalid inputs
-        self.valid_input_widget = QWidget()
-        self.valid_input_widget.setObjectName("valid_input")
-        self.valid_input_widget.setStyleSheet("""
-            QWidget#valid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),   
-                    stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1)
-                    stop:1 rgba(180, 200, 255, 1)  
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.valid_input_label = QLabel("Valid Input")
-        self.valid_input_label.setWordWrap(True)
-        self.valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.valid_input_label.setObjectName("valid_input_label")
-        self.valid_input_label.setStyleSheet("""
-            QLabel#valid_input_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        valid_input_layout = QVBoxLayout(self.valid_input_widget)
-        valid_input_layout.addWidget(self.valid_input_label)
-        valid_input_layout.setSpacing(0)
-        valid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.invalid_input_widget = QWidget()
-        self.invalid_input_widget.setObjectName("invalid_input")
-        self.invalid_input_widget.setStyleSheet("""
-            QWidget#invalid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 100, 100, 1),   
-                    stop:0.4 rgba(255, 130, 120, 1), 
-                    stop:0.7 rgba(200, 90, 150, 1), 
-                    stop:1 rgba(180, 60, 140, 1)     
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.invalid_input_label = QLabel("Invalid Input")
-        self.invalid_input_label.setWordWrap(True)
-        self.invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.invalid_input_label.setObjectName("invalid_input_label")
-        self.invalid_input_label.setStyleSheet("""
-            QLabel#invalid_input_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        invalid_input_layout = QVBoxLayout(self.invalid_input_widget)
-        invalid_input_layout.addWidget(self.invalid_input_label)
-        invalid_input_layout.setSpacing(0)
-        invalid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.valid_input_widget.setMaximumHeight(50)
-        self.invalid_input_widget.setMaximumHeight(50)
-
-        self.valid_input_widget.hide()
-        self.invalid_input_widget.hide()
-
-        #Create a layout for the ncol adjustment section and add the line edit object to it
-        borderaxespad_section_layout = QVBoxLayout(self.borderaxespad_adjustment_section)
-        borderaxespad_section_layout.addWidget(self.borderaxespad_input)
-        borderaxespad_section_layout.addWidget(self.valid_input_widget)
-        borderaxespad_section_layout.addWidget(self.invalid_input_widget)
-    
-        #Add the margins, spacing, and stretch to the layout to make it look good
-        borderaxespad_section_layout.setContentsMargins(10,10,10,10)
-        borderaxespad_section_layout.setSpacing(10)
-        borderaxespad_section_layout.addStretch()
-
-        #Add the ncol adjustment section to the main widget
-        main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.borderaxespad_adjustment_section)
-        
-        #Set both the spacing and margins for the main widget to make sure it fits nicely
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0,0,0,0)
-
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-    
-    def change_borderaxespad(self):
-        #Extract the ncol input from the user and remove any excess text from it
-        borderaxespad_input = self.borderaxespad_input.text().strip()
-
-        if (borderaxespad_input == ""):
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.hide()
-            self.borderaxespad_value = 0.5
-            self.update_borderaxespad()
-            return 
-
-        #Only update the ncol value in the json file if the input is valid
-        try:
-            self.borderaxespad_value = float(borderaxespad_input)
-            self.valid_input_widget.show()
-            self.invalid_input_widget.hide()
-        except:
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.show()
-        else:
-            self.update_borderaxespad()
-
-    def update_borderaxespad(self):
-        #Get the newest json entries from the plot manager
-        db = self.plot_manager.get_db()
-
-        #Check if db is empty or not. If it is empty then create a new entry with the ncol value
-        #If the db isn't empty then update the db with the new ncol value.
-        if (db != []):
-            self.plot_manager.update_legend("borderaxespad",self.borderaxespad_value)
-        else:
-            plot_parameters = plot_json[self.selected_graph].copy()
-            plot_parameters["legend"]["borderaxespad"] = self.borderaxespad_value
-            self.plot_manager.insert_plot_parameter(plot_parameters)
-        self.graph_display.show_graph()
-
-    def mousePressEvent(self, event):
-        if not self.borderaxespad_input.geometry().contains(event.position().toPoint()):
-            self.borderaxespad_input.clearFocus()
-        super().mousePressEvent(event)
-
-class legend_handlelength_adjustment_section(QWidget):
-    def __init__(self, selected_graph, graph_display):
-        super().__init__()
-
-        self.graph_display = graph_display
-
-        self.plot_manager = PlotManager()
-        
-        self.selected_graph = selected_graph
-
-        #Create a section to display the loc section and style it
-        self.handlelength_adjustment_section = QWidget()
-        self.handlelength_adjustment_section.setObjectName("handlelength_adjustment_section")
-        self.handlelength_adjustment_section.setStyleSheet("""
-            QWidget#handlelength_adjustment_section{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-            QLineEdit{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                color: black;
-                font-size: 24pt;
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        #Initialize the handlelength value to be 2.0
-        self.handlelength_value = 2.0
-
-        #Create a line edit object for the user to input the ncol
-        self.handlelength_input = QLineEdit()
-        self.handlelength_input.setPlaceholderText("handlelength: ")
-
-        #Set the height of the line edit object to make it look good
-        self.handlelength_input.setFixedHeight(60)
-
-        #Connect any changes with the text to an update function
-        self.handlelength_input.textChanged.connect(self.change_handlelength)
-
-        #Create two widget to display valid and invalid inputs
-        self.valid_input_widget = QWidget()
-        self.valid_input_widget.setObjectName("valid_input")
-        self.valid_input_widget.setStyleSheet("""
-            QWidget#valid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),   
-                    stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1)
-                    stop:1 rgba(180, 200, 255, 1)  
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.valid_input_label = QLabel("Valid Input")
-        self.valid_input_label.setWordWrap(True)
-        self.valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.valid_input_label.setObjectName("valid_input_label")
-        self.valid_input_label.setStyleSheet("""
-            QLabel#valid_input_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        valid_input_layout = QVBoxLayout(self.valid_input_widget)
-        valid_input_layout.addWidget(self.valid_input_label)
-        valid_input_layout.setSpacing(0)
-        valid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.invalid_input_widget = QWidget()
-        self.invalid_input_widget.setObjectName("invalid_input")
-        self.invalid_input_widget.setStyleSheet("""
-            QWidget#invalid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 100, 100, 1),   
-                    stop:0.4 rgba(255, 130, 120, 1), 
-                    stop:0.7 rgba(200, 90, 150, 1), 
-                    stop:1 rgba(180, 60, 140, 1)     
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.invalid_input_label = QLabel("Invalid Input")
-        self.invalid_input_label.setWordWrap(True)
-        self.invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.invalid_input_label.setObjectName("invalid_input_label")
-        self.invalid_input_label.setStyleSheet("""
-            QLabel#invalid_input_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        invalid_input_layout = QVBoxLayout(self.invalid_input_widget)
-        invalid_input_layout.addWidget(self.invalid_input_label)
-        invalid_input_layout.setSpacing(0)
-        invalid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.valid_input_widget.setMaximumHeight(50)
-        self.invalid_input_widget.setMaximumHeight(50)
-
-        self.valid_input_widget.hide()
-        self.invalid_input_widget.hide()
-
-        #Create a layout for the ncol adjustment section and add the line edit object to it
-        handlelength_section_layout = QVBoxLayout(self.handlelength_adjustment_section)
-        handlelength_section_layout.addWidget(self.handlelength_input)
-        handlelength_section_layout.addWidget(self.valid_input_widget)
-        handlelength_section_layout.addWidget(self.invalid_input_widget)
-    
-        #Add the margins, spacing, and stretch to the layout to make it look good
-        handlelength_section_layout.setContentsMargins(10,10,10,10)
-        handlelength_section_layout.setSpacing(10)
-        handlelength_section_layout.addStretch()
-
-        #Add the ncol adjustment section to the main widget
-        main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.handlelength_adjustment_section)
-        
-        #Set both the spacing and margins for the main widget to make sure it fits nicely
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0,0,0,0)
-
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-    
-    def change_handlelength(self):
-        #Extract the ncol input from the user and remove any excess text from it
-        handlelength_input = self.handlelength_input.text().strip()
-
-        if (handlelength_input == ""):
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.hide()
-            self.handlelength_value = 2.0
-            self.update_handlelength()
-            return 
-
-        #Only update the ncol value in the json file if the input is valid
-        try:
-            self.handlelength_value = float(handlelength_input)
-            self.valid_input_widget.show()
-            self.invalid_input_widget.hide()
-        except:
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.show()
-        else:
-            self.update_handlelength()
-
-    def update_handlelength(self):
-        #Get the newest json entries from the plot manager
-        db = self.plot_manager.get_db()
-
-        #Check if db is empty or not. If it is empty then create a new entry with the ncol value
-        #If the db isn't empty then update the db with the new ncol value.
-        if (db != []):
-            self.plot_manager.update_legend("handlelength",self.handlelength_value)
-        else:
-            plot_parameters = plot_json[self.selected_graph].copy()
-            plot_parameters["legend"]["handlelength"] = self.handlelength_value
-            self.plot_manager.insert_plot_parameter(plot_parameters)
-        self.graph_display.show_graph()
-
-    def mousePressEvent(self, event):
-        if not self.handlelength_input.geometry().contains(event.position().toPoint()):
-            self.handlelength_input.clearFocus()
-        super().mousePressEvent(event)
-
-class legend_handleheight_adjustment_section(QWidget):
-    def __init__(self, selected_graph, graph_display):
-        super().__init__()
-
-        self.graph_display = graph_display
-
-        self.plot_manager = PlotManager()
-        
-        self.selected_graph = selected_graph
-
-        #Create a section to display the loc section and style it
-        self.handleheight_adjustment_section = QWidget()
-        self.handleheight_adjustment_section.setObjectName("handleheight_adjustment_section")
-        self.handleheight_adjustment_section.setStyleSheet("""
-            QWidget#handleheight_adjustment_section{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-            QLineEdit{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                color: black;
-                font-size: 24pt;
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        #Initialize the ncol value to be 0
-        self.handleheight_value = 0
-
-        #Create a line edit object for the user to input the ncol
-        self.handleheight_input = QLineEdit()
-        self.handleheight_input.setPlaceholderText("handleheight_input: ")
-
-        #Set the height of the line edit object to make it look good
-        self.handleheight_input.setFixedHeight(60)
-
-        #Connect any changes with the text to an update function
-        self.handleheight_input.textChanged.connect(self.change_handleheight)
-
-        #Create two widget to display valid and invalid inputs
-        self.valid_input_widget = QWidget()
-        self.valid_input_widget.setObjectName("valid_input")
-        self.valid_input_widget.setStyleSheet("""
-            QWidget#valid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),   
-                    stop:0.3 rgba(63, 252, 180, 1), 
-                    stop:0.6 rgba(150, 220, 255, 1)
-                    stop:1 rgba(180, 200, 255, 1)  
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.valid_input_label = QLabel("Valid Input")
-        self.valid_input_label.setWordWrap(True)
-        self.valid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.valid_input_label.setObjectName("valid_input_label")
-        self.valid_input_label.setStyleSheet("""
-            QLabel#valid_input_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        valid_input_layout = QVBoxLayout(self.valid_input_widget)
-        valid_input_layout.addWidget(self.valid_input_label)
-        valid_input_layout.setSpacing(0)
-        valid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.invalid_input_widget = QWidget()
-        self.invalid_input_widget.setObjectName("invalid_input")
-        self.invalid_input_widget.setStyleSheet("""
-            QWidget#invalid_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(255, 100, 100, 1),   
-                    stop:0.4 rgba(255, 130, 120, 1), 
-                    stop:0.7 rgba(200, 90, 150, 1), 
-                    stop:1 rgba(180, 60, 140, 1)     
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        self.invalid_input_label = QLabel("Invalid Input")
-        self.invalid_input_label.setWordWrap(True)
-        self.invalid_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.invalid_input_label.setObjectName("invalid_input_label")
-        self.invalid_input_label.setStyleSheet("""
-            QLabel#invalid_input_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        invalid_input_layout = QVBoxLayout(self.invalid_input_widget)
-        invalid_input_layout.addWidget(self.invalid_input_label)
-        invalid_input_layout.setSpacing(0)
-        invalid_input_layout.setContentsMargins(0,0,0,0)
-
-        self.valid_input_widget.setMaximumHeight(50)
-        self.invalid_input_widget.setMaximumHeight(50)
-
-        self.valid_input_widget.hide()
-        self.invalid_input_widget.hide()
-
-        #Create a layout for the ncol adjustment section and add the line edit object to it
-        handleheight_section_layout = QVBoxLayout(self.handleheight_adjustment_section)
-        handleheight_section_layout.addWidget(self.handleheight_input)
-        handleheight_section_layout.addWidget(self.valid_input_widget)
-        handleheight_section_layout.addWidget(self.invalid_input_widget)
-    
-        #Add the margins, spacing, and stretch to the layout to make it look good
-        handleheight_section_layout.setContentsMargins(10,10,10,10)
-        handleheight_section_layout.setSpacing(10)
-        handleheight_section_layout.addStretch()
-
-        #Add the ncol adjustment section to the main widget
-        main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.handleheight_adjustment_section)
-        
-        #Set both the spacing and margins for the main widget to make sure it fits nicely
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0,0,0,0)
-
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-    
-    def change_handleheight(self):
-        #Extract the ncol input from the user and remove any excess text from it
-        handleheight_input = self.handleheight_input.text().strip()
-
-        if (handleheight_input == ""):
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.hide()
-            self.handleheight_value = 0.7
-            self.update_handleheight()
-            return 
-
-        #Only update the ncol value in the json file if the input is valid
-        try:
-            self.handleheight_value = float(handleheight_input)
-            self.valid_input_widget.show()
-            self.invalid_input_widget.hide()
-        except:
-            self.valid_input_widget.hide()
-            self.invalid_input_widget.show()
-        else:
-            self.update_handleheight()
-
-    def update_handleheight(self):
-        #Get the newest json entries from the plot manager
-        db = self.plot_manager.get_db()
-
-        #Check if db is empty or not. If it is empty then create a new entry with the ncol value
-        #If the db isn't empty then update the db with the new ncol value.
-        if (db != []):
-            self.plot_manager.update_legend("handleheight",self.handleheight_value)
-        else:
-            plot_parameters = plot_json[self.selected_graph].copy()
-            plot_parameters["legend"]["handleheight"] = self.handleheight_value
-            self.plot_manager.insert_plot_parameter(plot_parameters)
-        self.graph_display.show_graph()
-
-    def mousePressEvent(self, event):
-        if not self.handleheight_input.geometry().contains(event.position().toPoint()):
-            self.handleheight_input.clearFocus()
-        super().mousePressEvent(event)
-
-class legend_markerfirst_adjustment_section(QWidget):
-    def __init__(self,selected_graph,graph_display):
-        super().__init__()
-
-        self.graph_display = graph_display
-
-        self.plot_manager = PlotManager()
-        
-        self.selected_graph = selected_graph
-        
-        #Initialize the frameon state
-        self.markerfirst_state = True
-        
-        #Create a widget to display the frameon adjustment section and style it for consistency
-        self.markerfirst_adjustment_section = QWidget()
-        self.markerfirst_adjustment_section.setObjectName("markerfirst_adjustment_section")
-        self.markerfirst_adjustment_section.setStyleSheet("""
-            QWidget#markerfirst_adjustment_section{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
-        #Create a label to put on top of the QPushButton
-        self.markerfirst_label = QLabel("Markerfirst On")
-        self.markerfirst_label.setWordWrap(True)
-        self.markerfirst_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.markerfirst_label.setObjectName("markerfirst_label")
-        self.markerfirst_label.setStyleSheet("""
-            QLabel#markerfirst_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-        self.markerfirst_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-    
-        #Create a button to allow the user to switch between shadow
-        self.markerfirst_button = QPushButton()
-        self.markerfirst_button.setObjectName("markerfirst_button")
-        self.markerfirst_button.setStyleSheet("""
-            QPushButton#markerfirst_button{
+        #Create a reset columnspacing button and connect the reset function to it
+        self.reset_columnspacing_button = QPushButton()
+        self.reset_columnspacing_button.setObjectName("reset_columnspacing_button")
+        self.reset_columnspacing_button.setStyleSheet("""
+            QPushButton#reset_columnspacing_button{
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -8649,7 +9602,7 @@ class legend_markerfirst_adjustment_section(QWidget):
                 padding: 6px;
                 color: black;
             }
-            QPushButton#markerfirst_button:hover{
+            QPushButton#reset_columnspacing_button:hover{
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -8666,45 +9619,1323 @@ class legend_markerfirst_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.markerfirst_button.setMinimumHeight(45)
+        self.reset_columnspacing_button.clicked.connect(self.reset_columnsapcing)
+        self.reset_columnspacing_button.setMinimumHeight(50)
+
+        #Add the label onto the button
+        reset_columnspacing_button_layout = QVBoxLayout(self.reset_columnspacing_button)
+        reset_columnspacing_button_layout.addWidget(self.reset_columnspacing_label)
+        reset_columnspacing_button_layout.setContentsMargins(0,0,0,0)
+        reset_columnspacing_button_layout.setSpacing(0)
+
+        #Add the line edit widget and the two validity check widgets to the layout
+        legend_columnspacing_adjustment_section_layout.addWidget(self.columnspacing_input)
+        legend_columnspacing_adjustment_section_layout.addWidget(self.valid_columnspacing_input_widget)
+        legend_columnspacing_adjustment_section_layout.addWidget(self.invalid_columnspacing_input_widget)
+    
+        #Add the margins, spacing, and stretch to the layout to make it look good
+        legend_columnspacing_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        legend_columnspacing_adjustment_section_layout.setSpacing(10)
+        legend_columnspacing_adjustment_section_layout.addStretch()
+
+        #Add the reset ncol button to the layout
+        legend_columnspacing_adjustment_section_layout.addWidget(self.reset_columnspacing_button)
+
+    def change_to_original_screen(self):
+        pass
+
+    def change_columnspacing(self):
+        #Extract the columnspacing input from the user and remove any excess text from it
+        columnspacing_input = self.columnspacing_input.text().strip()
+
+        #Change ncol to the default value if the user deletes their entry
+        if (columnspacing_input == ""):
+            self.valid_columnspacing_input_widget.hide()
+            self.invalid_columnspacing_input_widget.hide()
+            return 
+
+        #Only update the columnspacing value in the json file if the input is valid
+        try:
+            self.columnspacing_value = int(columnspacing_input)
+            self.valid_columnspacing_input_widget.show()
+            self.invalid_columnspacing_input_widget.hide()
+        except ValueError:
+            self.valid_columnspacing_input_widget.hide()
+            self.invalid_columnspacing_input_widget.show()
+        else:
+            self.update_columnspacing()
+
+    def reset_columnsapcing(self):
+        #Clear the input in the QLineEdit Widget
+        self.columnspacing_input.clear()
+
+        #Set the columnspacing to 2 (default value) then update it in the plot config
+        self.columnspacing_value = 2.0
+        self.update_columnspacing()
+
+    def update_columnspacing(self):
+        #Get the newest json entries from the plot manager
+        db = self.plot_manager.get_db()
+
+        #Check if db is empty or not. If it is empty then create a new entry with the ncol value
+        #If the db isn't empty then update the db with the new ncol value.
+        if (db != []):
+            self.plot_manager.update_legend("columnspacing",self.columnspacing_value)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["columnspacing"] = self.columnspacing_value
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        #Update the graph
+        self.graph_display.show_graph()
+
+    def mousePressEvent(self, event):
+        #Clear the focus of the input widget if the cursor clicks somewhere else
+        if not self.columnspacing_input.geometry().contains(event.position().toPoint()):
+            self.columnspacing_input.clearFocus()
+        super().mousePressEvent(event)
+
+class legend_handletextpad_adjustment_section(QWidget):
+    def __init__(self, selected_graph,graph_display):
+        super().__init__()
+
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        #Initialize the handletextpad value to be 0.8
+        self.handletextpad_value = 0.8
+
+        #Set the object name for the widget
+        self.setObjectName("legend_handletextpad_adjustment_section")
+
+        #-----Create the Validity Check Widgets-----
+        self.valid_handletextpad_input_widget = QWidget()
+        self.valid_handletextpad_input_widget.setObjectName("valid_handletextpad_input_widget")
+        self.valid_handletextpad_input_widget.setStyleSheet("""
+            QWidget#valid_handletextpad_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_handletextpad_input_label = QLabel("Valid handletextpad")
+        self.valid_handletextpad_input_label.setWordWrap(True)
+        self.valid_handletextpad_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_handletextpad_input_label.setObjectName("valid_handletextpad_input_widget")
+        self.valid_handletextpad_input_label.setStyleSheet("""
+            QLabel#valid_handletextpad_input_widget{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        self.invalid_handletextpad_input_widget = QWidget()
+        self.invalid_handletextpad_input_widget.setObjectName("invalid_handletextpad_input_widget")
+        self.invalid_handletextpad_input_widget.setStyleSheet("""
+            QWidget#invalid_handletextpad_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_handletextpad_input_label = QLabel("Invalid handletextpad")
+        self.invalid_handletextpad_input_label.setWordWrap(True)
+        self.invalid_handletextpad_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_handletextpad_input_label.setObjectName("invalid_handletextpad_input_label")
+        self.invalid_handletextpad_input_label.setStyleSheet("""
+            QLabel#invalid_handletextpad_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_handletextpad_input_widget_layout = QVBoxLayout(self.valid_handletextpad_input_widget)
+        valid_handletextpad_input_widget_layout.addWidget(self.valid_handletextpad_input_label)
+        valid_handletextpad_input_widget_layout.setSpacing(0)
+        valid_handletextpad_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        invalid_handletextpad_input_widget_layout = QVBoxLayout(self.invalid_handletextpad_input_widget)
+        invalid_handletextpad_input_widget_layout.addWidget(self.invalid_handletextpad_input_label)
+        invalid_handletextpad_input_widget_layout.setSpacing(0)
+        invalid_handletextpad_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        #-----Set the height for the widgets-----
+        self.valid_handletextpad_input_widget.setMaximumHeight(50)
+        self.invalid_handletextpad_input_widget.setMaximumHeight(50)
+
+        #-----Hide the Validity Check Widgets-----
+        self.valid_handletextpad_input_widget.hide()
+        self.invalid_handletextpad_input_widget.hide()
+
+        #-----Create the handletextpad adjustment section-----
+        self.legend_handletextpad_adjustment_section = QWidget()
+        self.legend_handletextpad_adjustment_section.setObjectName("legend_handletextpad_adjustment_section")
+        self.legend_handletextpad_adjustment_section.setStyleSheet("""
+            QWidget#legend_handletextpad_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+            QLineEdit{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.create_legend_handletextpad_adjustment_section()
+
+        #Add the handletextpad adjustment section to the main widget
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.legend_handletextpad_adjustment_section)
         
-        #Put the label on top of the button we created for control frameon
-        markerfirst_button_layout = QVBoxLayout(self.markerfirst_button)
-        markerfirst_button_layout.addWidget(self.markerfirst_label)
-        markerfirst_button_layout.setContentsMargins(0,0,0,0)
-        markerfirst_button_layout.setSpacing(0)
+        #Set both the spacing and margins for the main widget to make sure it fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+    
+    def create_legend_handletextpad_adjustment_section(self):
+        legend_handletextpad_adjustment_section_layout = QVBoxLayout(self.legend_handletextpad_adjustment_section)
 
-        #Connect the frameon button to a function to switch between the two states
-        self.markerfirst_button.clicked.connect(self.switch_markerfirst_state)
+        #Create a line edit object for the user to input the ncol
+        self.handletextpad_input = QLineEdit()
+        self.handletextpad_input.setPlaceholderText("handletextpad: ")
 
-        #Create a button layout for the frameon adjustment section
-        button_layout = QVBoxLayout(self.markerfirst_adjustment_section)
+        #Set the height of the line edit object to make it look good
+        self.handletextpad_input.setFixedHeight(60)
 
-        #Add the frameon button to the layout
-        button_layout.addWidget(self.markerfirst_button)
+        #Connect any changes with the text to an update function
+        self.handletextpad_input.textChanged.connect(self.change_handletextpad)
 
-        #Set the spacing, margins, and stretch to make it look good
-        button_layout.setSpacing(0)
-        button_layout.setContentsMargins(10,10,10,10)
-        button_layout.addStretch()
+        #Create a reset ncol label
+        self.reset_handletextpad_label = QLabel("Reset handletextpad")
+        self.reset_handletextpad_label.setObjectName("reset_handletextpad_label")
+        self.reset_handletextpad_label.setWordWrap(True)
+        self.reset_handletextpad_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_handletextpad_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents,True)
+        self.reset_handletextpad_label.setStyleSheet("""
+            QLabel#reset_handletextpad_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        #Create a reset ncol anchor button and connect the reset function to it
+        self.reset_handletextpad_button = QPushButton()
+        self.reset_handletextpad_button.setObjectName("reset_handletextpad_button")
+        self.reset_handletextpad_button.setStyleSheet("""
+            QPushButton#reset_handletextpad_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#reset_handletextpad_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.reset_handletextpad_button.clicked.connect(self.reset_handletextpad)
+        self.reset_handletextpad_button.setMinimumHeight(50)
+
+        #Add the label onto the button
+        reset_handletextpad_button_layout = QVBoxLayout(self.reset_handletextpad_button)
+        reset_handletextpad_button_layout.addWidget(self.reset_handletextpad_label)
+        reset_handletextpad_button_layout.setContentsMargins(0,0,0,0)
+        reset_handletextpad_button_layout.setSpacing(0)
+
+        #Create a layout for the ncol adjustment section and add the line edit object to it
+        legend_handletextpad_adjustment_section_layout.addWidget(self.handletextpad_input)
+        legend_handletextpad_adjustment_section_layout.addWidget(self.valid_handletextpad_input_widget)
+        legend_handletextpad_adjustment_section_layout.addWidget(self.invalid_handletextpad_input_widget)
+    
+        #Add the margins, spacing, and stretch to the layout to make it look good
+        legend_handletextpad_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        legend_handletextpad_adjustment_section_layout.setSpacing(10)
+        legend_handletextpad_adjustment_section_layout.addStretch()
+
+        #Add the reset ncol button to the layout
+        legend_handletextpad_adjustment_section_layout.addWidget(self.reset_handletextpad_button)
+
+    def change_to_original_screen(self):
+        pass
+
+    def change_handletextpad(self):
+        #Extract the ncol input from the user and remove any excess text from it
+        handletextpad_input = self.handletextpad_input.text().strip()
+
+        #Change handletextpad to the default value if the user deletes their entry
+        if (handletextpad_input == ""):
+            self.valid_handletextpad_input_widget.hide()
+            self.invalid_handletextpad_input_widget.hide()
+            return 
+
+        #Only update the ncol value in the json file if the input is valid
+        try:
+            self.handletextpad_value = float(handletextpad_input)
+            self.valid_handletextpad_input_widget.show()
+            self.invalid_handletextpad_input_widget.hide()
+        except ValueError:
+            self.valid_handletextpad_input_widget.hide()
+            self.invalid_handletextpad_input_widget.show()
+        else:
+            self.update_handletextpad()
+
+    def reset_handletextpad(self):
+        #Clear the input in the QLineEdit Widget
+        self.handletextpad_input.clear()
+
+        #Set the handletextpad to 0.8 (default value) then update it in the plot config
+        self.handletextpad_value = 0.8
+        self.update_handletextpad()
+
+    def update_handletextpad(self):
+        #Get the newest json entries from the plot manager
+        db = self.plot_manager.get_db()
+
+        #Check if db is empty or not. If it is empty then create a new entry with the ncol value
+        #If the db isn't empty then update the db with the new ncol value.
+        if (db != []):
+            self.plot_manager.update_legend("handletextpad",self.handletextpad_value)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["handletextpad"] = self.handletextpad_value
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        #Update the graph
+        self.graph_display.show_graph()
+
+    def mousePressEvent(self, event):
+        #Clear the focus of the input widget if the cursor clicks somewhere else
+        if not self.handletextpad_input.geometry().contains(event.position().toPoint()):
+            self.handletextpad_input.clearFocus()
+        super().mousePressEvent(event)
+
+class legend_borderaxespad_adjustment_section(QWidget):
+    def __init__(self, selected_graph,graph_display):
+        super().__init__()
+
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        #Initialize the borderaxespad value to be 0.5
+        self.borderaxespad_value = 0.5
+
+        #Set the object name for the widget
+        self.setObjectName("legend_borderaxespad_adjustment_section")
+
+        #-----Create the Validity Check Widgets-----
+        self.valid_borderaxespad_input_widget = QWidget()
+        self.valid_borderaxespad_input_widget.setObjectName("valid_borderaxespad_input_widget")
+        self.valid_borderaxespad_input_widget.setStyleSheet("""
+            QWidget#valid_borderaxespad_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_borderaxespad_input_label = QLabel("Valid borderaxespad")
+        self.valid_borderaxespad_input_label.setWordWrap(True)
+        self.valid_borderaxespad_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_borderaxespad_input_label.setObjectName("valid_borderaxespad_input_label")
+        self.valid_borderaxespad_input_label.setStyleSheet("""
+            QLabel#valid_borderaxespad_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        self.invalid_borderaxespad_input_widget = QWidget()
+        self.invalid_borderaxespad_input_widget.setObjectName("invalid_borderaxespad_input_widget")
+        self.invalid_borderaxespad_input_widget.setStyleSheet("""
+            QWidget#invalid_borderaxespad_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_borderaxespad_input_label = QLabel("Invalid borderaxespad")
+        self.invalid_borderaxespad_input_label.setWordWrap(True)
+        self.invalid_borderaxespad_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_borderaxespad_input_label.setObjectName("invalid_borderaxespad_input_label")
+        self.invalid_borderaxespad_input_label.setStyleSheet("""
+            QLabel#invalid_borderaxespad_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_borderaxespad_input_widget_layout = QVBoxLayout(self.valid_borderaxespad_input_widget)
+        valid_borderaxespad_input_widget_layout.addWidget(self.valid_borderaxespad_input_label)
+        valid_borderaxespad_input_widget_layout.setSpacing(0)
+        valid_borderaxespad_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        invalid_borderaxespad_input_widget_layout = QVBoxLayout(self.invalid_borderaxespad_input_widget)
+        invalid_borderaxespad_input_widget_layout.addWidget(self.invalid_borderaxespad_input_label)
+        invalid_borderaxespad_input_widget_layout.setSpacing(0)
+        invalid_borderaxespad_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        #-----Set the height for the widgets-----
+        self.valid_borderaxespad_input_widget.setMaximumHeight(50)
+        self.invalid_borderaxespad_input_widget.setMaximumHeight(50)
+
+        #-----Hide the Validity Check Widgets-----
+        self.valid_borderaxespad_input_widget.hide()
+        self.invalid_borderaxespad_input_widget.hide()
+
+        #-----Create the borderaxespad adjustment section-----
+        self.legend_borderaxespad_adjustment_section = QWidget()
+        self.legend_borderaxespad_adjustment_section.setObjectName("legend_borderaxespad_adjustment_section")
+        self.legend_borderaxespad_adjustment_section.setStyleSheet("""
+            QWidget#legend_borderaxespad_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+            QLineEdit{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.create_legend_borderaxespad_adjustment_section()
+
+        #Add the borderaxespad adjustment section to the main widget
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.legend_borderaxespad_adjustment_section)
+        
+        #Set both the spacing and margins for the main widget to make sure it fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+    
+    def create_legend_borderaxespad_adjustment_section(self):
+        #Create a layout for the ncol adjustment section
+        legend_borderaxespad_adjustment_section_layout = QVBoxLayout(self.legend_borderaxespad_adjustment_section)
+
+        #Create a line edit object for the user to input the ncol
+        self.borderaxespad_input = QLineEdit()
+        self.borderaxespad_input.setPlaceholderText("borderaxespad: ")
+
+        #Set the height of the line edit object to make it look good
+        self.borderaxespad_input.setFixedHeight(60)
+
+        #Connect any changes with the text to an update function
+        self.borderaxespad_input.textChanged.connect(self.change_borderaxespad)
+
+        #Create a reset borderaxespad label
+        self.reset_borderaxespad_label = QLabel("Reset borderaxespad")
+        self.reset_borderaxespad_label.setObjectName("reset_borderaxespad_label")
+        self.reset_borderaxespad_label.setWordWrap(True)
+        self.reset_borderaxespad_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_borderaxespad_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents,True)
+        self.reset_borderaxespad_label.setStyleSheet("""
+            QLabel#reset_borderaxespad_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        #Create a reset borderaxespad button and connect the reset function to it
+        self.reset_borderaxespad_button = QPushButton()
+        self.reset_borderaxespad_button.setObjectName("reset_borderaxespad_button")
+        self.reset_borderaxespad_button.setStyleSheet("""
+            QPushButton#reset_borderaxespad_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#reset_borderaxespad_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.reset_borderaxespad_button.clicked.connect(self.reset_borderaxespad)
+        self.reset_borderaxespad_button.setMinimumHeight(50)
+
+        #Add the label onto the button
+        reset_borderaxespad_button_layout = QVBoxLayout(self.reset_borderaxespad_button)
+        reset_borderaxespad_button_layout.addWidget(self.reset_borderaxespad_label)
+        reset_borderaxespad_button_layout.setContentsMargins(0,0,0,0)
+        reset_borderaxespad_button_layout.setSpacing(0)
+
+        #Create a layout for the borderaxespad adjustment section and add the line edit object to it
+        legend_borderaxespad_adjustment_section_layout.addWidget(self.borderaxespad_input)
+        legend_borderaxespad_adjustment_section_layout.addWidget(self.valid_borderaxespad_input_widget)
+        legend_borderaxespad_adjustment_section_layout.addWidget(self.invalid_borderaxespad_input_widget)
+    
+        #Add the margins, spacing, and stretch to the layout to make it look good
+        legend_borderaxespad_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        legend_borderaxespad_adjustment_section_layout.setSpacing(10)
+        legend_borderaxespad_adjustment_section_layout.addStretch()
+
+        #Add the reset ncol button to the layout
+        legend_borderaxespad_adjustment_section_layout.addWidget(self.reset_borderaxespad_button)
+
+    def change_to_original_screen(self):
+        pass
+
+    def change_borderaxespad(self):
+        #Extract the ncol input from the user and remove any excess text from it
+        borderaxespad_input = self.borderaxespad_input.text().strip()
+
+        #Hide the validity check widgets if the borderaxespad input is empty
+        if (borderaxespad_input == ""):
+            self.valid_borderaxespad_input_widget.hide()
+            self.invalid_borderaxespad_input_widget.hide()
+            return 
+
+        #Only update the ncol value in the json file if the input is valid
+        try:
+            self.borderaxespad_value = float(borderaxespad_input)
+            self.valid_borderaxespad_input_widget.show()
+            self.invalid_borderaxespad_input_widget.hide()
+        except ValueError:
+            self.valid_borderaxespad_input_widget.hide()
+            self.invalid_borderaxespad_input_widget.show()
+        else:
+            self.update_borderaxespad()
+
+    def reset_borderaxespad(self):
+        #Clear the input in the QLineEdit Widget
+        self.borderaxespad_input.clear()
+
+        #Set the borderaxespad to 0.5 (default value) then update it in the plot config
+        self.borderaxespad_value = 0.5
+        self.update_ncol()
+
+    def update_borderaxespad(self):
+        #Get the newest json entries from the plot manager
+        db = self.plot_manager.get_db()
+
+        #Check if db is empty or not. If it is empty then create a new entry with the ncol value
+        #If the db isn't empty then update the db with the new ncol value.
+        if (db != []):
+            self.plot_manager.update_legend("borderaxespad",self.borderaxespad_value)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["borderaxespad"] = self.borderaxespad_value
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        #Update the graph
+        self.graph_display.show_graph()
+
+    def mousePressEvent(self, event):
+        #Clear the focus of the input widget if the cursor clicks somewhere else
+        if not self.borderaxespad_input.geometry().contains(event.position().toPoint()):
+            self.borderaxespad_input.clearFocus()
+        super().mousePressEvent(event)
+
+class legend_handlelength_adjustment_section(QWidget):
+    def __init__(self, selected_graph, graph_display):
+        super().__init__()
+
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        #Initialize the handlelength value to be 2.0
+        self.handlelength_value = 2.0
+
+        #Set the object name for the object
+        self.setObjectName("legend_handlelength_adjustment_section")
+
+        #-----Create the Validity Check Widgets-----
+        self.valid_handlelength_input_widget = QWidget()
+        self.valid_handlelength_input_widget.setObjectName("valid_handlelength_input_widget")
+        self.valid_handlelength_input_widget.setStyleSheet("""
+            QWidget#valid_handlelength_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_handlelength_input_label = QLabel("Valid handlelength")
+        self.valid_handlelength_input_label.setWordWrap(True)
+        self.valid_handlelength_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_handlelength_input_label.setObjectName("valid_handlelength_input_widget")
+        self.valid_handlelength_input_label.setStyleSheet("""
+            QLabel#valid_handlelength_input_widget{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        self.invalid_handlelength_input_widget = QWidget()
+        self.invalid_handlelength_input_widget.setObjectName("invalid_handlelength_input_widget")
+        self.invalid_handlelength_input_widget.setStyleSheet("""
+            QWidget#invalid_handlelength_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_handlelength_input_label = QLabel("Invalid handlelength")
+        self.invalid_handlelength_input_label.setWordWrap(True)
+        self.invalid_handlelength_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_handlelength_input_label.setObjectName("invalid_handlelength_input_label")
+        self.invalid_handlelength_input_label.setStyleSheet("""
+            QLabel#invalid_handlelength_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_handlelength_input_widget_layout = QVBoxLayout(self.valid_handlelength_input_widget)
+        valid_handlelength_input_widget_layout.addWidget(self.valid_handlelength_input_label)
+        valid_handlelength_input_widget_layout.setSpacing(0)
+        valid_handlelength_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        invalid_handlelength_input_widget_layout = QVBoxLayout(self.invalid_handlelength_input_widget)
+        invalid_handlelength_input_widget_layout.addWidget(self.invalid_handlelength_input_label)
+        invalid_handlelength_input_widget_layout.setSpacing(0)
+        invalid_handlelength_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        #-----Set the height for the widgets-----
+        self.valid_handlelength_input_widget.setMaximumHeight(50)
+        self.invalid_handlelength_input_widget.setMaximumHeight(50)
+
+        #-----Hide the Validity Check Widgets-----
+        self.valid_handlelength_input_widget.hide()
+        self.invalid_handlelength_input_widget.hide()
+
+        #-----Create the handlelength adjustment section-----
+        self.legend_handlelength_adjustment_section = QWidget()
+        self.legend_handlelength_adjustment_section.setObjectName("legend_handlelength_adjustment_section")
+        self.legend_handlelength_adjustment_section.setStyleSheet("""
+            QWidget#legend_handlelength_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+            QLineEdit{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.create_legend_handlelength_adjustment_section()
+
+        #Add the ncol adjustment section to the main widget
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.legend_handlelength_adjustment_section)
+        
+        #Set both the spacing and margins for the main widget to make sure it fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+    
+    def create_legend_handlelength_adjustment_section(self):
+        #Create a layout for the handlelength adjustment section
+        legend_handlelength_adjustment_section_layout = QVBoxLayout(self.legend_handlelength_adjustment_section)
+
+        #Create a line edit object for the user to input the ncol
+        self.handlelength_input = QLineEdit()
+        self.handlelength_input.setPlaceholderText("handlelength: ")
+
+        #Set the height of the line edit object to make it look good
+        self.handlelength_input.setFixedHeight(60)
+
+        #Connect any changes with the text to an update function
+        self.handlelength_input.textChanged.connect(self.change_handlelength)
+
+        #Create a reset handlelength label
+        self.reset_handlelength_label = QLabel("Reset handlelength")
+        self.reset_handlelength_label.setObjectName("reset_handlelength_label")
+        self.reset_handlelength_label.setWordWrap(True)
+        self.reset_handlelength_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_handlelength_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents,True)
+        self.reset_handlelength_label.setStyleSheet("""
+            QLabel#reset_handlelength_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        #Create a reset ncol anchor button and connect the reset function to it
+        self.reset_handlelength_button = QPushButton()
+        self.reset_handlelength_button.setObjectName("reset_handlelength_button")
+        self.reset_handlelength_button.setStyleSheet("""
+            QPushButton#reset_handlelength_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#reset_handlelength_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.reset_handlelength_button.clicked.connect(self.reset_handlelength)
+        self.reset_handlelength_button.setMinimumHeight(50)
+
+        #Add the label onto the button
+        reset_handlelength_button_layout = QVBoxLayout(self.reset_handlelength_button)
+        reset_handlelength_button_layout.addWidget(self.reset_handlelength_label)
+        reset_handlelength_button_layout.setContentsMargins(0,0,0,0)
+        reset_handlelength_button_layout.setSpacing(0)
+
+        #Add the line edit object and validity check widgets to the layout
+        legend_handlelength_adjustment_section_layout.addWidget(self.handlelength_input)
+        legend_handlelength_adjustment_section_layout.addWidget(self.valid_handlelength_input_widget)
+        legend_handlelength_adjustment_section_layout.addWidget(self.invalid_handlelength_input_widget)
+    
+        #Add the margins, spacing, and stretch to the layout to make it look good
+        legend_handlelength_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        legend_handlelength_adjustment_section_layout.setSpacing(10)
+        legend_handlelength_adjustment_section_layout.addStretch()
+
+        #Add the reset ncol button to the layout
+        legend_handlelength_adjustment_section_layout.addWidget(self.reset_handlelength_button)
+
+    def change_to_original_screen(self):
+        pass
+
+    def change_handlelength(self):
+        #Extract the ncol input from the user and remove any excess text from it
+        handlelength_input = self.handlelength_input.text().strip()
+
+        #Hide the validity check widgets if the ncol input is empty
+        if (handlelength_input == ""):
+            self.valid_input_widget.hide()
+            self.invalid_input_widget.hide()
+            return 
+
+        #Only update the ncol value in the json file if the input is valid
+        try:
+            self.handlelength_value = float(handlelength_input)
+            self.valid_handlelength_input_widget.show()
+            self.invalid_handlelength_input_widget.hide()
+        except ValueError:
+            self.valid_handlelength_input_widget.hide()
+            self.invalid_handlelength_input_widget.show()
+        else:
+            self.update_handlelength()
+
+    def reset_handlelength(self):
+        #Clear the input in the QLineEdit Widget
+        self.handlelength_input.clear()
+
+        #Set the handlelength to 2.0 (default value) then update it in the plot config
+        self.handlelength_value = 2.0
+        self.update_handlelength()
+
+    def update_handlelength(self):
+        #Get the newest json entries from the plot manager
+        db = self.plot_manager.get_db()
+
+        #Check if db is empty or not. If it is empty then create a new entry with the ncol value
+        #If the db isn't empty then update the db with the new ncol value.
+        if (db != []):
+            self.plot_manager.update_legend("handlelength",self.handlelength_value)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["handlelength"] = self.handlelength_value
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        #Update the graph
+        self.graph_display.show_graph()
+
+    def mousePressEvent(self, event):
+        #Clear the focus of the input widget if the cursor clicks somewhere else
+        if not self.handlelength_input.geometry().contains(event.position().toPoint()):
+            self.handlelength_input.clearFocus()
+        super().mousePressEvent(event)
+
+class legend_handleheight_adjustment_section(QWidget):
+    def __init__(self, selected_graph, graph_display):
+        super().__init__()
+
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        #Initialize the handleheight value to be 0.7
+        self.handleheight_value = 0.7
+
+        #Set the object name for the widget
+        self.setObjectName("legend_handleheight_adjustment_section")
+
+        #-----Create the Validity Check Widgets-----
+        self.valid_handleheight_input_widget = QWidget()
+        self.valid_handleheight_input_widget.setObjectName("valid_handleheight_input_widget")
+        self.valid_handleheight_input_widget.setStyleSheet("""
+            QWidget#valid_handleheight_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.valid_handleheight_input_label = QLabel("Valid handleheight")
+        self.valid_handleheight_input_label.setWordWrap(True)
+        self.valid_handleheight_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.valid_handleheight_input_label.setObjectName("valid_handleheight_input_widget")
+        self.valid_handleheight_input_label.setStyleSheet("""
+            QLabel#valid_handleheight_input_widget{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        self.invalid_handleheight_input_widget = QWidget()
+        self.invalid_handleheight_input_widget.setObjectName("invalid_handleheight_input_widget")
+        self.invalid_handleheight_input_widget.setStyleSheet("""
+            QWidget#invalid_handleheight_input_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 100, 100, 1),   
+                    stop:0.4 rgba(255, 130, 120, 1), 
+                    stop:0.7 rgba(200, 90, 150, 1), 
+                    stop:1 rgba(180, 60, 140, 1)     
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        self.invalid_handleheight_input_label = QLabel("Invalid handleheight")
+        self.invalid_handleheight_input_label.setWordWrap(True)
+        self.invalid_handleheight_input_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.invalid_handleheight_input_label.setObjectName("invalid_handleheight_input_label")
+        self.invalid_handleheight_input_label.setStyleSheet("""
+            QLabel#invalid_handleheight_input_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        valid_handleheight_input_widget_layout = QVBoxLayout(self.valid_handleheight_input_widget)
+        valid_handleheight_input_widget_layout.addWidget(self.valid_handleheight_input_label)
+        valid_handleheight_input_widget_layout.setSpacing(0)
+        valid_handleheight_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        invalid_handleheight_input_widget_layout = QVBoxLayout(self.invalid_handleheight_input_widget)
+        invalid_handleheight_input_widget_layout.addWidget(self.invalid_handleheight_input_label)
+        invalid_handleheight_input_widget_layout.setSpacing(0)
+        invalid_handleheight_input_widget_layout.setContentsMargins(0,0,0,0)
+
+        #-----Set the height for the widgets-----
+        self.valid_handleheight_input_widget.setMaximumHeight(50)
+        self.invalid_handleheight_input_widget.setMaximumHeight(50)
+
+        #-----Hide the Validity Check Widgets-----
+        self.valid_handleheight_input_widget.hide()
+        self.invalid_handleheight_input_widget.hide()
+
+        #-----Create the handleheight adjustment section-----
+        self.legend_handleheight_adjustment_section = QWidget()
+        self.legend_handleheight_adjustment_section.setObjectName("legend_handleheight_adjustment_section")
+        self.legend_handleheight_adjustment_section.setStyleSheet("""
+            QWidget#legend_handleheight_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+            QLineEdit{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.create_legend_handleheight_adjustment_section()
+
+        #Add the ncol adjustment section to the main widget
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.legend_handleheight_adjustment_section)
+        
+        #Set both the spacing and margins for the main widget to make sure it fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+    
+    def create_legend_handleheight_adjustment_section(self):
+        #Create a layout for the handleheight adjustment section
+        legend_handleheight_adjustment_section_layout = QVBoxLayout(self.legend_handleheight_adjustment_section)
+
+        #Create a line edit object for the user to input the ncol
+        self.handleheight_input = QLineEdit()
+        self.handleheight_input.setPlaceholderText("handleheight_input: ")
+
+        #Set the height of the line edit object to make it look good
+        self.handleheight_input.setFixedHeight(60)
+
+        #Connect any changes with the text to an update function
+        self.handleheight_input.textChanged.connect(self.change_handleheight)
+
+        #Create a reset handleheight label
+        self.reset_handleheight_label = QLabel("Reset handleheight")
+        self.reset_handleheight_label.setObjectName("reset_handleheight_label")
+        self.reset_handleheight_label.setWordWrap(True)
+        self.reset_handleheight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_handleheight_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents,True)
+        self.reset_handleheight_label.setStyleSheet("""
+            QLabel#reset_handleheight_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+
+        #Create a reset handleheight button and connect the reset function to it
+        self.reset_handleheight_button = QPushButton()
+        self.reset_handleheight_button.setObjectName("reset_handleheight_button")
+        self.reset_handleheight_button.setStyleSheet("""
+            QPushButton#reset_handleheight_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#reset_handleheight_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.reset_handleheight_button.clicked.connect(self.reset_handleheight)
+        self.reset_handleheight_button.setMinimumHeight(50)
+
+        #Add the label onto the button
+        reset_handleheight_button_layout = QVBoxLayout(self.reset_handleheight_button)
+        reset_handleheight_button_layout.addWidget(self.reset_handleheight_label)
+        reset_handleheight_button_layout.setContentsMargins(0,0,0,0)
+        reset_handleheight_button_layout.setSpacing(0)
+
+        #Add the line edit object and validity check widgets to the layout
+        legend_handleheight_adjustment_section_layout.addWidget(self.handleheight_input)
+        legend_handleheight_adjustment_section_layout.addWidget(self.valid_handleheight_input_widget)
+        legend_handleheight_adjustment_section_layout.addWidget(self.invalid_handleheight_input_widget)
+    
+        #Add the margins, spacing, and stretch to the layout to make it look good
+        legend_handleheight_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        legend_handleheight_adjustment_section_layout.setSpacing(10)
+        legend_handleheight_adjustment_section_layout.addStretch()
+
+        #Add the reset handleheight button to the layout
+        legend_handleheight_adjustment_section_layout.addWidget(self.reset_handleheight_button)
+
+    def change_to_original_screen(self):
+        pass
+
+    def change_handleheight(self):
+        #Extract the ncol input from the user and remove any excess text from it
+        handleheight_input = self.handleheight_input.text().strip()
+
+        #If the input is empty then hide the validity check widgets
+        if (handleheight_input == ""):
+            self.valid_handleheight_input_widget.hide()
+            self.invalid_handleheight_input_widget.hide()
+            return 
+
+        #Only update the ncol value in the json file if the input is valid
+        try:
+            self.handleheight_value = float(handleheight_input)
+            self.valid_handleheight_input_widget.show()
+            self.invalid_handleheight_input_widget.hide()
+        except ValueError:
+            self.valid_handleheight_input_widget.hide()
+            self.invalid_handleheight_input_widget.show()
+        else:
+            self.update_handleheight()
+
+    def reset_handleheight(self): 
+        #Clear the input in the QLineEdit Widget
+        self.handleheight_input.clear()
+
+        #Set the handleheight to 2 (default value) then update it in the plot config
+        self.handleheight_value = 2.0
+        self.update_handleheight()
+
+    def update_handleheight(self):
+        #Get the newest json entries from the plot manager
+        db = self.plot_manager.get_db()
+
+        #Check if db is empty or not. If it is empty then create a new entry with the ncol value
+        #If the db isn't empty then update the db with the new ncol value.
+        if (db != []):
+            self.plot_manager.update_legend("handleheight",self.handleheight_value)
+        else:
+            plot_parameters = plot_json[self.selected_graph].copy()
+            plot_parameters["legend"]["handleheight"] = self.handleheight_value
+            self.plot_manager.insert_plot_parameter(plot_parameters)
+        #Update the graph
+        self.graph_display.show_graph()
+
+    def mousePressEvent(self, event):
+        #Clear the focus of the input widget if the cursor clicks somewhere else
+        if not self.handleheight_input.geometry().contains(event.position().toPoint()):
+            self.handleheight_input.clearFocus()
+        super().mousePressEvent(event)
+
+class legend_markerfirst_adjustment_section(QWidget):
+    def __init__(self,selected_graph,graph_display):
+        super().__init__()
+
+        self.selected_graph = selected_graph
+        self.graph_display = graph_display
+        self.plot_manager = PlotManager()
+
+        #Initialize the markerfirst state
+        self.markerfirst_state = True
+
+        #Set the object name for the widget
+        self.setObjectName("legend_markerfirst_adjustment_section")
+        
+        #-----Create the legend markerfirst adjustment section-----
+        self.legend_markerfirst_adjustment_section = QWidget()
+        self.legend_markerfirst_adjustment_section.setObjectName("legend_markerfirst_adjustment_section")
+        self.legend_markerfirst_adjustment_section.setStyleSheet("""
+            QWidget#legend_markerfirst_adjustment_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.create_legend_markerfirst_adjustment_section()
 
         #Create a layout for the main widget and store the frameon adjustment section in
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.markerfirst_adjustment_section)
+        main_layout.addWidget(self.legend_markerfirst_adjustment_section)
 
         #Add the spacing and margins to make sure that the section fits nicely
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0,0,0,0)
 
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+    def create_legend_markerfirst_adjustment_section(self):
+        #Create a layout for the legend visibility adjustment section
+        legend_markerfirst_adjustment_section_layout = QVBoxLayout(self.legend_markerfirst_adjustment_section)
 
-    def switch_markerfirst_state(self):
+        #-----Create the legend markefirst label used for the button-----
+        self.legend_markerfirst_label = QLabel("Markerfirst Off")
+        self.legend_markerfirst_label.setWordWrap(True)
+        self.legend_markerfirst_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.legend_markerfirst_label.setObjectName("legend_markerfirst_label")
+        self.legend_markerfirst_label.setStyleSheet("""
+            QLabel#legend_markerfirst_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.legend_markerfirst_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+    
+        #-----Create the legend markerfirst button-----
+        self.legend_markerfirst_button = QPushButton()
+        self.legend_markerfirst_button.setObjectName("legend_markerfirst_button")
+        self.legend_markerfirst_button.setStyleSheet("""
+            QPushButton#legend_markerfirst_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#legend_markerfirst_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.legend_markerfirst_button.setMinimumHeight(50)
+        
+        #-----Connect the button to automatically change the markerfirst state-----
+        self.legend_markerfirst_button.clicked.connect(self.change_legend_markerfist)
+
+        #-----Apply the label onto the button-----
+        legend_markerfirst_button_layout = QVBoxLayout(self.legend_markerfirst_button)
+        legend_markerfirst_button_layout.addWidget(self.legend_markerfirst_label)
+        legend_markerfirst_button_layout.setContentsMargins(0,0,0,0)
+        legend_markerfirst_button_layout.setSpacing(0)
+
+        #Add the button created to the legend visibility adjustment section
+        legend_markerfirst_adjustment_section_layout.addWidget(self.legend_markerfirst_button)
+        legend_markerfirst_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        legend_markerfirst_adjustment_section_layout.addStretch()
+
+    def change_to_original_screen(self):
+        pass
+
+    def change_legend_markerfist(self):
         #Change the frameon_state to be the opposite of the current state and update it in the json
         self.markerfirst_state = not self.markerfirst_state
+        #Change the label displayed on the button to match the visibility state
         if (self.markerfirst_state):
-            self.markerfirst_label.setText("Markerfirst On")
+            self.legend_markerfirst_label.setText("Markerfirst On")
         else:
-            self.markerfirst_label.setText("Markerfirst Off")
+            self.legend_markerfirst_label.setText("Markerfirst Off")
+        #Update the changes made to the plot config
         self.update_markerfirst()
 
     def update_markerfirst(self):
@@ -8717,6 +10948,7 @@ class legend_markerfirst_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["markerfirst"] = self.markerfirst_state
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        #Update the graph display so it displays the new changes
         self.graph_display.show_graph()
 
 class seaborn_legend_adjustment_section(QWidget):
@@ -8724,11 +10956,16 @@ class seaborn_legend_adjustment_section(QWidget):
         super().__init__()
 
         self.plot_manager = PlotManager()
-
         self.selected_graph = selected_graph
         self.graph_display = graph_display
 
-        #Create a section to display the seaborn legend section and style it
+        #Store the loc buttons created in a list and list out the possible positions
+        self.available_sns_legend_arguments = ["auto","brief","full","False"]
+
+        #Initialize Seaborn Legend Argument
+        self.sns_legend_argument_name = "auto"
+
+        #-----Create the Seaborn Legend Adjustment Section-----
         self.sns_legend_adjustment_section = QWidget()
         self.sns_legend_adjustment_section.setObjectName("sns_legend_adjustment_section")
         self.sns_legend_adjustment_section.setStyleSheet("""
@@ -8743,14 +10980,6 @@ class seaborn_legend_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-
-        #Store the loc buttons created in a list and list out the possible positions
-        self.available_sns_legend_arguments = ["brief","full","True","False"]
-
-        #Use a index to control the current location of the legend
-        self.sns_legend_argument_name = self.available_sns_legend_arguments[0]
-
-        #Create the seaborn legend parameter section
         self.create_sns_legend_parameter_section()
 
         #Add the legend loc adjustment section to the main widget to display on the other QDialog
@@ -8759,17 +10988,20 @@ class seaborn_legend_adjustment_section(QWidget):
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0,0,0,0)
 
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-
     def create_sns_legend_parameter_section(self):
+        #Create the layout for the sns legend parameter
         sns_legend_parameter_layout = QVBoxLayout(self.sns_legend_adjustment_section)
     
+        #Create a list view for the section and create a model with the legend parameters
         self.sns_legend_list_view = QListView()
         self.sns_legend_parameter_model = QStringListModel(self.available_sns_legend_arguments)
 
+        #Add the model with the legend parameters to the list view 
+        #Ban the user from being able to edit it
         self.sns_legend_list_view.setModel(self.sns_legend_parameter_model)
-        self.sns_legend_list_view.setObjectName("sns_legend_list_view")
         self.sns_legend_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        #Customizations for the list view
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -8778,8 +11010,11 @@ class seaborn_legend_adjustment_section(QWidget):
                 option.font = font
                 super().paint(painter, option, index)
         
+        #Apply the customization to the list view
         self.sns_legend_list_view.setItemDelegate(CustomDelegate())
-
+        
+        #Give the list view a name and edit the item, background, select and hover effect
+        self.sns_legend_list_view.setObjectName("sns_legend_list_view")
         self.sns_legend_list_view.setStyleSheet("""
             QListView#sns_legend_list_view{
                 background: qlineargradient(
@@ -8833,35 +11068,47 @@ class seaborn_legend_adjustment_section(QWidget):
             }
         """)
 
+        #Control the scroll bar for the list view and add spacing between each item
         self.sns_legend_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.sns_legend_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.sns_legend_list_view.setSpacing(3)
 
+        #Connect the list view to automatically update the selected item 
         self.sns_legend_list_view.clicked.connect(self.change_sns_legend_parameter)
 
+        #Add the list view to the layout
         sns_legend_parameter_layout.addWidget(self.sns_legend_list_view)
 
         # Add margins and spacing to make it look good and push content to the top
         sns_legend_parameter_layout.setContentsMargins(10, 10, 10, 10)
 
+    def change_to_original_screen(self):
+        pass
+
     def change_sns_legend_parameter(self,index):
+        #Change the legend parameter to the one selected by the user based on the index and update it
         self.sns_legend_argument_name = self.sns_legend_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
         
-        if (self.sns_legend_argument_name == "True"):
-            self.sns_legend_argument_name = True
+        #If the parameter chosen is False turn it into the bool form
         if (self.sns_legend_argument_name == "False"):
             self.sns_legend_argument_name = False
 
+        #Update it in the plot config
         self.update_legend_argument()
 
     def update_legend_argument(self):
+        #Get the newest plot config from the plot config json
         db = self.plot_manager.get_db()
+
+        #if there is a plot config then update it in the newest plot config
         if (db != []):
             self.plot_manager.update_seaborn_legend("legend",self.sns_legend_argument_name)
+        #if there is no plot config available then create a new one with the default and add the new value in
         else:
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["seaborn_legends"]["legend"] = self.sns_legend_argument_name
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        #Update the graph with the newest plot config
         self.graph_display.show_graph()
 
 class seaborn_legend_off_adjustment_section(QWidget):
@@ -8872,10 +11119,12 @@ class seaborn_legend_off_adjustment_section(QWidget):
         self.plot_manager = PlotManager()
         self.graph_display = graph_display
 
-        #Initialize the frameon state
-        self.sns_legend_off_state = True
+        #Initialize the legend off state
+        self.sns_legend_off_state = False
+
+        self.setObjectName("sns_legend_off_adjustment_section")    
         
-        #Create a widget to display the frameon adjustment section and style it for consistency
+        #-----Create the Seaborn Legend Off Adjustment Section-----
         self.sns_legend_off_adjustment_section = QWidget()
         self.sns_legend_off_adjustment_section.setObjectName("sns_legend_off_adjustment_section")
         self.sns_legend_off_adjustment_section.setStyleSheet("""
@@ -8890,7 +11139,19 @@ class seaborn_legend_off_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
+        self.create_sns_legend_off_adjustment_section()
 
+        #Create a layout for the main widget and store the frameon adjustment section in
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.sns_legend_off_adjustment_section)
+
+        #Add the spacing and margins to make sure that the section fits nicely
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0,0,0,0)
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+    def create_sns_legend_off_adjustment_section(self):
         #Create a label to put on top of the QPushButton
         self.sns_legend_off_label = QLabel("Legend Off")
         self.sns_legend_off_label.setWordWrap(True)
@@ -8947,7 +11208,7 @@ class seaborn_legend_off_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.sns_legend_off_button.setMinimumHeight(45)
+        self.sns_legend_off_button.setMinimumHeight(50)
         
         #Put the label on top of the button we created for control frameon
         sns_legend_off_button_layout = QVBoxLayout(self.sns_legend_off_button)
@@ -8956,36 +11217,32 @@ class seaborn_legend_off_adjustment_section(QWidget):
         sns_legend_off_button_layout.setSpacing(0)
 
         #Connect the frameon button to a function to switch between the two states
-        self.sns_legend_off_button.clicked.connect(self.switch_sns_legend_off_state)
+        self.sns_legend_off_button.clicked.connect(self.change_sns_legend_off_state)
 
         #Create a button layout for the frameon adjustment section
-        button_layout = QVBoxLayout(self.sns_legend_off_adjustment_section)
+        sns_legend_off_adjustment_section_layout = QVBoxLayout(self.sns_legend_off_adjustment_section)
 
         #Add the frameon button to the layout
-        button_layout.addWidget(self.sns_legend_off_button)
+        sns_legend_off_adjustment_section_layout.addWidget(self.sns_legend_off_button)
 
         #Set the spacing, margins, and stretch to make it look good
-        button_layout.setSpacing(0)
-        button_layout.setContentsMargins(10,10,10,10)
-        button_layout.addStretch()
+        sns_legend_off_adjustment_section_layout.setSpacing(0)
+        sns_legend_off_adjustment_section_layout.setContentsMargins(10,10,10,10)
+        sns_legend_off_adjustment_section_layout.addStretch()
 
-        #Create a layout for the main widget and store the frameon adjustment section in
-        main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.sns_legend_off_adjustment_section)
+    def change_to_original_screen(self):
+        pass
 
-        #Add the spacing and margins to make sure that the section fits nicely
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0,0,0,0)
-
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-
-    def switch_sns_legend_off_state(self):
-        #Change the frameon_state to be the opposite of the current state and update it in the json
+    def change_sns_legend_off_state(self):
+        #Change the legend_off to be the opposite of the current state and update it in the json
         self.sns_legend_off_state = not self.sns_legend_off_state
         if (self.sns_legend_off_state):
+            #Set the text to Legend Off if the state is true
             self.sns_legend_off_label.setText("Legend Off")
         else:
+            #Set the text to Legend On if the state is false
             self.sns_legend_off_label.setText("Legend On")
+        #Update the frameon state on the plot config
         self.update_sns_legend_off()
 
     def update_sns_legend_off(self):
@@ -8998,11 +11255,13 @@ class seaborn_legend_off_adjustment_section(QWidget):
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["seaborn_legends"]["legend_off"] = self.sns_legend_off_state
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        #Update the graph
         self.graph_display.show_graph()
 
 class seaborn_legend_markers_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
+        
         self.selected_graph = selected_graph
         self.graph_display = graph_display
         self.plot_manager = PlotManager()
@@ -9014,7 +11273,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
         try:
             self.style_value = pd.read_csv("./dataset/user_dataset.csv")[self.plot_manager.get_db()["style"]].unique()
             self.style_value_count = len(self.style_value)
-        except:
+        except FileNotFoundError or KeyError:
             self.style_value = []
             self.style_value_count = 0
 
@@ -9399,8 +11658,9 @@ class seaborn_legend_markers_adjustment_section(QWidget):
         main_layout.setContentsMargins(0,0,0,0)
 
         #-----Keyboard Shortcuts-----
-        previous_screen_shortcut = QShortcut(QKeySequence("left"),self)
-        previous_screen_shortcut.activated.connect(self.change_to_home_screen)
+        previous_screen_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left),self)
+        previous_screen_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
+        previous_screen_shortcut.activated.connect(self.change_to_original_screen)
 
     def create_select_single_markers_screen(self):
         select_single_markers_screen_layout = QVBoxLayout(self.select_single_markers_screen)
@@ -9778,7 +12038,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
         dictionary_marker_value_section_layout.setSpacing(10)
         dictionary_marker_value_section_layout.addStretch()
 
-    def change_to_home_screen(self):
+    def change_to_original_screen(self):
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 0
         self.available_screens[self.current_screen_idx].show()
@@ -9850,16 +12110,10 @@ class seaborn_legend_markers_adjustment_section(QWidget):
         db = self.plot_manager.get_db()
         markers = self.markers
         if (db != []):
-            try:
-                markers = [item.text() for item in self.markers]
-            except:
-                pass
+            markers = [item.text() for item in self.markers]
             self.plot_manager.update_seaborn_legend("markers",markers)
         else:
-            try:
-                markers = [item.text() for item in self.markers if isinstance(item,str)]
-            except:
-                pass
+            markers = [item.text() for item in self.markers if isinstance(item,str)]
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["legend"]["seaborn_legends"]["markers"] = markers
             self.plot_manager.insert_plot_parameter(plot_parameters)
@@ -9870,16 +12124,15 @@ class seaborn_legend_markers_adjustment_section(QWidget):
         self.markers_dictionary = {style:"o" for style in self.style_value}
 
     def showEvent(self,event):
-        super().showEvent(event)
-
         try:
             self.style_value = pd.read_csv("./dataset/user_dataset.csv")[self.plot_manager.get_db()["style"]].unique()
-        except:
+        except FileNotFoundError or KeyError:
             self.style_value = []
         self.style_value_count = len(self.style_value)
         self.multiple_select_markers_list_widget.clearSelection()
         self.reset_marker_selection()
-        self.change_to_home_screen()
+        self.change_to_original_screen()
+        super().showEvent(event)
 
 class seaborn_legend_dashes_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
@@ -11014,10 +13267,12 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
         main_layout.setContentsMargins(0,0,0,0)
 
         #-----Keyboard Shortcuts-----
-        previous_screen_shortcut = QShortcut(QKeySequence("left"),self)
+        previous_screen_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left),self)
+        previous_screen_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         previous_screen_shortcut.activated.connect(self.change_to_previous_screen)
 
-        enter_custom_dashes_shortcut = QShortcut(QKeySequence("Return"),self)
+        enter_custom_dashes_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Return),self)
+        enter_custom_dashes_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         enter_custom_dashes_shortcut.activated.connect(self.add_new_custom_dashes)
 
     def create_select_single_premade_dashes_screen(self):
@@ -11537,7 +13792,7 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
         select_dictionary_custom_dashes_screen_layout.setSpacing(10)
         select_dictionary_custom_dashes_screen_layout.addStretch()
 
-    def change_to_home_screen(self):
+    def change_to_original_screen(self):
         self.available_screens[self.current_screen_idx].hide()
         self.current_screen_idx = 0
         self.available_screens[self.current_screen_idx].show()
@@ -11822,7 +14077,7 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
     def showEvent(self,event):
         super().showEvent(event)
         self.reset_dashes_selection()
-        self.change_to_home_screen()
+        self.change_to_original_screen()
 
 class seaborn_legend_size_order_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
@@ -11941,6 +14196,9 @@ class seaborn_legend_size_order_adjustment_section(QWidget):
         # Add margins and spacing to make it look good and push content to the top
         size_order_adjustment_screen_layout.setContentsMargins(10, 10, 10, 10)
 
+    def change_to_original_screen(self):
+        pass
+
     def update_size_order(self):
         self.size_order = [self.size_order_listwidget.item(i).text() for i in range(self.size_order_listwidget.count())]
         db = self.plot_manager.get_db()
@@ -11993,7 +14251,7 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
             }
         """)
 
-        self.hue_order_warning_label = QLabel("Invalid Hue for Hue Order")
+        self.hue_order_warning_label = QLabel("No Hue Available")
         self.hue_order_warning_label.setObjectName("hue_order_warning_label")
         self.hue_order_warning_label.setStyleSheet("""
             QLabel#hue_order_warning_label{
@@ -12014,7 +14272,7 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
         hue_order_warning_layout.setSpacing(0)
         hue_order_warning_layout.setContentsMargins(0,0,0,0)
 
-        self.hue_order_warning_widget.setMinimumHeight(70)
+        self.hue_order_warning_widget.setMinimumHeight(60)
         self.hue_order_warning_widget.hide()
 
         #-----Get the Hue Values-----
@@ -12126,6 +14384,9 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
         main_layout.setContentsMargins(0,0,0,0)
         main_layout.setSpacing(0)
 
+    def change_to_original_screen(self):
+        pass
+
     def update_hue_order(self):
         self.hue_order = [self.hue_order_listwidget.item(i).text() for i in range(self.hue_order_listwidget.count())]
         db = self.plot_manager.get_db()
@@ -12142,7 +14403,7 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
         if (db != []):
             dataset = pd.read_csv("./dataset/user_dataset.csv")
             hue_parameter = db["hue"][0]
-            if (hue_parameter == None):
+            if (hue_parameter is None):
                 self.hue_order_warning_widget.show()
                 return []
             if ("self.dataset" in hue_parameter):
@@ -12281,6 +14542,9 @@ class seaborn_legend_style_order_adjustment_section(QWidget):
         # Add margins and spacing to make it look good and push content to the top
         style_order_adjustment_screen_layout.setContentsMargins(10, 10, 10, 10)
 
+    def change_to_original_screen(self):
+        pass
+
     def update_style_order(self):
         self.style_order = [self.style_order_listwidget.item(i).text() for i in range(self.style_order_listwidget.count())]
         db = self.plot_manager.get_db()
@@ -12296,8 +14560,8 @@ class seaborn_legend_style_order_adjustment_section(QWidget):
         db = self.plot_manager.get_db()
         if (db != []):
             dataset = pd.read_csv("./dataset/user_dataset.csv")
-            size_parameter = db["style"]
-            if (size_parameter == None):
+            size_parameter = db["size"]
+            if (size_parameter is None):
                 return []
             return dataset[size_parameter].unique()
         else:
@@ -12311,6 +14575,8 @@ class legend_button(QDialog):
     def __init__(self,selected_graph, graph_display):
         super().__init__()
         self.setWindowTitle("Customize Legend")
+
+        self.setObjectName("legend_screen")
 
         self.selected_graph = selected_graph
         self.graph_display = graph_display
@@ -12375,7 +14641,6 @@ class legend_button(QDialog):
         #Place the buttons and the dataset next to each other side by side
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.legend_parameters_section,stretch=1)
-        self.layout.setContentsMargins(15,15,15,15)
         self.layout.addSpacing(10)
         
         #Add the parameters screen to the layout
@@ -12389,15 +14654,18 @@ class legend_button(QDialog):
         self.available_screens.get(self.legend_parameters[self.current_screen_idx]).show()
 
         #Create a shortcut for the user to go to the previous column by press up
-        up_shortcut = QShortcut(QKeySequence("up"), self) 
+        up_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Up), self) 
+        up_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         up_shortcut.activated.connect(self.columns_go_up)  
 
         #Create a shortcut for the user to go to the next column by press down
-        down_shortcut = QShortcut(QKeySequence("down"), self) 
+        down_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Down), self) 
+        down_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         down_shortcut.activated.connect(self.columns_go_down)
 
         #Create a shortcut for the user to close the dialog window
-        close_shortcut = QShortcut(QKeySequence("ESC"), self) 
+        close_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape), self) 
+        close_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         close_shortcut.activated.connect(self.close_application)
 
         #Make sure this gets drawn.
@@ -12492,8 +14760,15 @@ class legend_button(QDialog):
 
     def change_current_parameter_screen(self,index):
         current_screen_name = self.legend_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
-        self.available_screens.get(self.legend_parameters[self.current_screen_idx]).hide()
-        self.available_screens.get(current_screen_name).show()
+        current_screen = self.available_screens.get(self.legend_parameters[self.current_screen_idx])
+        new_screen = self.available_screens.get(current_screen_name)
+
+        if (current_screen == new_screen):
+            current_screen.change_to_original_screen()
+
+        current_screen.hide()
+        new_screen.show()
+
         self.current_screen_idx = index.row()
     
     def columns_go_up(self):
@@ -13304,7 +15579,8 @@ class grid_color_adjustment_section(QWidget):
         main_layout.setSpacing(0)
 
         #-----Shortcuts-----
-        original_screen_shortcut = QShortcut(QKeySequence("left"),self)
+        original_screen_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left),self)
+        original_screen_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         original_screen_shortcut.activated.connect(self.change_to_original_screen)
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
@@ -14030,10 +16306,10 @@ class grid_color_adjustment_section(QWidget):
         try: 
             grayscale_value = float(grayscale_value)
             if (0 > grayscale_value or grayscale_value > 1):
-                raise Exception
+                raise ValueError
             self.grayscale_valid_input_widget.show()
             self.grayscale_invalid_input_widget.hide()
-        except:
+        except ValueError:
             self.grayscale_valid_input_widget.hide()
             self.grayscale_invalid_input_widget.show()
 
@@ -14457,7 +16733,8 @@ class grid_linestyle_adjustment_section(QWidget):
         main_layout.setSpacing(0)
 
         #-----Keyboard Shortcut-----
-        home_screen_shortcut = QShortcut(QKeySequence("left"),self)
+        home_screen_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left),self)
+        home_screen_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         home_screen_shortcut.activated.connect(self.change_to_home_screen)
 
     def create_premade_linestyle_screen(self):
@@ -15835,19 +18112,19 @@ class grid_button(QDialog):
         self.available_screens.get(self.grid_parameters[self.current_screen_idx]).show()
 
         #Create a shortcut for the user to go to the previous column by press up
-        up_shortcut = QShortcut(QKeySequence("up"), self) 
+        up_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Up), self) 
+        up_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         up_shortcut.activated.connect(self.columns_go_up)  
 
         #Create a shortcut for the user to go to the next column by press down
-        down_shortcut = QShortcut(QKeySequence("down"), self) 
+        down_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Down), self) 
+        down_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         down_shortcut.activated.connect(self.columns_go_down)
 
         #Create a shortcut for the user to close the dialog window
-        close_shortcut = QShortcut(QKeySequence("ESC"), self) 
+        close_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape), self) 
+        close_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         close_shortcut.activated.connect(self.close_application)
-
-        #Make sure this gets drawn.
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         
     def create_grid_parameter_buttons(self):
         grid_parameter_button_layout = QVBoxLayout(self.grid_parameters_section)
@@ -16908,12 +19185,13 @@ class hue_button(QDialog):
         main_layout.setSpacing(20)
 
         #-----Shortcuts-----
-        previous_screen_shortcut = QShortcut(QKeySequence("left"),self)
+        previous_screen_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left),self)
+        previous_screen_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         previous_screen_shortcut.activated.connect(self.change_to_previous_screen)
 
-        close_screen_shortcut = QShortcut(QKeySequence("Esc"),self)
+        close_screen_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape),self)
+        close_screen_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         close_screen_shortcut.activated.connect(self.close_dialog)
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
     def get_categorical_columns(self):
         columns = self.dataset.select_dtypes(include=["category","object","string","bool"]).columns
@@ -18580,7 +20858,8 @@ class style_button(QDialog):
         main_layout.setContentsMargins(15,15,15,15)
 
         #-----Keyboard Shortcut-----
-        close_screen_shortcut = QShortcut(QKeySequence("Esc"),self)
+        close_screen_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape),self)
+        close_screen_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         close_screen_shortcut.activated.connect(self.close_dialog)
 
     def create_style_parameter_button(self):
@@ -19361,7 +21640,8 @@ class size_button(QDialog):
         main_layout.setContentsMargins(15,15,15,15)
 
         #-----Keyboard Shortcut-----
-        close_screen_shortcut = QShortcut(QKeySequence("Esc"),self)
+        close_screen_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape),self)
+        close_screen_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         close_screen_shortcut.activated.connect(self.close_dialog)
 
     def create_size_parameter_button(self):
@@ -20523,10 +22803,12 @@ class palette_button(QDialog):
         main_layout.setSpacing(20)
 
         #-----Keyboard Shortcut-----
-        close_screen_shortcut = QShortcut(QKeySequence("Esc"),self)
+        close_screen_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape),self)
+        close_screen_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         close_screen_shortcut.activated.connect(self.close_dialog)
 
-        new_custom_list_palette_shortcut = QShortcut(QKeySequence("Return"),self)
+        new_custom_list_palette_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Return),self)
+        new_custom_list_palette_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         new_custom_list_palette_shortcut.activated.connect(self.new_custom_list_palette)
         
     def create_palette_parameter_button(self):
@@ -22241,8 +24523,9 @@ class alpha_button(QDialog):
         main_layout.setSpacing(20)
 
         #-----Keyboard Shortcut-----
-        self.esc_shortcut = QShortcut(QKeySequence("esc"),self)
-        self.esc_shortcut.activated.connect(self.close_dialog)
+        esc_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape),self)
+        esc_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
+        esc_shortcut.activated.connect(self.close_dialog)
 
     def create_alpha_parameter_button(self):
         alpha_parameter_button_layout = QVBoxLayout(self.alpha_parameter_section)
@@ -22612,8 +24895,9 @@ class marker_button(QDialog):
         main_layout.setSpacing(20)
 
         #-----Keyboard Shortcut-----
-        self.esc_shortcut = QShortcut(QKeySequence("esc"),self)
-        self.esc_shortcut.activated.connect(self.close_dialog)
+        esc_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape),self)
+        esc_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
+        esc_shortcut.activated.connect(self.close_dialog)
 
     def create_marker_parameter_button(self):
         marker_parameter_button_layout = QVBoxLayout(self.marker_parameter_section)
@@ -23186,8 +25470,9 @@ class s_button(QDialog):
         main_layout.setSpacing(20)
 
         #-----Keyboard Shortcut-----
-        self.esc_shortcut = QShortcut(QKeySequence("esc"),self)
-        self.esc_shortcut.activated.connect(self.close_dialog)
+        esc_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape),self)
+        esc_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
+        esc_shortcut.activated.connect(self.close_dialog)
 
     def create_s_parameter_button(self):
         s_parameter_button_layout = QVBoxLayout(self.s_parameter_section)
@@ -23933,7 +26218,8 @@ class edgecolor_button(QDialog):
         main_layout.setSpacing(20)
 
         #-----Keyboard Shortcut-----
-        close_screen_shortcut = QShortcut(QKeySequence("Esc"),self)
+        close_screen_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape),self)
+        close_screen_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         close_screen_shortcut.activated.connect(self.close_dialog)
         
     def create_edgecolor_parameter_section(self):
