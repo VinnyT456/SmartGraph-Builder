@@ -1,6 +1,8 @@
 import os 
 import sys
 
+from PyQt6.QtCore import QTimer
+from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
 )
@@ -74,10 +76,13 @@ class MainWindow(QMainWindow):
 
         window.setStyleSheet("""
             QWidget#MainWindow {
-                    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #7f9cf5, stop:0.5 #b299f8, stop:1 #a15ee0);
-                }
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #7f9cf5, stop:0.5 #b299f8, stop:1 #a15ee0);
+            }
         """)
         self.setCentralWidget(window)
+
+        esc_shortcut = QShortcut(QKeySequence("esc"),self)
+        esc_shortcut.activated.connect(self.close)
 
         #Check that the dataset folder is empty
         folder_path = 'dataset'
@@ -86,10 +91,19 @@ class MainWindow(QMainWindow):
                 file_path = f"{folder_path}/{file}"
                 os.remove(file_path)
 
+    def center_window(self):
+        screen = self.screen()
+        screen_geometry = screen.availableGeometry()
+        window_geometry = self.frameGeometry()
+        window_geometry.moveCenter(screen_geometry.center())
+        self.move(window_geometry.topLeft())
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        QTimer.singleShot(0, self.center_window)
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
     app.exec()
-
-

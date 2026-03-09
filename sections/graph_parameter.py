@@ -17,7 +17,7 @@ SEABORN_PLOTS = {
         "y-axis_data_type":["float"],
         "parameters":["x-axis","y-axis","axis title","title",
                     "legend","grid","hue", "style", "size", 
-                    "palette","alpha", "marker", "s", "edgecolor"]
+                    "palette","alpha", "marker", "s", "edgecolor","a","b"]
     },
     "Line Plot":{
         "Image":"sample_graphs/line_plot.png",
@@ -255,7 +255,8 @@ class graph_parameter_table(QWidget):
             
             instance = self.dialogs.get(name)
             if (isinstance(instance,QDialog)):
-                instance.exec()
+                instance.setModal(True)  
+                instance.show()
         
         #Get the parameters based on the selected graph and module
         self.parameters = SEABORN_PLOTS[selected_graph].get("parameters",[])
@@ -267,13 +268,36 @@ class graph_parameter_table(QWidget):
         self.buttons.clear()
 
         #Display a total of 14 buttons in 7 rows and 2 columns
-        for row in range(7):
+        for row in range(8):
             for col in range(2):
-                #Get the button name and function then connect it to the button itself
-                button_name = self.parameters[row*2+col]
+                button_name = str(self.parameters[row*2+col])
+
+                '''button_label = QLabel(button_name)
+                button_label.setObjectName("button_label")
+                button_label.setStyleSheet("""
+                    QLabel#button_label{
+                        font-family: "SF Pro Display";
+                        font-weight: 600;
+                        font-size: 24px;
+                        padding: 6px;
+                        color: black;
+                        border: none;
+                        background: transparent;
+                    }
+                """)
+                button_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                button_label.setWordWrap(True)'''
+
                 button_function = self.button_collections.get(button_name,'')
                 button = QPushButton(button_name)
+                button.setObjectName(button_name)
                 button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+                '''layout = QVBoxLayout(button)
+                layout.addWidget(button_label)
+                layout.setContentsMargins(0,0,0,0)
+                layout.setSpacing(0) '''
+
                 if (button_function):
                     button.clicked.connect(lambda checked=False, name=button_name, func=button_function: handle_button_function(name,func))
 
@@ -282,13 +306,10 @@ class graph_parameter_table(QWidget):
                 self.buttons.append(button)
 
         #Control how much space each button covers
-        for row in range(7):
+        for row in range(8):
             self.layout.setRowStretch(row, 1)
         for col in range(2):
             self.layout.setColumnStretch(col, 1)
-
-        #Make sure that the table is properly drawn on the main window
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
 class select_graph_module(QPushButton):
     def __init__(self):
@@ -306,6 +327,8 @@ class select_graph_module(QPushButton):
             );
             color: #c8f7ff;
         """)
+        
+        self.setObjectName("select_graph_module")
 
         #Specify the possible modules
         self.graph_module = ["Seaborn","Plotly"]
@@ -355,17 +378,20 @@ class select_graph_module(QPushButton):
             graph_module = self.graph_module[self.graph_module_idx]
 
 class select_graph_window(QDialog):
-    def __init__(self,available_graphs,graph_images,graph_parameter_table):
+    def __init__(self,available_graphs,graph_images,graph_parameter_table,select_graph_button):
         super().__init__()
 
         self.available_graphs = available_graphs
         self.graph_images = graph_images
         self.graph_parameter_table = graph_parameter_table
+        self.select_graph_button = select_graph_button
 
         #Initialize the size and title of the window
         self.setWindowTitle("Select Your Graph")
         self.setFixedHeight(600)
         self.setFixedWidth(700)
+
+        self.setObjectName("select_graph_window")
 
         #Customized the window
         self.setStyleSheet("""
@@ -456,7 +482,8 @@ class select_graph_window(QDialog):
         self.select_button.setObjectName("Select_Button")
 
         #Create a shortcut to let the user choose by pressing enter
-        enter_shortcut = QShortcut(QKeySequence("Return"), self) 
+        enter_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Return), self) 
+        enter_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         enter_shortcut.activated.connect(self.select_button.click)  
 
         self.select_button.setStyleSheet("""
@@ -493,7 +520,8 @@ class select_graph_window(QDialog):
         self.previous_graph.setObjectName("Previous_Graph")
 
         #Create a shortcut to let the user go to the previous graph with the left key
-        left_shortcut = QShortcut(QKeySequence("Left"), self) 
+        left_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left), self) 
+        left_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         left_shortcut.activated.connect(self.previous_graph.click)
 
         self.previous_graph.setStyleSheet("""
@@ -535,7 +563,8 @@ class select_graph_window(QDialog):
         self.next_graph = QPushButton()
 
         #Create a shortcut to let the user go to the next graph with the right key
-        right_shortcut = QShortcut(QKeySequence("Right"), self) 
+        right_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Right), self) 
+        right_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         right_shortcut.activated.connect(self.next_graph.click)
 
         self.next_graph.setObjectName("Next_Graph")
@@ -626,6 +655,13 @@ class select_graph_window(QDialog):
         #Update the selected graph variable, display the associated parameter buttons, and close the window.
         global selected_graph
         selected_graph = self.available_graphs[idx]
+        self.select_graph_button.label.setText(selected_graph)
+        self.select_graph_button.label.setStyleSheet("""
+            font-family: "SF Pro Display";
+            font-weight: 600;
+            font-size: 18px;
+            border-radius: 16px;
+        """)
         self.graph_parameter_table.update_parameter_buttons()
         self.close() 
 
@@ -654,6 +690,8 @@ class select_graph(QPushButton):
         """)
 
         self.graph_parameter_table = graph_parameter_table
+
+        self.setObjectName("select_graph")
     
         #Create a seperate label for the text to ensure the format is correct
         self.label = QLabel("Select Type of Graph")
@@ -686,16 +724,14 @@ class select_graph(QPushButton):
             graph_images = [i["Image"] for i in list(SEABORN_PLOTS.values())]
 
             #Open a select graph window for the user to choose what graph they wanna plot
-            select_graph_window(list(SEABORN_PLOTS.keys()),graph_images,self.graph_parameter_table).exec()
-            #Check if the user selected a graph yet, if yes then replace the label with the graph
-            if (selected_graph != ''):
-                self.label.setText(selected_graph)
-                self.label.setStyleSheet("""
-                    font-family: "SF Pro Display";
-                    font-weight: 600;
-                    font-size: 18px;
-                    border-radius: 16px;
-                """) 
+            self.graph_window = select_graph_window(
+                list(SEABORN_PLOTS.keys()),
+                graph_images,
+                self.graph_parameter_table,
+                self
+            )
+            self.graph_window.setModal(True)   
+            self.graph_window.show() 
 
 class GraphParameter_TopBar(QWidget):
     def __init__(self,graph_parameter_table):

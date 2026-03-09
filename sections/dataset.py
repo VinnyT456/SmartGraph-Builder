@@ -245,8 +245,8 @@ class PrepareDataset(QAbstractTableModel):
 
     def setHeaderData(self, section, orientation, value, role=Qt.ItemDataRole.EditRole):
         if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.EditRole:
-            old_name = self._df.columns[section]
-            self._df.rename(columns={old_name: value}, inplace=True)
+            old_name = self.df.columns[section]
+            self.df.rename(columns={old_name: value}, inplace=True)
             self.headerDataChanged.emit(orientation, section, section)
             return True
         return False
@@ -317,15 +317,16 @@ class import_replace_dataset_button(QPushButton):
     def __init__(self,dataset_table):
         super().__init__()
         self.dataset_table = dataset_table
+        self.setObjectName("import_dataset")
         self.setStyleSheet("""
             background: qlineargradient(
-                        x1:0, y1:1,
-                        x2:0, y2:0,
-                        stop:0.02 rgba(131, 125, 255, 1),
-                        stop:0.36 rgba(97, 97, 255, 1),
-                        stop:0.66 rgba(31, 162, 255, 1),
-                        stop:1 rgba(0, 212, 255, 1)
-                    );
+                x1:0, y1:1,
+                x2:0, y2:0,
+                stop:0.02 rgba(131, 125, 255, 1),
+                stop:0.36 rgba(97, 97, 255, 1),
+                stop:0.66 rgba(31, 162, 255, 1),
+                stop:1 rgba(0, 212, 255, 1)
+            );
             color: #c8f7ff;
         """)
 
