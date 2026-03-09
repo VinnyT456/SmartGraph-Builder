@@ -65,7 +65,6 @@ class graph_generator(QWidget):
 
         self.default_graph_legend_parameters = self.default_graph_parameters[self.graph_type].get("legend")
         self.default_graph_legend_parameters.pop("seaborn_legends",None)
-        self.default_graph_legend_parameters.pop("visible",None)
         self.default_graph_legend_parameters.pop("label",None)
 
         self.hue_mapping = self.current_graph_parameters["hue"][1]
@@ -177,56 +176,58 @@ class graph_generator(QWidget):
         self.graph_legend_parameters["labelcolor"] = labelcolor_argument
         self.graph_grid_parameter["color"] = grid_color_argument
 
-    def set_legend(self,graph,legend_visibility,graph_label):
-        if (legend_visibility and not graph_label.startswith("_")):
-            if graph.legend_:
-                graph.legend_.remove()
-            for artist in graph.get_children():
-                try:
-                    artist.set_label(graph_label)
-                except:
-                    pass
-            legend = graph.legend(**self.graph_legend_parameters)
-            legend.set_visible(legend_visibility)
-        else:
-            legend = None
+    def set_legend(self, graph):
+        graph_legend_parameter_copy = self.graph_legend_parameters.copy()
+        graph_label = graph_legend_parameter_copy.pop("label")
+        legend_visibility = graph_legend_parameter_copy.pop("visible")
 
-    def set_hue_legend(self,legend):
-        legend_parameters = {
-            "loc": lambda val: legend.set_loc(val),
-            "bbox_to_anchor": lambda val: legend.set_bbox_to_anchor(val),
-            "ncol": lambda val: setattr(legend, "_ncol", val),  # internal, but works
-            "fontsize": lambda val: [text.set_fontsize(val) for text in legend.get_texts()],
-            "title": lambda val: legend.set_title(val),
-            "title_fontsize": lambda val: legend.get_title().set_fontsize(val),
-            "frameon": lambda val: legend.set_frame_on(val),
-            "facecolor": lambda val: legend.get_frame().set_facecolor(val),
-            "edgecolor": lambda val: legend.get_frame().set_edgecolor(val),
-            "framealpha": lambda val: legend.get_frame().set_alpha(val),
-            "shadow": lambda val: legend.set_shadow(val),
-            "fancybox": lambda val: legend.get_frame().set_boxstyle("round" if val else "square"),
-            "borderpad": lambda val: legend.get_frame().set_boxstyle(f"round,pad={val}"),
-            "labelcolor": lambda val: [text.set_color(val) for text in legend.get_texts()],
-            "alignment": lambda val: setattr(legend._legend_box, "align", val),
-            "columnspacing": lambda val: setattr(legend._legend_box, "sep", val),
-            "handletextpad": lambda val: setattr(legend._legend_handle_box, "sep", val),
-            "borderaxespad": lambda val: legend.get_frame().set_pad(val),
-            "handlelength": lambda val: [handle.set_markersize(val) for handle in legend.legendHandles],
-            "handleheight": lambda val: None,
-            "markerfirst": lambda val: setattr(legend._legend_handle_box, "markerfirst", val)
-        }
+        legend = graph.get_legend()
 
-        for (parameter,value),default_value in zip(self.graph_legend_parameters.items(),self.default_graph_legend_parameters.values()):
-            try:
-                if (value != default_value):
-                    legend_parameters[parameter](value)
-            except:
-                continue
+        if not legend_visibility:
+            legend.set_visible(False)
+            return
+
+        # If legend exists, remove it so we can recreate with parameters
+        if legend is not None:
+            legend.remove()
+
+        # Assign label to artists if needed (matplotlib-only case)
+        if graph_label and not graph_label.startswith("_"):
+            for artist in graph.lines + graph.collections:
+                artist.set_label(graph_label)
+
+        # Recreate legend with your parameters
+        legend = graph.legend(**graph_legend_parameter_copy)
+        legend.set_visible(True)
+        legend.set_label(graph_label)
+
+    def set_seaborn_legend(self,graph):
+        graph_legend_parameter_copy = self.graph_legend_parameters.copy()
+        graph_label = graph_legend_parameter_copy.pop("label")
+        legend_visibility = graph_legend_parameter_copy.pop("visible")
+
+        legend = graph.get_legend()
+
+        if not legend_visibility:
+            legend.set_visible(False)
+            return
+
+        if (legend is not None):
+            legend.remove()
+
+        if (graph_legend_parameter_copy["title"] is None and legend is not None):
+            graph_legend_parameter_copy["title"] = legend.get_title().get_text() 
+
+        handles, labels = graph.get_legend_handles_labels()
+
+        legend = graph.legend(handles, labels, **graph_legend_parameter_copy)
+        legend.set_visible(True)
+        legend.set_label(graph_label)
 
     def create_graph(self):
         self.prepare_plotting()
 
-        if (self.x_axis == None or self.y_axis == None):
+        if (self.x_axis is None or self.y_axis is None):
             return None
 
         self.convert_hue()
@@ -258,13 +259,14 @@ class graph_generator(QWidget):
                 graph.grid(**{k: v for k, v in self.graph_grid_parameter.items() if v is not None and v != [None,None]})
             else:
                 graph.grid(False)
-        
-        graph_label = self.graph_legend_parameters.pop("label")
-        legend_visibility = self.graph_legend_parameters.pop("visible")
-        if (legend_visibility == True and not graph_label.startswith("_") and self.graph_parameters["hue"] == None):
-            self.set_legend(graph,legend_visibility,graph_label)
-        elif (self.graph_parameters["hue"] is not None):
-            self.set_hue_legend(graph.legend_)
+    
+        graph_label = self.graph_legend_parameters["label"]
+        legend_visibility = self.graph_legend_parameters["visible"]
+        if (self.graph_parameters["hue"] is None and self.graph_parameters["style"] is None and self.graph_parameters["size"] is None):
+            if (not legend_visibility and graph_label != "__nolegend__"):
+                self.set_legend(graph)
+        else:
+            self.set_seaborn_legend(graph)
 
         fig = graph.get_figure()
         buf = BytesIO()
