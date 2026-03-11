@@ -1,13 +1,13 @@
 from PyQt6.QtCore import QItemSelectionModel, QSortFilterProxyModel, QStringListModel, Qt
 from PyQt6.QtGui import QFont, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
-    QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QListWidget, QListWidgetItem, QPushButton, 
+    QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QListWidget, QListWidgetItem, QPushButton, QStyle, 
     QTableView, QWidget, QVBoxLayout, QStyledItemDelegate, QSizePolicy
 )
-from fsspec.caching import P
 from sections import plot_manager
 from sections.dataset import PrepareDataset
 from sections.plot_manager import PlotManager
+from collections import deque
 import matplotlib.colors as mcolors
 import pandas as pd
 import os
@@ -1206,7 +1206,7 @@ class title_button(QDialog):
         title = self.title_section.text().strip()
         db = self.plot_manager.get_db()
         if (db != []):
-            if (db["title"] == None or not self.title_created):
+            if (db["title"] is None or not self.title_created):
                 db["title"] = title
                 self.plot_manager.insert_plot_parameter(db)
                 self.title_created = True
@@ -1338,7 +1338,7 @@ class legend_visible_adjustment_section(QWidget):
         legend_visibility_adjustment_section_layout.setContentsMargins(10,10,10,10)
         legend_visibility_adjustment_section_layout.addStretch()
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         pass
 
     def change_legend_visibility(self):
@@ -1441,7 +1441,7 @@ class legend_label_adjustment_section(QWidget):
         legend_label_adjustment_section_layout.setContentsMargins(10,10,10,10)
         legend_label_adjustment_section_layout.addStretch()
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         pass
 
     def change_legend_label(self):
@@ -1638,7 +1638,7 @@ class legend_loc_adjustment_section(QWidget):
         # Add margins and spacing to make it look good and push content to the top
         legend_loc_adjustment_section_layout.setContentsMargins(10, 10, 10, 10)
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         pass
 
     def change_legend_loc(self,index):
@@ -1918,7 +1918,7 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
         #Add the reset bbox anchor button to the layout
         legend_bbox_adjustment_section_layout.addWidget(self.reset_bbox_anchor_button)
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         pass
 
     def change_x(self):
@@ -2294,7 +2294,7 @@ class legend_ncol_adjustment_section(QWidget):
         #Add the reset ncol button to the layout
         legend_ncol_adjustment_section_layout.addWidget(self.reset_ncol_button)
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         pass
 
     def change_ncol(self):
@@ -2526,14 +2526,12 @@ class legend_fontsize_adjustment_section(QWidget):
                                 self.fixed_fontsize_adjustment_section,
                                 self.custom_fontsize_adjustment_section,
                                 self.reset_fontsize_section]
-        self.current_screen_idx = 0
+        self.current_section_idx = 0
 
         #Create a layout for the main widget and add the adjustment section to it
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.legend_fontsize_adjustment_section)
-        main_layout.addWidget(self.fixed_fontsize_adjustment_section)
-        main_layout.addWidget(self.custom_fontsize_adjustment_section)
-        main_layout.addWidget(self.reset_fontsize_section)
+        for section in self.available_screen:
+            main_layout.addWidget(section)
 
         #Add the spacing and margin to ensure the section fits nicely with the main widget
         main_layout.setSpacing(0)
@@ -2542,7 +2540,7 @@ class legend_fontsize_adjustment_section(QWidget):
         #Create shortcuts to go back and forth between the screens.
         go_back_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left), self) 
         go_back_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
-        go_back_shortcut.activated.connect(self.change_to_original_screen)
+        go_back_shortcut.activated.connect(self.change_to_original_section)
 
     def create_legend_fontsize_adjustment_section(self):
         #Created the legend fontsize adjustment section layout
@@ -2928,29 +2926,29 @@ class legend_fontsize_adjustment_section(QWidget):
         if (page_name == "Reset Fontsize"):
             self.change_to_reset_fontsize_section()
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         #Hide the current screen, change the screen index, show the new screen 
-        self.available_screen[self.current_screen_idx].hide()
-        self.current_screen_idx = 0
-        self.available_screen[self.current_screen_idx].show()
+        self.available_screen[self.current_section_idx].hide()
+        self.current_section_idx = 0
+        self.available_screen[self.current_section_idx].show()
 
     def change_to_fixed_fontsize_section(self):
         #Hide the current screen, change the screen index, show the new screen 
-        self.available_screen[self.current_screen_idx].hide()
-        self.current_screen_idx = 1
-        self.available_screen[self.current_screen_idx].show()
+        self.available_screen[self.current_section_idx].hide()
+        self.current_section_idx = 1
+        self.available_screen[self.current_section_idx].show()
 
     def change_to_custom_fontsize_section(self):
         #Hide the current screen, change the screen index, show the new screen 
-        self.available_screen[self.current_screen_idx].hide()
-        self.current_screen_idx = 2
-        self.available_screen[self.current_screen_idx].show()
+        self.available_screen[self.current_section_idx].hide()
+        self.current_section_idx = 2
+        self.available_screen[self.current_section_idx].show()
 
     def change_to_reset_fontsize_section(self):
         #Hide the current screen, change the screen index, show the new screen 
-        self.available_screen[self.current_screen_idx].hide()
-        self.current_screen_idx = 3
-        self.available_screen[self.current_screen_idx].show()
+        self.available_screen[self.current_section_idx].hide()
+        self.current_section_idx = 3
+        self.available_screen[self.current_section_idx].show()
 
     def change_custom_fontsize(self):
         #Get the input the user enters and remove any spaces
@@ -3084,7 +3082,7 @@ class legend_title_adjustment_section(QWidget):
         legend_title_adjustment_section_layout.setSpacing(10)
         legend_title_adjustment_section_layout.addStretch()
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         pass
 
     def change_legend_title(self):
@@ -3287,18 +3285,16 @@ class legend_title_fontsize_adjustment_section(QWidget):
         self.reset_fontsize_section.hide()
 
         #-----Available Screens-----
-        self.available_screens = [self.legend_title_fontsize_adjustment_section,
+        self.available_sections = [self.legend_title_fontsize_adjustment_section,
                                 self.fixed_title_fontsize_section,
                                 self.custom_title_fontsize_section,
                                 self.reset_fontsize_section]
-        self.current_screen_idx = 0
+        self.current_section_idx = 0
 
         #-----Add the sections onto the main widget-----
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.legend_title_fontsize_adjustment_section)
-        main_layout.addWidget(self.fixed_title_fontsize_section)
-        main_layout.addWidget(self.custom_title_fontsize_section)
-        main_layout.addWidget(self.reset_fontsize_section)
+        for section in self.available_sections:
+            main_layout.addWidget(section)
 
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0,0,0,0)
@@ -3306,7 +3302,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
         #-----Keyboard Shortcut-----
         go_back_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left), self) 
         go_back_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
-        go_back_shortcut.activated.connect(self.change_to_original_screen)
+        go_back_shortcut.activated.connect(self.change_to_original_section)
 
     def create_legend_title_fontsize_adjustment_section(self):
         #Creat the legend title fontsize adjustment section layout
@@ -3393,7 +3389,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
         self.legend_title_fontsize_parameter_list_view.setSpacing(3)
 
         #Make the list view automatically switch sections based on item clicked
-        self.legend_title_fontsize_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+        self.legend_title_fontsize_parameter_list_view.clicked.connect(self.change_current_parameter_section)
 
         #Add the list view to the layout
         legend_title_fontsize_adjustment_section_layout.addWidget(self.legend_title_fontsize_parameter_list_view)
@@ -3665,7 +3661,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
         reset_fontsize_section_layout.setContentsMargins(10,10,10,10)
         reset_fontsize_section_layout.addStretch()
 
-    def change_current_parameter_screen(self,index):
+    def change_current_parameter_section(self,index):
         #Identify the screen name selected
         screen_name = self.legend_title_fontsize_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
 
@@ -3679,29 +3675,29 @@ class legend_title_fontsize_adjustment_section(QWidget):
         if (screen_name == "Reset Fontsize"):
             self.change_to_reset_fontsize_section()
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         #Hide the current screen, change the screen idx, and display the original screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 0
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_fixed_title_fontsize_section(self):
         #Hide the current screen, change the screen idx, and display the fixed fontsize screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 1
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 1
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_custom_title_fontsize_section(self):
         #Hide the current screen, change the screen idx, and display the custom fontsize screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 2
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 2
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_reset_fontsize_section(self):
         #Hide the current screen, change the screen idx, and display the custom fontsize screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 3
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 3
+        self.available_sections[self.current_section_idx].show()
 
     def change_custom_title_fontsize(self):
         #Extract the fontsize from the user input
@@ -3881,7 +3877,7 @@ class legend_frameon_adjustment_section(QWidget):
         legend_frameon_adjustment_section_layout.setContentsMargins(10,10,10,10)
         legend_frameon_adjustment_section_layout.addStretch()
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         pass
 
     def change_frameon_state(self):
@@ -4318,29 +4314,26 @@ class legend_face_color_adjustment_section(QWidget):
         self.reset_face_color_section.hide()
 
         #-----Available Screens-----
-        self.available_screens = [self.legend_face_color_adjustment_section,self.named_color_section,
+        self.available_sections = [self.legend_face_color_adjustment_section,self.named_color_section,
                                 self.hex_code_color_section,self.rgb_color_section,
                                 self.grayscale_color_section,self.short_code_color_section,
                                 self.reset_face_color_section]
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+        self.current_section_idx = 0
+        self.available_sections[self.current_section_idx].show()
 
         #-----Main Screen-----
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.legend_face_color_adjustment_section)
-        main_layout.addWidget(self.named_color_section)
-        main_layout.addWidget(self.hex_code_color_section)
-        main_layout.addWidget(self.rgb_color_section)
-        main_layout.addWidget(self.grayscale_color_section)
-        main_layout.addWidget(self.short_code_color_section)
-        main_layout.addWidget(self.reset_face_color_section)
+
+        for section in self.available_sections:
+            main_layout.addWidget(section)
+        
         main_layout.setContentsMargins(0,0,0,0)
         main_layout.setSpacing(0)
 
         #-----Keyboard Shortcut-----
         original_screen_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left),self)
         original_screen_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
-        original_screen_shortcut.activated.connect(self.change_to_original_screen)
+        original_screen_shortcut.activated.connect(self.change_to_original_section)
 
     def create_legend_face_color_adjustment_section(self):
         #Create the layout for the legend face color adjustment section
@@ -4427,7 +4420,7 @@ class legend_face_color_adjustment_section(QWidget):
         self.legend_face_color_parameter_list_view.setSpacing(3)
 
         #Automatically update the facecolor based on the selected parameter
-        self.legend_face_color_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+        self.legend_face_color_parameter_list_view.clicked.connect(self.change_current_parameter_section)
 
         #Add the list view to the face color adjustment section layout
         legend_face_color_adjustment_section_layout.addWidget(self.legend_face_color_parameter_list_view)
@@ -5088,7 +5081,7 @@ class legend_face_color_adjustment_section(QWidget):
         reset_face_color_section_layout.setContentsMargins(10,10,10,10)
         reset_face_color_section_layout.addStretch()
 
-    def change_current_parameter_screen(self,index):
+    def change_current_parameter_section(self,index):
         #Get the associated screen name based on the item the user clicked on in the list view
         screen_name = self.legend_face_color_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
         
@@ -5116,47 +5109,48 @@ class legend_face_color_adjustment_section(QWidget):
         if (screen_name == "Reset Face Color"):
             self.change_to_reset_face_color_section()
 
-    def change_to_original_screen(self):
-        #Hide the current screen, change the screen idx, display the new screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+    def change_to_original_section(self):
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 0
+        self.legend_face_color_parameter_list_view.clearSelection()
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_named_color_section(self):
-        #Hide the current screen, change the screen idx, display the new screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 1
-        self.available_screens[self.current_screen_idx].show()
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 1
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_hex_code_section(self):
-        #Hide the current screen, change the screen idx, display the new screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 2
-        self.available_screens[self.current_screen_idx].show()
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 2
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_rgb_color_section(self):
-        #Hide the current screen, change the screen idx, display the new screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 3
-        self.available_screens[self.current_screen_idx].show()
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 3
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_grayscale_colors_section(self):
-        #Hide the current screen, change the screen idx, display the new screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 4
-        self.available_screens[self.current_screen_idx].show()
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 4
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_short_code_color_section(self):
-        #Hide the current screen, change the screen idx, display the new screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 5
-        self.available_screens[self.current_screen_idx].show()
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 5
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_reset_face_color_section(self):
-        #Hide the current screen, change the screen idx, display the new screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 6
-        self.available_screens[self.current_screen_idx].show()
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 6
+        self.available_sections[self.current_section_idx].show()
 
     def change_named_color(self,index):
         #Using the index acquired by the filter proxy and get the associated index in the model
@@ -5338,13 +5332,13 @@ class legend_face_color_adjustment_section(QWidget):
 
     def reset_face_color(self):
         #Change the facecolor to None and update it
-        if (self.current_screen_idx == 2):
+        if (self.current_section_idx == 2):
             self.hex_code_input.clear()
-        if (self.current_screen_idx == 3):
+        if (self.current_section_idx == 3):
             self.r_input.clear()
             self.g_input.clear()
             self.b_input.clear()
-        if (self.current_screen_idx == 4):
+        if (self.current_section_idx == 4):
             self.grayscale_color_input.clear()
 
         self.current_facecolor = None
@@ -5791,29 +5785,26 @@ class legend_edge_color_adjustment_section(QWidget):
         self.reset_edge_color_section.hide()
 
         #-----Available Screens-----
-        self.available_screens = [self.legend_edge_color_adjustment_section,self.named_color_section,
+        self.available_sections = [self.legend_edge_color_adjustment_section,self.named_color_section,
                                 self.hex_code_color_section,self.rgba_color_section,
                                 self.grayscale_color_section,self.short_code_color_section,
                                 self.reset_edge_color_section]
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+        self.current_section_idx = 0
+        self.available_sections[self.current_section_idx].show()
 
         #-----Main Screen-----
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.legend_edge_color_adjustment_section)
-        main_layout.addWidget(self.named_color_section)
-        main_layout.addWidget(self.hex_code_color_section)
-        main_layout.addWidget(self.rgba_color_section)
-        main_layout.addWidget(self.grayscale_color_section)
-        main_layout.addWidget(self.short_code_color_section)
-        main_layout.addWidget(self.reset_edge_color_section)
+
+        for section in self.available_sections:
+            main_layout.addWidget(section)
+
         main_layout.setContentsMargins(0,0,0,0)
         main_layout.setSpacing(0)
 
         #-----Shortcuts-----
         original_screen_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left),self)
         original_screen_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
-        original_screen_shortcut.activated.connect(self.change_to_original_screen)
+        original_screen_shortcut.activated.connect(self.change_to_original_section)
 
     def create_legend_edge_color_adjustment_section(self):
         #Create the layout for the legend edge color adjustment section
@@ -5900,7 +5891,7 @@ class legend_edge_color_adjustment_section(QWidget):
         self.legend_edge_color_parameter_list_view.setSpacing(3)
 
         #Automatically update the edgecolor based on the selected parameter
-        self.legend_edge_color_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+        self.legend_edge_color_parameter_list_view.clicked.connect(self.change_current_parameter_section)
 
         #Add the list view to the edge color adjustment section layout
         legend_edge_color_adjustment_section_layout.addWidget(self.legend_edge_color_parameter_list_view)
@@ -6581,7 +6572,7 @@ class legend_edge_color_adjustment_section(QWidget):
         reset_edge_color_section_layout.setContentsMargins(10,10,10,10)
         reset_edge_color_section_layout.addStretch()
 
-    def change_current_parameter_screen(self,index):
+    def change_current_parameter_section(self,index):
         #Get the associated screen name based on the item the user clicked on in the list view
         screen_name = self.legend_edge_color_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
         
@@ -6605,51 +6596,52 @@ class legend_edge_color_adjustment_section(QWidget):
         if (screen_name == "Short Code Color"):
             self.change_to_short_code_color_section()
 
-        #If the screen name is Reset Face Color change to the reset face color section
-        if (screen_name == "Reset Face Color"):
-            self.change_to_reset_face_color_section()
+        #If the screen name is Reset Edge Color change to the reset face color section
+        if (screen_name == "Reset Edge Color"):
+            self.change_to_reset_edge_color_section()
 
-    def change_to_original_screen(self):
-        #Hide the current screen, change the screen idx, display the new screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+    def change_to_original_section(self):
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 0
+        self.legend_edge_color_parameter_list_view.clearSelection()
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_named_color_section(self):
-        #Hide the current screen, change the screen idx, display the new screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 1
-        self.available_screens[self.current_screen_idx].show()
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 1
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_hex_code_section(self):
-        #Hide the current screen, change the screen idx, display the new screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 2
-        self.available_screens[self.current_screen_idx].show()
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 2
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_rgba_color_section(self):
-        #Hide the current screen, change the screen idx, display the new screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 3
-        self.available_screens[self.current_screen_idx].show()
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 3
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_grayscale_colors_section(self):
-        #Hide the current screen, change the screen idx, display the new screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 4
-        self.available_screens[self.current_screen_idx].show()
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 4
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_short_code_color_section(self):
-        #Hide the current screen, change the screen idx, display the new screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 5
-        self.available_screens[self.current_screen_idx].show()
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 5
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_reset_edge_color_section(self):
-        #Hide the current screen, change the screen idx, display the new screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 6
-        self.available_screens[self.current_screen_idx].show()
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 6
+        self.available_sections[self.current_section_idx].show()
 
     def change_named_color(self,index):
         #Using the index acquired by the filter proxy and get the associated index in the model
@@ -6855,14 +6847,14 @@ class legend_edge_color_adjustment_section(QWidget):
 
     def reset_edge_color(self):
         #Change the edgecolor to None and update it
-        if (self.current_screen_idx == 2):
+        if (self.current_section_idx == 2):
             self.hex_code_input.clear()
-        if (self.current_screen_idx == 3):
+        if (self.current_section_idx == 3):
             self.r_input.clear()
             self.g_input.clear()
             self.b_input.clear()
             self.a_input.clear()
-        if (self.current_screen_idx == 4):
+        if (self.current_section_idx == 4):
             self.grayscale_color_input.clear()
 
         self.current_edgecolor = None
@@ -7126,7 +7118,7 @@ class legend_framealpha_adjustment_section(QWidget):
         #Add the reset framealpha value button to the layout
         legend_framealpha_adjustment_section_layout.addWidget(self.reset_framealpha_button)
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         pass
 
     def change_framealpha(self):
@@ -7300,7 +7292,7 @@ class legend_shadow_adjustment_section(QWidget):
         legend_shadow_adjustment_section_layout.setContentsMargins(10,10,10,10)
         legend_shadow_adjustment_section_layout.addStretch()
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         pass
 
     def change_shadow_state(self):
@@ -7445,7 +7437,7 @@ class legend_fancybox_adjustment_section(QWidget):
         legend_fancybox_button_layout.setContentsMargins(10,10,10,10)
         legend_fancybox_button_layout.addStretch()
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         pass
 
     def change_fancybox_state(self):
@@ -7694,7 +7686,7 @@ class legend_borderpad_adjustment_section(QWidget):
         legend_borderpad_adjustment_section_layout.setSpacing(10)
         legend_borderpad_adjustment_section_layout.addStretch()
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         pass
 
     def change_borderpad(self):
@@ -8154,29 +8146,26 @@ class legend_label_color_adjustment_section(QWidget):
         self.reset_label_color_section.hide()
 
         #-----Available Screens-----
-        self.available_screens = [self.legend_label_color_adjustment_section,self.named_color_section,
+        self.available_sections = [self.legend_label_color_adjustment_section,self.named_color_section,
                                 self.hex_code_color_section,self.rgba_color_section,
                                 self.grayscale_color_section,self.short_code_color_section,
                                 self.reset_label_color_section]
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+        self.current_section_idx = 0
+        self.available_sections[self.current_section_idx].show()
 
         #-----Main Screen-----
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.legend_label_color_adjustment_section)
-        main_layout.addWidget(self.named_color_section)
-        main_layout.addWidget(self.hex_code_color_section)
-        main_layout.addWidget(self.rgba_color_section)
-        main_layout.addWidget(self.grayscale_color_section)
-        main_layout.addWidget(self.short_code_color_section)
-        main_layout.addWidget(self.reset_label_color_section)
+
+        for section in self.available_sections: 
+            main_layout.addWidget(section)
+
         main_layout.setContentsMargins(0,0,0,0)
         main_layout.setSpacing(0)
 
         #-----Shortcuts-----
         original_screen_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left),self)
         original_screen_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
-        original_screen_shortcut.activated.connect(self.change_to_original_screen)
+        original_screen_shortcut.activated.connect(self.change_to_original_section)
 
     def create_legend_label_color_adjustment_section(self):
         #Create the layout for the legend label color adjustment section
@@ -8263,7 +8252,7 @@ class legend_label_color_adjustment_section(QWidget):
         self.legend_label_color_parameter_list_view.setSpacing(3)
 
         #Automatically update the label color based on the selected parameter
-        self.legend_label_color_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+        self.legend_label_color_parameter_list_view.clicked.connect(self.change_current_parameter_section)
 
         #Add the list view to the label color adjustment section layout
         legend_label_color_adjustment_section_layout.addWidget(self.legend_label_color_parameter_list_view)
@@ -8944,7 +8933,7 @@ class legend_label_color_adjustment_section(QWidget):
         reset_label_color_section_layout.setContentsMargins(10,10,10,10)
         reset_label_color_section_layout.addStretch()
 
-    def change_current_parameter_screen(self,index):
+    def change_current_parameter_section(self,index):
         #Get the associated screen name based on the item the user clicked on in the list view
         screen_name = self.legend_label_color_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
 
@@ -8968,51 +8957,52 @@ class legend_label_color_adjustment_section(QWidget):
         if (screen_name == "Short Code Color"):
             self.change_to_short_code_color_section()
 
-        #If the screen name is Reset Face Color change to the reset face color section
-        if (screen_name == "Reset Face Color"):
-            self.change_to_reset_face_color_section()
+        #If the screen name is Reset Label Color change to the reset face color section
+        if (screen_name == "Reset Label Color"):
+            self.change_to_reset_label_color_section()
 
-    def change_to_original_screen(self):
-        #Hide the current screen, change the screen idx, display the new screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+    def change_to_original_section(self):
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 0
+        self.legend_label_color_parameter_list_view.clearSelection()
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_named_color_section(self):
-        #Hide the current screen, change the screen idx, display the new screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 1
-        self.available_screens[self.current_screen_idx].show()
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 1
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_hex_code_section(self):
-        #Hide the current screen, change the screen idx, display the new screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 2
-        self.available_screens[self.current_screen_idx].show()
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 2
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_rgba_color_section(self):
-        #Hide the current screen, change the screen idx, display the new screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 3
-        self.available_screens[self.current_screen_idx].show()
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 3
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_grayscale_color_section(self):
-        #Hide the current screen, change the screen idx, display the new screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 4
-        self.available_screens[self.current_screen_idx].show()
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 4
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_short_code_color_section(self):
-        #Hide the current screen, change the screen idx, display the new screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 5
-        self.available_screens[self.current_screen_idx].show()
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 5
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_reset_label_color_section(self):
-        #Hide the current screen, change the screen idx, display the new screen
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 6
-        self.available_screens[self.current_screen_idx].show()
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 6
+        self.available_sections[self.current_section_idx].show()
 
     def change_named_color(self,index):
         #Using the index acquired by the filter proxy and get the associated index in the model
@@ -9218,14 +9208,14 @@ class legend_label_color_adjustment_section(QWidget):
 
     def reset_label_color(self):
         #Change the edgecolor to None and update it
-        if (self.current_screen_idx == 2):
+        if (self.current_section_idx == 2):
             self.hex_code_input.clear()
-        if (self.current_screen_idx == 3):
+        if (self.current_section_idx == 3):
             self.r_input.clear()
             self.g_input.clear()
             self.b_input.clear()
             self.a_input.clear()
-        if (self.current_screen_idx == 4):
+        if (self.current_section_idx == 4):
             self.grayscale_color_input.clear()
 
         self.current_label_color = 'k'
@@ -9392,7 +9382,7 @@ class legend_alignment_adjustment_section(QWidget):
         # Add margins and spacing to make it look good and push content to the top
         legend_alignment_adjustment_section_layout.setContentsMargins(10, 10, 10, 10)
 
-    def change_to_original_screen():
+    def change_to_original_section():
         pass
 
     def change_alignment(self,index):
@@ -9641,7 +9631,7 @@ class legend_columnspacing_adjustment_section(QWidget):
         #Add the reset ncol button to the layout
         legend_columnspacing_adjustment_section_layout.addWidget(self.reset_columnspacing_button)
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         pass
 
     def change_columnspacing(self):
@@ -9919,7 +9909,7 @@ class legend_handletextpad_adjustment_section(QWidget):
         #Add the reset ncol button to the layout
         legend_handletextpad_adjustment_section_layout.addWidget(self.reset_handletextpad_button)
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         pass
 
     def change_handletextpad(self):
@@ -10198,7 +10188,7 @@ class legend_borderaxespad_adjustment_section(QWidget):
         #Add the reset ncol button to the layout
         legend_borderaxespad_adjustment_section_layout.addWidget(self.reset_borderaxespad_button)
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         pass
 
     def change_borderaxespad(self):
@@ -10477,7 +10467,7 @@ class legend_handlelength_adjustment_section(QWidget):
         #Add the reset ncol button to the layout
         legend_handlelength_adjustment_section_layout.addWidget(self.reset_handlelength_button)
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         pass
 
     def change_handlelength(self):
@@ -10756,7 +10746,7 @@ class legend_handleheight_adjustment_section(QWidget):
         #Add the reset handleheight button to the layout
         legend_handleheight_adjustment_section_layout.addWidget(self.reset_handleheight_button)
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         pass
 
     def change_handleheight(self):
@@ -10924,7 +10914,7 @@ class legend_markerfirst_adjustment_section(QWidget):
         legend_markerfirst_adjustment_section_layout.setContentsMargins(10,10,10,10)
         legend_markerfirst_adjustment_section_layout.addStretch()
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         pass
 
     def change_legend_markerfist(self):
@@ -11082,7 +11072,7 @@ class seaborn_legend_adjustment_section(QWidget):
         # Add margins and spacing to make it look good and push content to the top
         sns_legend_parameter_layout.setContentsMargins(10, 10, 10, 10)
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         pass
 
     def change_sns_legend_parameter(self,index):
@@ -11230,7 +11220,7 @@ class seaborn_legend_off_adjustment_section(QWidget):
         sns_legend_off_adjustment_section_layout.setContentsMargins(10,10,10,10)
         sns_legend_off_adjustment_section_layout.addStretch()
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         pass
 
     def change_sns_legend_off_state(self):
@@ -11266,38 +11256,41 @@ class seaborn_legend_markers_adjustment_section(QWidget):
         self.graph_display = graph_display
         self.plot_manager = PlotManager()
 
-        self.available_markers = [".", ",", "o", "v", "^", "<", ">", "1", "2", "3", "4",
-                                "8", "s", "p", "P", "*", "h", "H", "+", "x", "X",
-                                "D", "d", "|", "_"]
+        #Initialize the available filled markers
+        self.available_filled_markers = [".", ",", "o", "v", 
+                                        "^", "<", ">", "8", 
+                                        "s", "p", "P", "*", 
+                                        "h", "H", "X", "D", "d"]
 
-        try:
-            self.style_value = pd.read_csv("./dataset/user_dataset.csv")[self.plot_manager.get_db()["style"]].unique()
+        #Initialize the available line markers
+        self.available_line_markers = ["+", "x", "|", "_", 
+                                        "1", "2", "3", "4",]
+
+        #Initialize all the available markers
+        self.available_markers = self.available_filled_markers + self.available_line_markers
+
+        #Types of markers parameter 
+        self.marker_parameters = ["Single Marker", "Multiple Markers", "Dictionary Marker", "Reset Markers"]
+
+        #Types of markers
+        self.marker_types = ["Filled Markers", "Line Markers"]
+
+        #Try to get the number of style elements from the dataset where [] is default
+        self.plot_style = self.plot_manager.get_db()["style"]
+        self.style_value = []
+        self.style_value_count = 0
+        if (self.plot_style is not None):
+            self.style_value = pd.read_csv("./dataset/user_dataset.csv")[self.plot_style].unique()
             self.style_value_count = len(self.style_value)
-        except FileNotFoundError or KeyError:
-            self.style_value = []
-            self.style_value_count = 0
 
-        self.markers = []
+        #Initialize the state, list, dictionary for the markers
+        self.multiple_markers = deque(maxlen=self.style_value_count)
         self.markers_dictionary = dict()
         self.markers_dictionary_key = ""
         self.markers_dictionary_value = ""
-        self.initial_markers_argument = True
 
-        #-----Seaborn Legend Markers Screen-----
-        self.sns_legend_markers_screen = QWidget()
-        self.sns_legend_markers_screen.setObjectName("sns_legend_markers_screen")
-        self.sns_legend_markers_screen.setStyleSheet("""
-            QWidget#sns_legend_markers_screen{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }       
-        """)
+        #Initialize the default markers argument
+        self.markers = True
 
         #-----Markers Instruction Widget-----
         self.markers_instruction_widget = QWidget()
@@ -11315,8 +11308,10 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
+        self.markers_instruction_widget.setMaximumHeight(60)
+        self.markers_instruction_widget.hide()
 
-        self.markers_instruction_label = QLabel("Select the hue or style first")
+        self.markers_instruction_label = QLabel("Invalid Hue or Style")
         self.markers_instruction_label.setObjectName("markers_instruction_label")
         self.markers_instruction_label.setWordWrap(True)
         self.markers_instruction_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -11337,277 +11332,28 @@ class seaborn_legend_markers_adjustment_section(QWidget):
         markers_instruction_widget_layout.setContentsMargins(0,0,0,0)
         markers_instruction_widget_layout.setSpacing(0)
 
-        #-----Turn Markers on/off Button-----
-        self.turn_markers_on_off_button = QPushButton()
-        self.turn_markers_on_off_button.setObjectName("turn_markers_on_off_button")
-        self.turn_markers_on_off_button.setStyleSheet("""
-            QPushButton#turn_markers_on_off_button{
+        #-----Seaborn Legend Markers Adjustment Section-----
+        self.sns_legend_markers_adjustment_section = QWidget()
+        self.sns_legend_markers_adjustment_section.setObjectName("sns_legend_markers_adjustment_section")
+        self.sns_legend_markers_adjustment_section.setStyleSheet("""
+            QWidget#sns_legend_markers_adjustment_section{
                 background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
                 );
                 border: 2px solid black;
                 border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 16px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#turn_markers_on_off_button:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
+            }       
         """)
+        self.create_sns_legend_markers_adjustment_section()
 
-        self.turn_markers_on_off_label = QLabel("Turn Markers Off")
-        self.turn_markers_on_off_label.setObjectName("turn_markers_on_off_label")
-        self.turn_markers_on_off_label.setWordWrap(True)
-        self.turn_markers_on_off_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.turn_markers_on_off_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.turn_markers_on_off_label.setStyleSheet("""
-            QLabel#turn_markers_on_off_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        turn_markers_on_off_layout = QVBoxLayout(self.turn_markers_on_off_button)
-        turn_markers_on_off_layout.addWidget(self.turn_markers_on_off_label)
-        turn_markers_on_off_layout.setContentsMargins(0,0,0,0)
-        turn_markers_on_off_layout.setSpacing(0)
-
-        #-----Select Single Marker Button-----
-        self.select_single_markers_button = QPushButton()
-        self.select_single_markers_button.setObjectName("select_single_markers_button")
-        self.select_single_markers_button.setStyleSheet("""
-            QPushButton#select_single_markers_button{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 16px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#select_single_markers_button:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.select_single_markers_label = QLabel("Select Single Marker")
-        self.select_single_markers_label.setObjectName("select_single_markers_label")
-        self.select_single_markers_label.setWordWrap(True)
-        self.select_single_markers_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.select_single_markers_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.select_single_markers_label.setStyleSheet("""
-            QLabel#select_single_markers_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        select_single_markers_button_layout = QVBoxLayout(self.select_single_markers_button)
-        select_single_markers_button_layout.addWidget(self.select_single_markers_label)
-        select_single_markers_button_layout.setContentsMargins(0,0,0,0)
-        select_single_markers_button_layout.setSpacing(0)
-
-        #-----Select Multiple Marker Button-----
-        self.select_multiple_markers_button = QPushButton()
-        self.select_multiple_markers_button.setObjectName("select_multiple_markers_button")
-        self.select_multiple_markers_button.setStyleSheet("""
-            QPushButton#select_multiple_markers_button{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 16px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#select_multiple_markers_button:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.select_multiple_markers_label = QLabel("Select Multiple Marker")
-        self.select_multiple_markers_label.setObjectName("select_multiple_markers_label")
-        self.select_multiple_markers_label.setWordWrap(True)
-        self.select_multiple_markers_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.select_multiple_markers_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.select_multiple_markers_label.setStyleSheet("""
-            QLabel#select_multiple_markers_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        select_multiple_markers_button_layout = QVBoxLayout(self.select_multiple_markers_button)
-        select_multiple_markers_button_layout.addWidget(self.select_multiple_markers_label)
-        select_multiple_markers_button_layout.setContentsMargins(0,0,0,0)
-        select_multiple_markers_button_layout.setSpacing(0)
-
-        #-----Select Dictionary Markers Button-----
-        self.select_dictionary_markers_button = QPushButton()
-        self.select_dictionary_markers_button.setObjectName("select_dictionary_markers_button")
-        self.select_dictionary_markers_button.setStyleSheet("""
-            QPushButton#select_dictionary_markers_button{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 16px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#select_dictionary_markers_button:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.select_dictionary_markers_label = QLabel("Select Dictionay Marker")
-        self.select_dictionary_markers_label.setObjectName("select_dictionary_markers_label")
-        self.select_dictionary_markers_label.setWordWrap(True)
-        self.select_dictionary_markers_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.select_dictionary_markers_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.select_dictionary_markers_label.setStyleSheet("""
-            QLabel#select_dictionary_markers_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        select_dictionary_markers_button_layout = QVBoxLayout(self.select_dictionary_markers_button)
-        select_dictionary_markers_button_layout.addWidget(self.select_dictionary_markers_label)
-        select_dictionary_markers_button_layout.setContentsMargins(0,0,0,0)
-        select_dictionary_markers_button_layout.setSpacing(0)
-
-        #-----Set the size of each button-----
-        self.turn_markers_on_off_button.setMinimumHeight(70)
-        self.select_single_markers_button.setMinimumHeight(70)
-        self.select_multiple_markers_button.setMinimumHeight(70)
-        self.select_dictionary_markers_button.setMinimumHeight(70)
-
-        #-----Connect cach button to it's associated function-----
-        self.turn_markers_on_off_button.clicked.connect(self.turn_markers_on_and_off)
-        self.select_single_markers_button.clicked.connect(self.change_to_single_markers_screen)
-        self.select_multiple_markers_button.clicked.connect(self.change_to_multiple_markers_screen)
-        self.select_dictionary_markers_button.clicked.connect(self.change_to_dictonary_markers_screen)
-
-        #-----Seaborn Legend Markers Screen Layout-----
-        sns_legend_markers_screen_layout = QVBoxLayout(self.sns_legend_markers_screen)
-        sns_legend_markers_screen_layout.addWidget(self.turn_markers_on_off_button)
-        sns_legend_markers_screen_layout.addWidget(self.select_single_markers_button)
-        sns_legend_markers_screen_layout.addWidget(self.select_multiple_markers_button)
-        sns_legend_markers_screen_layout.addWidget(self.select_dictionary_markers_button)
-        sns_legend_markers_screen_layout.setContentsMargins(10,10,10,10)
-        sns_legend_markers_screen_layout.setSpacing(5)
-        sns_legend_markers_screen_layout.addStretch()
-
-        #-----Seaborn Legend Select Single Markers Screen-----
-        self.select_single_markers_screen = QWidget()
-        self.select_single_markers_screen.setObjectName("select_single_markers_screen")
-        self.select_single_markers_screen.setStyleSheet(""" 
-            QWidget#select_single_markers_screen{
+        #-----Seaborn Legend Select Single Markers Section-----
+        self.select_single_markers_section = QWidget()
+        self.select_single_markers_section.setObjectName("select_single_markers_section")
+        self.select_single_markers_section.setStyleSheet(""" 
+            QWidget#select_single_markers_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -11618,14 +11364,14 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 border-radius: 16px;
             }     
         """)
-        self.create_select_single_markers_screen()
-        self.select_single_markers_screen.hide()
+        self.create_select_single_markers_section()
+        self.select_single_markers_section.hide()
 
-        #-----Seaborn Legend Multiple Markers Screen-----
-        self.select_multiple_markers_screen = QWidget()
-        self.select_multiple_markers_screen.setObjectName("select_multiple_markers_screen")
-        self.select_multiple_markers_screen.setStyleSheet("""
-            QWidget#select_multiple_markers_screen{
+        #-----Seaborn Legend Multiple Markers Section-----
+        self.select_multiple_markers_section = QWidget()
+        self.select_multiple_markers_section.setObjectName("select_multiple_markers_section")
+        self.select_multiple_markers_section.setStyleSheet("""
+            QWidget#select_multiple_markers_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -11636,23 +11382,79 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 border-radius: 16px;
             }  
         """)
-        self.create_select_multiple_markers_screen()
-        self.select_multiple_markers_screen.hide()
+        self.create_select_multiple_markers_section()
+        self.select_multiple_markers_section.hide()
 
-        #-----Seaborn Legend Dictionary Markers Screen----
-        self.select_dictionary_markers_screen = QWidget()
-        self.create_select_dictionary_markers_screen()
-        self.select_dictionary_markers_screen.hide()
+        #-----Seaborn Legend Filled Markers section-----
+        self.select_multiple_filled_markers_section = QWidget()
+        self.select_multiple_filled_markers_section.setObjectName("select_multiple_filled_markers_section")
+        self.select_multiple_filled_markers_section.setStyleSheet("""
+            QWidget#select_multiple_filled_markers_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.create_select_multiple_filled_markers_section()
+        self.select_multiple_filled_markers_section.hide()
+
+        #-----Seaborn Legend Line Markers section-----
+        self.select_multiple_line_markers_section = QWidget()
+        self.select_multiple_line_markers_section.setObjectName("select_multiple_line_markers_section")
+        self.select_multiple_line_markers_section.setStyleSheet("""
+            QWidget#select_multiple_line_markers_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.create_select_multiple_line_markers_section()
+        self.select_multiple_line_markers_section.hide()
+
+        #-----Seaborn Legend Dictionary Markers Section----
+        self.select_dictionary_markers_section = QWidget()
+        self.create_select_dictionary_markers_section()
+        self.select_dictionary_markers_section.hide()
+
+        #-----Seaborn Legend Reset Markers Section-----
+        self.reset_markers_section = QWidget()
+        self.reset_markers_section.setObjectName("reset_markers_section")
+        self.reset_markers_section.setStyleSheet("""
+            QWidget#reset_markers_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.create_reset_markers_section()
+        self.reset_markers_section.hide()
 
         #-----All Available Screens-----
-        self.current_screen_idx = 0
-        self.available_screens = [self.sns_legend_markers_screen,self.select_single_markers_screen,
-                                self.select_multiple_markers_screen,self.select_dictionary_markers_screen]
+        self.current_section_idx = 0
+        self.available_sections = [self.sns_legend_markers_adjustment_section,
+                                self.select_single_markers_section,self.select_multiple_markers_section,
+                                self.select_multiple_filled_markers_section,self.select_multiple_line_markers_section,
+                                self.select_dictionary_markers_section,self.reset_markers_section]
 
         #-----Add All the Screens to the Main Widget-----
         main_layout = QVBoxLayout(self)
-        for screen in self.available_screens:
-            main_layout.addWidget(screen)
+        for section in self.available_sections:
+            main_layout.addWidget(section)
 
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0,0,0,0)
@@ -11660,19 +11462,21 @@ class seaborn_legend_markers_adjustment_section(QWidget):
         #-----Keyboard Shortcuts-----
         previous_screen_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left),self)
         previous_screen_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
-        previous_screen_shortcut.activated.connect(self.change_to_original_screen)
+        previous_screen_shortcut.activated.connect(self.change_to_original_section)
 
-    def create_select_single_markers_screen(self):
-        select_single_markers_screen_layout = QVBoxLayout(self.select_single_markers_screen)
+    def create_sns_legend_markers_adjustment_section(self):
+        #Create the layout for the sns legend markers adjustment section
+        sns_legend_markers_adjustment_section_layout = QVBoxLayout(self.sns_legend_markers_adjustment_section)
 
-        self.single_select_markers_list_view = QListView()
-        self.single_select_markers_model = QStringListModel(self.available_markers)
+        #Create the list view and model for the legend markers adjustment section
+        self.sns_legend_markers_parameter_list_view = QListView()
+        self.sns_legend_markers_parameter_model = QStringListModel(self.marker_parameters)
 
-        self.single_select_markers_list_view.setModel(self.single_select_markers_model)
-        self.single_select_markers_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.single_select_markers_list_view.setObjectName("single_select_markers_list_view")
-        self.single_select_markers_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        #Add the model to the list view and disable editting for the list view
+        self.sns_legend_markers_parameter_list_view.setModel(self.sns_legend_markers_parameter_model)
+        self.sns_legend_markers_parameter_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
+        #Customization for the list view
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -11680,11 +11484,14 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 font.setWeight(600)
                 option.font = font
                 super().paint(painter, option, index)
-        
-        self.single_select_markers_list_view.setItemDelegate(CustomDelegate())
 
-        self.single_select_markers_list_view.setStyleSheet("""
-            QListView#single_select_markers_list_view{
+        #Apply the customization to the list view
+        self.sns_legend_markers_parameter_list_view.setItemDelegate(CustomDelegate())
+
+        #Set the object name and style the list view's background, item, select and hover effects.
+        self.sns_legend_markers_parameter_list_view.setObjectName("sns_legend_markers_parameter_list_view")
+        self.sns_legend_markers_parameter_list_view.setStyleSheet("""
+            QListView#sns_legend_markers_parameter_list_view{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -11694,7 +11501,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 border: transparent;
                 border-radius: 16px;
             }
-            QListView#single_select_markers_list_view::item {
+            QListView#sns_legend_markers_parameter_list_view::item {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -11708,7 +11515,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#single_select_markers_list_view::item:selected {
+            QListView#sns_legend_markers_parameter_list_view::item:selected {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -11721,7 +11528,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#single_select_markers_list_view::item:hover {
+            QListView#sns_legend_markers_parameter_list_view::item:hover {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -11736,27 +11543,38 @@ class seaborn_legend_markers_adjustment_section(QWidget):
             }
         """)
 
-        self.single_select_markers_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.single_select_markers_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.single_select_markers_list_view.setSpacing(3)
+        #Hide the scroll bar for the list view and control the spacing for each item
+        self.sns_legend_markers_parameter_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.sns_legend_markers_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.sns_legend_markers_parameter_list_view.setSpacing(3)
 
-        self.single_select_markers_list_view.clicked.connect(self.change_single_select_marker)
-        select_single_markers_screen_layout.addWidget(self.single_select_markers_list_view)
+        #Automatically update the section based on the selected parameter
+        self.sns_legend_markers_parameter_list_view.clicked.connect(self.change_current_parameter_section)
 
-        # Add margins and spacing to make it look good and push content to the top
-        select_single_markers_screen_layout.setContentsMargins(10, 10, 10, 10)
+        #Add the instructions widget for the markers to the layout
+        sns_legend_markers_adjustment_section_layout.addWidget(self.markers_instruction_widget)
 
-    def create_select_multiple_markers_screen(self):
-        select_multiple_markers_screen_layout = QVBoxLayout(self.select_multiple_markers_screen)
+        #Add the list view to the sns legend markers adjustment section layout
+        sns_legend_markers_adjustment_section_layout.addWidget(self.sns_legend_markers_parameter_list_view)
 
-        self.multiple_select_markers_list_widget = QListWidget()
-        self.multiple_select_markers_list_widget.setSelectionMode(QListView.SelectionMode.MultiSelection)
-        self.multiple_select_markers_list_widget.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.multiple_select_markers_list_widget.setObjectName("multiple_select_markers_list_widget")
+        #Add margins and spacing to make it look good and push content to the top
+        sns_legend_markers_adjustment_section_layout.setContentsMargins(10, 10, 10, 10)
+        sns_legend_markers_adjustment_section_layout.setSpacing(0)
+        sns_legend_markers_adjustment_section_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        for marker in self.available_markers:
-            self.multiple_select_markers_list_widget.addItem(QListWidgetItem(marker))
+    def create_select_single_markers_section(self):
+        #Create the layout for the select single markers section
+        select_single_markers_section_layout = QVBoxLayout(self.select_single_markers_section)
 
+        #Create the list view and model for the single select
+        self.select_single_markers_list_view = QListView()
+        self.select_single_markers_model = QStringListModel(self.available_markers)
+
+        #Add the model to the list view and disable editting for the list view 
+        self.select_single_markers_list_view.setModel(self.single_select_markers_model)
+        self.select_single_markers_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        #Customization for the list view
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -11765,10 +11583,13 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 option.font = font
                 super().paint(painter, option, index)
         
-        self.multiple_select_markers_list_widget.setItemDelegate(CustomDelegate())
+        #Apply the customization to the list view
+        self.select_single_markers_list_view.setItemDelegate(CustomDelegate())
 
-        self.multiple_select_markers_list_widget.setStyleSheet("""
-            QListView#multiple_select_markers_list_widget{
+        #Set the object name and style the list view's background, item, select and hover effects.
+        self.select_single_markers_list_view.setObjectName("select_single_markers_list_view")
+        self.select_single_markers_list_view.setStyleSheet("""
+            QListView#select_single_markers_list_view{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -11778,7 +11599,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 border: transparent;
                 border-radius: 16px;
             }
-            QListView#multiple_select_markers_list_widget::item {
+            QListView#select_single_markers_list_view::item {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -11792,7 +11613,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#multiple_select_markers_list_widget::item:selected {
+            QListView#select_single_markers_list_view::item:selected {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -11805,7 +11626,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#multiple_select_markers_list_widget::item:hover {
+            QListView#select_single_markers_list_view::item:hover {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -11820,19 +11641,314 @@ class seaborn_legend_markers_adjustment_section(QWidget):
             }
         """)
 
-        self.multiple_select_markers_list_widget.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.multiple_select_markers_list_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.multiple_select_markers_list_widget.setSpacing(3)
+        #Hide the scroll bar for the list view and control the spacing for each item
+        self.select_single_markers_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.select_single_markers_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.select_single_markers_list_view.setSpacing(3)
 
-        self.multiple_select_markers_list_widget.itemClicked.connect(self.change_multiple_select_marker)
-        select_multiple_markers_screen_layout.addWidget(self.multiple_select_markers_list_widget)
+        #Automatically update the markers based on the selected marker
+        self.select_single_markers_list_view.clicked.connect(self.change_single_select_marker)
+        select_single_markers_section_layout.addWidget(self.select_single_markers_list_view)
 
         # Add margins and spacing to make it look good and push content to the top
-        select_multiple_markers_screen_layout.setContentsMargins(10, 10, 10, 10)
+        select_single_markers_section_layout.setContentsMargins(10, 10, 10, 10)
 
-    def create_select_dictionary_markers_screen(self):
-        select_dictionary_markers_screen_layout = QVBoxLayout(self.select_dictionary_markers_screen)  
+    def create_select_multiple_markers_section(self):
+        #Create the layout for the select multiple markers section
+        select_multiple_markers_section_layout = QVBoxLayout(self.select_multiple_markers_section)
 
+        #Create the list view and model for the select multiple markers section
+        self.select_multiple_markers_list_view = QListView()
+        self.select_multiple_markers_model = QStringListModel(self.marker_types)
+
+        #Add the model to the list view and disable editting for the list view
+        self.select_multiple_markers_list_view.setModel(self.select_multiple_markers_model)
+        self.select_multiple_markers_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        #Customization for the list view
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+
+        #Apply the customization to the list view
+        self.select_multiple_markers_list_view.setItemDelegate(CustomDelegate())
+
+        #Set the object name and style the list view's background, item, select and hover effects.
+        self.select_multiple_markers_list_view.setObjectName("select_multiple_markers_list_view")
+        self.select_multiple_markers_list_view.setStyleSheet("""
+            QListView#select_multiple_markers_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#select_multiple_markers_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#select_multiple_markers_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#select_multiple_markers_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        #Hide the scroll bar for the list view and control the spacing for each item
+        self.select_multiple_markers_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.select_multiple_markers_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.select_multiple_markers_list_view.setSpacing(3)
+
+        #Automatically update the markers based on the selected parameter
+        self.select_multiple_markers_list_view.clicked.connect(self.change_select_multiple_marker_section)
+
+        #Add the list view to the select multiple markers section layout
+        select_multiple_markers_section_layout.addWidget(self.select_multiple_markers_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        select_multiple_markers_section_layout.setContentsMargins(10, 10, 10, 10)
+        select_multiple_markers_section_layout.setSpacing(0)
+        select_multiple_markers_section_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+    def create_select_multiple_filled_markers_section(self):
+        #Create the layout for the select multiple filled markers section
+        select_multiple_filled_markers_section_layout = QVBoxLayout(self.select_multiple_filled_markers_section)
+
+        #Create the list widget for the select multiple filled markers section
+        self.select_multiple_filled_markers_list_widget = QListWidget()
+
+        #Control the selection mode and ban the user from editting the items
+        self.select_multiple_filled_markers_list_widget.setSelectionMode(QListView.SelectionMode.MultiSelection)
+        self.select_multiple_filled_markers_list_widget.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        #Provide a name for the select multiple filled markers list widget
+        self.select_multiple_filled_markers_list_widget.setObjectName("select_multiple_filled_markers_list_widget")
+
+        #Add the markers to the select multiple filled markers list widget
+        for marker in self.available_filled_markers:
+            self.select_multiple_filled_markers_list_widget.addItem(QListWidgetItem(marker))
+
+        #Customization for the list view
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        #Apply the customization to the list widget
+        self.select_multiple_filled_markers_list_widget.setItemDelegate(CustomDelegate())
+
+        #Style the list view's background, item, select and hover effects.
+        self.select_multiple_filled_markers_list_widget.setStyleSheet("""
+            QListView#select_multiple_filled_markers_list_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#select_multiple_filled_markers_list_widget::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#select_multiple_filled_markers_list_widget::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#select_multiple_filled_markers_list_widget::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        #Hide the scroll bar for the list view and control the spacing for each item
+        self.select_multiple_filled_markers_list_widget.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.select_multiple_filled_markers_list_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.select_multiple_filled_markers_list_widget.setSpacing(3)
+
+        #Automatically update the markers selected based on the selected item
+        self.select_multiple_filled_markers_list_widget.itemClicked.connect(self.change_multiple_select_marker)
+        
+        #Add the list widget to the select multiple filled markers section layout
+        select_multiple_filled_markers_section_layout.addWidget(self.select_multiple_filled_markers_list_widget)
+
+        # Add margins and spacing to make it look good and push content to the top
+        select_multiple_filled_markers_section_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_select_multiple_line_markers_section(self):
+        #Create the layout for the select multiple line markers section
+        select_multiple_line_markers_section_layout = QVBoxLayout(self.select_multiple_line_markers_section)
+
+        #Create the list widget for the select multiple line markers section
+        self.select_multiple_line_markers_list_widget = QListWidget()
+        
+        #Control the selection mode and ban the user from editting the items
+        self.select_multiple_line_markers_list_widget.setSelectionMode(QListView.SelectionMode.MultiSelection)
+        self.select_multiple_line_markers_list_widget.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        
+        #Provide a name for the select multiple line markers list widget
+        self.select_multiple_line_markers_list_widget.setObjectName("select_multiple_line_markers_list_widget")
+
+        #Add the markers to the select multiple line markers list widget
+        for marker in self.available_line_markers:
+            self.select_multiple_line_markers_list_widget.addItem(QListWidgetItem(marker))
+
+        #Customization for the list view
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        #Apply the customization to the list widget
+        self.select_multiple_line_markers_list_widget.setItemDelegate(CustomDelegate())
+
+        #Style the list view's background, item, select and hover effects.
+        self.select_multiple_line_markers_list_widget.setStyleSheet("""
+            QListView#select_multiple_line_markers_list_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#select_multiple_line_markers_list_widget::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#select_multiple_line_markers_list_widget::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#select_multiple_line_markers_list_widget::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        #Hide the scroll bar for the list view and control the spacing for each item
+        self.select_multiple_line_markers_list_widget.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.select_multiple_line_markers_list_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.select_multiple_line_markers_list_widget.setSpacing(3)
+
+        #Automatically update the markers selected based on the selected item
+        self.select_multiple_line_markers_list_widget.itemClicked.connect(self.change_multiple_select_marker)
+        
+        #Add the list widget to the select multiple line markers section layout
+        select_multiple_line_markers_section_layout.addWidget(self.select_multiple_line_markers_list_widget)
+
+        # Add margins and spacing to make it look good and push content to the top
+        select_multiple_line_markers_section_layout.setContentsMargins(10, 10, 10, 10)
+
+    def create_select_dictionary_markers_section(self):
+        #Create the layout for the select dictionary markers section
+        select_dictionary_markers_section_layout = QVBoxLayout(self.select_dictionary_markers_section)  
+
+        #Create the dictionary markers key section
         self.dictionary_markers_key_section = QWidget()
         self.dictionary_markers_key_section.setObjectName("dictionay_markers_key_section")
         self.dictionary_markers_key_section.setStyleSheet("""
@@ -11849,6 +11965,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
         """)
         self.create_dictionary_markers_key_section()
 
+        #Create the dictionary markers value section
         self.dictionary_markers_value_section = QWidget()
         self.dictionary_markers_value_section.setObjectName("dictionay_markers_value_section")
         self.dictionary_markers_value_section.setStyleSheet("""
@@ -11865,21 +11982,27 @@ class seaborn_legend_markers_adjustment_section(QWidget):
         """)
         self.create_dictionary_markers_value_section()
 
-        select_dictionary_markers_screen_layout.addWidget(self.dictionary_markers_key_section,stretch=1)
-        select_dictionary_markers_screen_layout.addWidget(self.dictionary_markers_value_section,stretch=1)
-        select_dictionary_markers_screen_layout.setSpacing(10)
-        select_dictionary_markers_screen_layout.setContentsMargins(0,0,0,0)
+        #Add the widgets to the layout of the select dictionary markers section layout
+        select_dictionary_markers_section_layout.addWidget(self.dictionary_markers_key_section,stretch=1)
+        select_dictionary_markers_section_layout.addWidget(self.dictionary_markers_value_section,stretch=1)
+
+        # Add margins and spacing to make it look good and push content to the top
+        select_dictionary_markers_section_layout.setSpacing(10)
+        select_dictionary_markers_section_layout.setContentsMargins(0,0,0,0)
 
     def create_dictionary_markers_key_section(self):
-        dictionary_marker_key_section_layout = QVBoxLayout(self.dictionary_markers_key_section)
+        #Create the layout for the dictionary markers key section
+        dictionary_markers_key_section_layout = QVBoxLayout(self.dictionary_markers_key_section)
 
-        self.dictionary_style_key_list_view = QListView()
-        self.dictionary_style_key_model = QStringListModel(self.style_value)
+        #Create the list view and model for the dictionary markers key section
+        self.dictionary_markers_key_list_view = QListView()
+        self.dictionary_markers_key_model = QStringListModel(self.style_value)
         
-        self.dictionary_style_key_list_view.setModel(self.dictionary_style_key_model)
-        self.dictionary_style_key_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.dictionary_style_key_list_view.setObjectName("dictionary_style_key_list_view")
-
+        #Add the model to the list view and disable editting for the list view 
+        self.dictionary_markers_key_list_view.setModel(self.dictionary_markers_key_model)
+        self.dictionary_markers_key_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        
+        #Customization for the list view
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -11888,10 +12011,13 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 option.font = font
                 super().paint(painter, option, index)
         
-        self.dictionary_style_key_list_view.setItemDelegate(CustomDelegate())
+        #Apply the customization to the list view 
+        self.dictionary_markers_key_list_view.setItemDelegate(CustomDelegate())
 
-        self.dictionary_style_key_list_view.setStyleSheet("""
-            QListView#dictionary_style_key_list_view{
+        #Set the object name and style the list view's background, item, select and hover effects.
+        self.dictionary_markers_key_list_view.setObjectName("dictionary_markers_key_list_view")
+        self.dictionary_markers_key_list_view.setStyleSheet("""
+            QListView#dictionary_markers_key_list_view{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -11901,7 +12027,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 border: transparent;
                 border-radius: 16px;
             }
-            QListView#dictionary_style_key_list_view::item {
+            QListView#dictionary_markers_key_list_view::item {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -11915,7 +12041,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#dictionary_style_key_list_view::item:selected {
+            QListView#dictionary_markers_key_list_view::item:selected {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -11928,7 +12054,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#dictionary_style_key_list_view::item:hover {
+            QListView#dictionary_markers_key_list_view::item:hover {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -11943,27 +12069,35 @@ class seaborn_legend_markers_adjustment_section(QWidget):
             }
         """)
 
-        self.dictionary_style_key_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.dictionary_style_key_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.dictionary_style_key_list_view.setSpacing(3)
+        #Hide the scroll bar for the list view and control the spacing for each item
+        self.dictionary_markers_key_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.dictionary_markers_key_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.dictionary_markers_key_list_view.setSpacing(3)
 
-        self.dictionary_style_key_list_view.clicked.connect(self.change_dictionary_style_key)
+        #Automatically update the key based on the selected style key
+        self.dictionary_markers_key_list_view.clicked.connect(self.change_dictionary_style_key)
 
-        dictionary_marker_key_section_layout.addWidget(self.dictionary_style_key_list_view)
-        dictionary_marker_key_section_layout.setContentsMargins(10,10,10,10)
-        dictionary_marker_key_section_layout.setSpacing(10)
-        dictionary_marker_key_section_layout.addStretch()
+        #Add the list view to the dictionary markers key section layout
+        dictionary_markers_key_section_layout.addWidget(self.dictionary_markers_key_list_view)
+        
+        #Add margins and spacing to make it look good and push content to the top
+        dictionary_markers_key_section_layout.setContentsMargins(10,10,10,10)
+        dictionary_markers_key_section_layout.setSpacing(10)
+        dictionary_markers_key_section_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
     def create_dictionary_markers_value_section(self):
-        dictionary_marker_value_section_layout = QVBoxLayout(self.dictionary_markers_value_section)
+        #Create the layout for the dictionary markers value section
+        dictionary_markers_value_section_layout = QVBoxLayout(self.dictionary_markers_value_section)
 
+        #Create the list view and model for the dictionary markers value section
         self.dictionary_markers_value_list_view = QListView()
-        self.dictionary_markers_value_model = QStringListModel(self.available_markers)
+        self.dictionary_markers_value_model = QStringListModel(self.available_filled_markers)
         
+        #Add the model to the list view and disable editting for the list view 
         self.dictionary_markers_value_list_view.setModel(self.dictionary_markers_value_model)
         self.dictionary_markers_value_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.dictionary_markers_value_list_view.setObjectName("dictionary_markers_value_list_view")
-
+    
+        #Customization for the list view
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -11972,8 +12106,11 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 option.font = font
                 super().paint(painter, option, index)
         
+        #Apply the customization to the list view
         self.dictionary_markers_value_list_view.setItemDelegate(CustomDelegate())
 
+        #Set the object name and style the list view's background, item, select and hover effects.
+        self.dictionary_markers_value_list_view.setObjectName("dictionary_markers_value_list_view")
         self.dictionary_markers_value_list_view.setStyleSheet("""
             QListView#dictionary_markers_value_list_view{
                 background: qlineargradient(
@@ -12027,111 +12164,291 @@ class seaborn_legend_markers_adjustment_section(QWidget):
             }
         """)
 
+        #Hide the scroll bar for the list view and control the spacing for each item 
         self.dictionary_markers_value_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.dictionary_markers_value_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.dictionary_markers_value_list_view.setSpacing(3)
 
+        #Automatically update the dictionary markers value based on the selected markers
         self.dictionary_markers_value_list_view.clicked.connect(self.change_dictionary_markers_value)
 
-        dictionary_marker_value_section_layout.addWidget(self.dictionary_markers_value_list_view)
-        dictionary_marker_value_section_layout.setContentsMargins(10,10,10,10)
-        dictionary_marker_value_section_layout.setSpacing(10)
-        dictionary_marker_value_section_layout.addStretch()
+        #Add the list view to the dictionary markers value section
+        dictionary_markers_value_section_layout.addWidget(self.dictionary_markers_value_list_view)
 
-    def change_to_original_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+        #Add margins and spacing to make it look good and push content to the top
+        dictionary_markers_value_section_layout.setContentsMargins(10,10,10,10)
+        dictionary_markers_value_section_layout.setSpacing(10)
+        dictionary_markers_value_section_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-    def change_to_single_markers_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 1
-        self.available_screens[self.current_screen_idx].show()
+    def create_reset_markers_section(self):
+        #Create a layout for the reset markers section
+        reset_markers_section_layout = QVBoxLayout(self.reset_markers_section)
 
-    def change_to_multiple_markers_screen(self):
-        self.markers = []
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 2
-        self.available_screens[self.current_screen_idx].show()
+        #Create the reset seaborn legend markers label for the button
+        self.reset_markers_label = QLabel("Reset Markers")
+        self.reset_markers_label.setWordWrap(True)
+        self.reset_markers_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_markers_label.setObjectName("reset_markers_label")
+        self.reset_markers_label.setStyleSheet("""
+            QLabel#reset_markers_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.reset_markers_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
-    def change_to_dictonary_markers_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 3
-        self.available_screens[self.current_screen_idx].show()
+        #Create the reset seaborn legend markers button
+        self.reset_markers_button = QPushButton()
+        self.reset_markers_button.setObjectName("reset_markers_button")
+        self.reset_markers_button.setStyleSheet("""
+            QPushButton#reset_markers_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#reset_markers_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.reset_markers_button.setMinimumHeight(50)
 
-    def turn_markers_on_and_off(self):
-        self.initial_markers_argument = not self.initial_markers_argument
-        if (self.initial_markers_argument):
-            self.turn_markers_on_off_label.setText("Turn Markers Off")
-        else:
-            self.turn_markers_on_off_label.setText("Turn Markers On")
-        self.markers = self.initial_markers_argument
-        self.update_markers()
+        #Connect the button to automatically reset the face color when clicked on
+        self.reset_markers_button.clicked.connect(self.reset_markers)
+
+        #Add the label onto the button
+        reset_markers_button_layout = QVBoxLayout(self.reset_markers_button)
+        reset_markers_button_layout.addWidget(self.reset_markers_label)
+        reset_markers_button_layout.setContentsMargins(0,0,0,0)
+        reset_markers_button_layout.setSpacing(0)
+
+        #Add the button created to the reset face color section
+        reset_markers_section_layout.addWidget(self.reset_markers_button)
+        reset_markers_section_layout.setContentsMargins(10,10,10,10)
+        reset_markers_section_layout.addStretch()
+
+    def change_current_parameter_section(self,index):
+        #Get the associated screen name based on the item the user clicked on in the list view
+        section_name = self.sns_legend_markers_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
+
+        #If the screen name is Single Marker change to the single marker section
+        if (section_name == "Single Marker"):
+            self.change_to_single_markers_section()
+
+        #If the screen name is Multiple Markers change to the multiple markers section
+        if (section_name == "Multiple Markers"):
+            self.change_to_multiple_markers_section()
+
+        #If the screen name is Dictionary Marker change to the dictionary marker section
+        if (section_name == "Dictionary Marker"):
+            self.change_to_dictonary_markers_section()
+
+        #If the screen name is Reset Face Color change to the reset face color section
+        if (section_name == "Reset Markers"):
+            self.change_to_reset_markers_section()
+
+    def change_select_multiple_marker_section(self,index):
+        #Get the associated screen name based on the item the user clicked on in the list view
+        section_name = self.select_multiple_markers_model.data(index,Qt.ItemDataRole.DisplayRole)
+
+        #If the screen name is Filled Markers change to the filled markers section 
+        if (section_name == "Filled Markers"):
+            self.change_to_multiple_filled_markers_section()
+
+        #If the screen name is Line Markers change to the line markers section 
+        if (section_name == "Line Markers"):
+            self.change_to_multiple_line_markers_section()
+
+    def change_to_original_section(self):
+        #Clear the selection for the list view
+        self.sns_legend_markers_parameter_list_view.clearSelection()
+
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 0
+        self.available_sections[self.current_section_idx].show()
+
+    def change_to_single_markers_section(self):
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 1
+        self.available_sections[self.current_section_idx].show()
+
+    def change_to_multiple_markers_section(self):
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 2
+        self.available_sections[self.current_section_idx].show()
+
+    def change_to_multiple_filled_markers_section(self):
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 3
+        self.available_sections[self.current_section_idx].show()
+
+    def change_to_multiple_line_markers_section(self):
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 4
+        self.available_sections[self.current_section_idx].show()
+
+    def change_to_dictonary_markers_section(self):
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 5
+        self.available_sections[self.current_section_idx].show()
+
+    def change_to_reset_markers_section(self):
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 6
+        self.available_sections[self.current_section_idx].show()
 
     def change_single_select_marker(self,index):
+        #Identify the marker that is selected and update it
         self.markers = [self.single_select_markers_model.data(index, Qt.ItemDataRole.DisplayRole)]
         self.update_markers()
     
     def change_multiple_select_marker(self,item):
-        if (item in self.markers):
-            self.markers.remove(item)
+        #Check if the item being clicked is already selected
+        #If the item is already selected then unselect it and remove it
+        if (item in self.multiple_markers):
+            self.multiple_markers.remove(item)
             item.setSelected(False)
+        #If it's not check the size of the list and add it to the list 
         else:
-            if (len(self.markers) == self.style_value_count):
-                old_item = self.markers.pop(0)
+            #If the size is already at max remove the first element and unselect it
+            if (len(self.multiple_markers) == self.style_value_count):
+                old_item = self.multiple_markers.popleft()
                 old_item.setSelected(False)
-            self.markers.append(item)
+            #Add the marker selected to the list
+            self.multiple_markers.append(item)
         
-        if (self.markers != []):
+        #Only update the markers in the plot config when the size is at max
+        if (len(self.multiple_markers) == self.style_value_count):
+            self.markers = [item.text() for item in self.multiple_markers]
             self.update_markers()
 
     def change_dictionary_style_key(self,index):
+        #Identify the markers key selected
         self.markers_dictionary_key = self.dictionary_style_key_model.data(index,Qt.ItemDataRole.DisplayRole)
+        
+        #Reset the markers value
         self.dictionary_markers_value_list_view.clearSelection()
         self.markers_dictionary_value = ""
+        
+        #Check to see if we could add it to the dictionary or not
         self.change_dictionary_select_marker()
 
     def change_dictionary_markers_value(self,index):
+        #Identify the marker value selected and check if we could add it to the dictionary
         self.markers_dictionary_value = self.dictionary_markers_value_model.data(index,Qt.ItemDataRole.DisplayRole)
         self.change_dictionary_select_marker()
 
     def change_dictionary_select_marker(self):
+        #When both the key and value isn't None try to add it to the dictionary
         if (self.markers_dictionary_key != "" and self.markers_dictionary_value != ""):
             
+            #Clear the selection for both list views
+            self.dictionary_markers_key_list_view.clearSelection()
+            self.dictionary_markers_value_list_view.clearSelection()
+
+            #Add the key and value to the dictionary
             self.markers_dictionary[self.markers_dictionary_key] = self.markers_dictionary_value
 
+            #Get the keys in the dictionary
             dictionary_keys = list(self.markers_dictionary.keys())
             
+            #If there is enough keys then update the markers in the plot config
             if (len(dictionary_keys) == self.style_value_count):
                 self.markers = self.markers_dictionary
                 self.update_markers()
 
     def update_markers(self):
+        #Get the newest plot config from the plot config json
         db = self.plot_manager.get_db()
-        markers = self.markers
+
+        #if there is a plot config then update it in the newest plot config
         if (db != []):
-            markers = [item.text() for item in self.markers]
-            self.plot_manager.update_seaborn_legend("markers",markers)
+            self.plot_manager.update_seaborn_legend("markers",self.markers)
+        #if there is no plot config available then create a new one with the default and add the new value in
         else:
-            markers = [item.text() for item in self.markers if isinstance(item,str)]
             plot_parameters = plot_json[self.selected_graph].copy()
-            plot_parameters["legend"]["seaborn_legends"]["markers"] = markers
+            plot_parameters["legend"]["seaborn_legends"]["markers"] = self.markers
             self.plot_manager.insert_plot_parameter(plot_parameters)
+        #Update the graph with the newest plot config
         self.graph_display.show_graph()
 
-    def reset_marker_selection(self):
-        self.markers = []
-        self.markers_dictionary = {style:"o" for style in self.style_value}
+    def reset_markers(self):
+        #Initialize the state, list, dictionary for the markers
+        self.multiple_markers = deque(maxlen=self.style_value_count)
+        self.markers_dictionary = dict()
+        self.markers_dictionary_key = ""
+        self.markers_dictionary_value = ""
+
+        #Initialize the default markers argument
+        self.markers = True
+
+        #Update the plot config with the reset markers
+        self.update_markers()
 
     def showEvent(self,event):
-        try:
-            self.style_value = pd.read_csv("./dataset/user_dataset.csv")[self.plot_manager.get_db()["style"]].unique()
-        except FileNotFoundError or KeyError:
-            self.style_value = []
-        self.style_value_count = len(self.style_value)
-        self.multiple_select_markers_list_widget.clearSelection()
-        self.reset_marker_selection()
-        self.change_to_original_screen()
+        #Get the new style from the plot config
+        new_plot_style = self.plot_manager.get_db()["style"]
+
+        #If there isn't any style then show the instructions widget
+        if (new_plot_style is None):
+            self.sns_legend_markers_parameter_list_view.hide()
+            self.markers_instruction_widget.show()
+        #If the style is different then show the list view 
+        elif (self.plot_style != new_plot_style):
+            self.sns_legend_markers_parameter_list_view.show()
+            self.markers_instruction_widget.hide()
+
+            #Reinitialize the list, count, and plot style
+            self.style_value = pd.read_csv("./dataset/user_dataset.csv")[self.plot_style].unique()
+            self.style_value_count = len(self.style_value)
+            self.plot_style = new_plot_style
+
+            #Update the dictionary style key model
+            self.dictionary_style_key_model.setStringList(self.style_value)
+
+            #Clear the selection for the select multiple markers section
+            self.select_multiple_filled_markers_list_widget.clearSelection()
+            self.select_multiple_line_markers_list_widget.clearSelection()
+
+            #Reset the markers
+            self.reset_markers()
+            
         super().showEvent(event)
 
 class seaborn_legend_dashes_adjustment_section(QWidget):
@@ -13250,17 +13567,17 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
         dictionary_dashes_screen_layout.addStretch()
 
         #-----All Available Screens-----
-        self.current_screen_idx = 0
-        self.available_screens = [self.sns_legend_dashes_screen,self.select_single_dashes_screen,
+        self.current_section_idx = 0
+        self.available_sections = [self.sns_legend_dashes_screen,self.select_single_dashes_screen,
                                 self.select_single_premade_dashes_screen,self.select_single_custom_dashes_screen,
                                 self.select_multiple_dashes_screen,self.select_multiple_premade_dashes_screen,
                                 self.select_multiple_custom_dashes_screen,self.select_dictionary_dashes_screen,
                                 self.select_dictionary_premade_dashes_screen,self.select_dictionary_custom_dashes_screen]
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].show()
 
         #-----Add All the Screens to the Main Widget-----
         main_layout = QVBoxLayout(self)
-        for screen in self.available_screens:
+        for screen in self.available_sections:
             main_layout.addWidget(screen)
 
         main_layout.setSpacing(0)
@@ -13792,78 +14109,78 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
         select_dictionary_custom_dashes_screen_layout.setSpacing(10)
         select_dictionary_custom_dashes_screen_layout.addStretch()
 
-    def change_to_original_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+    def change_to_original_section(self):
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 0
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_previous_screen(self):
         self.hide_validity_widgets()
-        if (self.current_screen_idx == 0):
+        if (self.current_section_idx == 0):
             return
 
-        self.available_screens[self.current_screen_idx].hide()
+        self.available_sections[self.current_section_idx].hide()
 
-        if (self.current_screen_idx in [1,4,7]):
-            self.current_screen_idx = 0
-        if (self.current_screen_idx in [2,3]):
-            self.current_screen_idx = 1
+        if (self.current_section_idx in [1,4,7]):
+            self.current_section_idx = 0
+        if (self.current_section_idx in [2,3]):
+            self.current_section_idx = 1
             self.select_single_custom_dashes_input.clear()
-        if (self.current_screen_idx in [5,6]):
-            self.current_screen_idx = 4
+        if (self.current_section_idx in [5,6]):
+            self.current_section_idx = 4
             self.select_multiple_custom_dashes_input.clear()
-        if (self.current_screen_idx in [8,9]):
-            self.current_screen_idx = 7
+        if (self.current_section_idx in [8,9]):
+            self.current_section_idx = 7
             self.select_dictionary_premade_dashes_key_input.clear()
             self.select_dictionary_custom_dashes_key_input.clear()
             self.select_dictionary_custom_dashes_value_input.clear()
 
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_single_dashes_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 1
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 1
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_select_single_premade_dashes_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 2
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 2
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_select_single_custom_dashes_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 3
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 3
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_multiple_dashes_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 4
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 4
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_select_multiple_premade_dashes_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 5
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 5
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_select_multiple_custom_dashes_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 6
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 6
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_dictionary_dashes_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 7
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 7
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_select_dictionary_premade_dashes_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 8
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 8
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_select_dictionary_custom_dashes_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 9
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 9
+        self.available_sections[self.current_section_idx].show()
 
     def turn_dashes_on_and_off(self):
         self.initial_dashes_argument = not self.initial_dashes_argument
@@ -13909,7 +14226,6 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
             
             self.valid_single_custom_dashes_widget.show()
             self.invalid_single_custom_dashes_widget.hide()
-            
         except:
             self.valid_single_custom_dashes_widget.setVisible(False)
             self.invalid_single_custom_dashes_widget.setVisible(True)
@@ -14024,7 +14340,7 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
         self.graph_display.show_graph()
 
     def add_new_custom_dashes(self):
-        if (not self.available_screens[6].isHidden()):
+        if (not self.available_sections[6].isHidden()):
             if (self.check_multiple_select_custom_dashes()):
                 custom_dashes = self.select_multiple_custom_dashes_input.text().strip()
                 if "," in custom_dashes:
@@ -14044,7 +14360,7 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
 
                 self.update_dashes()
 
-        if (not self.available_screens[9].isHidden()):
+        if (not self.available_sections[9].isHidden()):
             if (self.change_dictionary_value_custom_dashes()):
                 self.change_dictionary_select_dashes()
 
@@ -14077,7 +14393,7 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
     def showEvent(self,event):
         super().showEvent(event)
         self.reset_dashes_selection()
-        self.change_to_original_screen()
+        self.change_to_original_section()
 
 class seaborn_legend_size_order_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
@@ -14196,7 +14512,7 @@ class seaborn_legend_size_order_adjustment_section(QWidget):
         # Add margins and spacing to make it look good and push content to the top
         size_order_adjustment_screen_layout.setContentsMargins(10, 10, 10, 10)
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         pass
 
     def update_size_order(self):
@@ -14215,7 +14531,7 @@ class seaborn_legend_size_order_adjustment_section(QWidget):
         if (db != []):
             dataset = pd.read_csv("./dataset/user_dataset.csv")
             size_parameter = db["size"]
-            if (size_parameter == None):
+            if (size_parameter is None):
                 return []
             return dataset[size_parameter].unique()
         else:
@@ -14384,7 +14700,7 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
         main_layout.setContentsMargins(0,0,0,0)
         main_layout.setSpacing(0)
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         pass
 
     def update_hue_order(self):
@@ -14542,7 +14858,7 @@ class seaborn_legend_style_order_adjustment_section(QWidget):
         # Add margins and spacing to make it look good and push content to the top
         style_order_adjustment_screen_layout.setContentsMargins(10, 10, 10, 10)
 
-    def change_to_original_screen(self):
+    def change_to_original_section(self):
         pass
 
     def update_style_order(self):
@@ -14586,7 +14902,7 @@ class legend_button(QDialog):
 
         self.legend_parameters.extend(self.seaborn_specific_legend_parameters)
 
-        self.current_screen_idx = 0
+        self.current_section_idx = 0
 
         self.available_screen_names = [legend_visible_adjustment_section,legend_label_adjustment_section,
                                   legend_loc_adjustment_section,legend_bbox_to_anchor_adjustment_section,
@@ -14604,7 +14920,7 @@ class legend_button(QDialog):
                                   seaborn_legend_dashes_adjustment_section,seaborn_legend_size_order_adjustment_section,
                                   seaborn_legend_hue_order_adjustment_section,seaborn_legend_style_order_adjustment_section]
 
-        self.available_screens = dict()
+        self.available_sections = dict()
 
         self.setStyleSheet("""
             QDialog{
@@ -14647,11 +14963,11 @@ class legend_button(QDialog):
         for screen_name,screen in zip(self.legend_parameters,self.available_screen_names):
             parameter_screen = screen(self.selected_graph,self.graph_display)
             parameter_screen.hide()
-            self.available_screens[screen_name] = parameter_screen
+            self.available_sections[screen_name] = parameter_screen
             self.layout.addWidget(parameter_screen,stretch=1)
         
         #Show the first parameter screen
-        self.available_screens.get(self.legend_parameters[self.current_screen_idx]).show()
+        self.available_sections.get(self.legend_parameters[self.current_section_idx]).show()
 
         #Create a shortcut for the user to go to the previous column by press up
         up_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Up), self) 
@@ -14751,41 +15067,41 @@ class legend_button(QDialog):
         self.legend_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.legend_parameter_list_view.setSpacing(3)
 
-        self.legend_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+        self.legend_parameter_list_view.clicked.connect(self.change_current_parameter_section)
 
         legend_parameter_button_layout.addWidget(self.legend_parameter_list_view)
 
         # Add margins and spacing to make it look good and push content to the top
         legend_parameter_button_layout.setContentsMargins(10, 10, 10, 10)
 
-    def change_current_parameter_screen(self,index):
+    def change_current_parameter_section(self,index):
         current_screen_name = self.legend_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
-        current_screen = self.available_screens.get(self.legend_parameters[self.current_screen_idx])
-        new_screen = self.available_screens.get(current_screen_name)
+        current_screen = self.available_sections.get(self.legend_parameters[self.current_section_idx])
+        new_screen = self.available_sections.get(current_screen_name)
 
         if (current_screen == new_screen):
-            current_screen.change_to_original_screen()
+            current_screen.change_to_original_section()
 
         current_screen.hide()
         new_screen.show()
 
-        self.current_screen_idx = index.row()
+        self.current_section_idx = index.row()
     
     def columns_go_up(self):
-        self.available_screens.get(self.legend_parameters[self.current_screen_idx]).hide()
-        self.current_screen_idx -= 1
-        self.current_screen_idx %= len(self.legend_parameters)
-        self.available_screens.get(self.legend_parameters[self.current_screen_idx]).show()
-        new_screen_index = self.legend_parameter_model.index(self.current_screen_idx)
+        self.available_sections.get(self.legend_parameters[self.current_section_idx]).hide()
+        self.current_section_idx -= 1
+        self.current_section_idx %= len(self.legend_parameters)
+        self.available_sections.get(self.legend_parameters[self.current_section_idx]).show()
+        new_screen_index = self.legend_parameter_model.index(self.current_section_idx)
         self.legend_parameter_list_view.setCurrentIndex(new_screen_index)
         self.legend_parameter_list_view.scrollTo(new_screen_index,QAbstractItemView.ScrollHint.PositionAtCenter)
 
     def columns_go_down(self):
-        self.available_screens.get(self.legend_parameters[self.current_screen_idx]).hide()
-        self.current_screen_idx += 1
-        self.current_screen_idx %= len(self.legend_parameters)
-        self.available_screens.get(self.legend_parameters[self.current_screen_idx]).show()
-        new_screen_index = self.legend_parameter_model.index(self.current_screen_idx)
+        self.available_sections.get(self.legend_parameters[self.current_section_idx]).hide()
+        self.current_section_idx += 1
+        self.current_section_idx %= len(self.legend_parameters)
+        self.available_sections.get(self.legend_parameters[self.current_section_idx]).show()
+        new_screen_index = self.legend_parameter_model.index(self.current_section_idx)
         self.legend_parameter_list_view.setCurrentIndex(new_screen_index)
         self.legend_parameter_list_view.scrollTo(new_screen_index,QAbstractItemView.ScrollHint.PositionAtCenter)
 
@@ -14906,7 +15222,7 @@ class grid_visible_adjustment_section(QWidget):
 
     def switch_grid_visibility(self):
         self.grid_visible_state = not self.grid_visible_state
-        if (self.grid_visible_state == False):
+        if (not self.grid_visible_state):
             self.grid_visibility_label.setText("Grid On")
         else:
             self.grid_visibility_label.setText("Grid Off")
@@ -15561,11 +15877,11 @@ class grid_color_adjustment_section(QWidget):
 
         #-----Initialize Screen Value-----
 
-        self.available_screens = [self.grid_color_adjustment_homescreen,self.named_color_screen,
+        self.available_sections = [self.grid_color_adjustment_homescreen,self.named_color_screen,
                                 self.hex_code_color_screen,self.rgba_color_screen,
                                 self.grayscale_color_screen,self.short_code_color_screen]
         self.previous_screen_idx = 0
-        self.current_screen_idx = 0
+        self.current_section_idx = 0
 
         #-----Main Screen-----
         main_layout = QVBoxLayout(self)
@@ -15581,7 +15897,7 @@ class grid_color_adjustment_section(QWidget):
         #-----Shortcuts-----
         original_screen_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left),self)
         original_screen_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
-        original_screen_shortcut.activated.connect(self.change_to_original_screen)
+        original_screen_shortcut.activated.connect(self.change_to_original_section)
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
@@ -16175,39 +16491,39 @@ class grid_color_adjustment_section(QWidget):
         # Add margins and spacing to make it look good and push content to the top
         short_code_color_screen_layout.setContentsMargins(10, 10, 10, 10)
 
-    def change_to_original_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 0
+    def change_to_original_section(self):
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 0
         self.grid_color_adjustment_homescreen.show()
 
     def change_to_named_color_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.previous_screen_idx = self.current_screen_idx
-        self.current_screen_idx = 1
+        self.available_sections[self.current_section_idx].hide()
+        self.previous_screen_idx = self.current_section_idx
+        self.current_section_idx = 1
         self.named_color_screen.show()
 
     def change_to_hex_code_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.previous_screen_idx = self.current_screen_idx
-        self.current_screen_idx = 2
+        self.available_sections[self.current_section_idx].hide()
+        self.previous_screen_idx = self.current_section_idx
+        self.current_section_idx = 2
         self.hex_code_color_screen.show()
 
     def change_to_rgba_color_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.previous_screen_idx = self.current_screen_idx
-        self.current_screen_idx = 3
+        self.available_sections[self.current_section_idx].hide()
+        self.previous_screen_idx = self.current_section_idx
+        self.current_section_idx = 3
         self.rgba_color_screen.show()
 
     def change_to_grayscale_colors_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.previous_screen_idx = self.current_screen_idx
-        self.current_screen_idx = 4
+        self.available_sections[self.current_section_idx].hide()
+        self.previous_screen_idx = self.current_section_idx
+        self.current_section_idx = 4
         self.grayscale_color_screen.show()
 
     def change_to_short_code_color_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.previous_screen_idx = self.current_screen_idx
-        self.current_screen_idx = 5
+        self.available_sections[self.current_section_idx].hide()
+        self.previous_screen_idx = self.current_section_idx
+        self.current_section_idx = 5
         self.short_code_color_screen.show()
 
     def set_color_to_none(self):
@@ -16239,7 +16555,7 @@ class grid_color_adjustment_section(QWidget):
             try:
                 int(hex_code,16)
                 return True
-            except:
+            except ValueError:
                 return False
         
         if (hex_code != ""):
@@ -16720,9 +17036,9 @@ class grid_linestyle_adjustment_section(QWidget):
         self.custom_linestyle_screen.hide()
 
         #-----Available Screen and Screen Index-----
-        self.available_screens = [self.grid_linestyle_adjustment_screen,self.premade_linestyle_screen,
+        self.available_sections = [self.grid_linestyle_adjustment_screen,self.premade_linestyle_screen,
                                 self.custom_linestyle_screen]
-        self.current_screen_idx = 0
+        self.current_section_idx = 0
 
         #-----Add the Screens to the Main Layout-----
         main_layout = QVBoxLayout(self)
@@ -16917,19 +17233,19 @@ class grid_linestyle_adjustment_section(QWidget):
         custom_linestyle_screen_layout.addStretch()
 
     def change_to_home_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 0
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_premade_linestyle_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 1
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 1
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_custom_linestyle_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 2
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 2
+        self.available_sections[self.current_section_idx].show()
 
     def change_premade_linestyle(self,index):
         index = self.premade_linestyle_options.index(self.premade_linestyle_model.data(index,Qt.ItemDataRole.DisplayRole))
@@ -16951,12 +17267,12 @@ class grid_linestyle_adjustment_section(QWidget):
         try:
             grid_linestyle_offset = float(grid_linestyle_offset)
             if (grid_linestyle_offset < 0):
-                raise Exception
+                raise ValueError
             self.valid_offset_widget.show()
             self.invalid_offset_widget.hide()
             self.valid_on_off_sequence_widget.hide()
             self.invalid_on_off_sequence_widget.hide()
-        except:
+        except ValueError:
             self.valid_offset_widget.hide()
             self.invalid_offset_widget.show()
             self.valid_on_off_sequence_widget.hide()
@@ -17552,7 +17868,7 @@ class grid_zorder_adjustment_section(QWidget):
             self.invalid_zorder_widget.hide()
             self.grid_zorder = zorder
             self.update_grid_zorder()
-        except:
+        except ValueError:
             self.valid_zorder_widget.hide()
             self.invalid_zorder_widget.show()
 
@@ -18054,14 +18370,14 @@ class grid_button(QDialog):
 
         self.grid_parameters = list(plot_json[self.selected_graph]["grid"].keys())
 
-        self.current_screen_idx = 0
+        self.current_section_idx = 0
         self.available_screen_names = [grid_visible_adjustment_section,grid_which_adjustment_section,
                                        grid_axis_adjustment_section,grid_color_adjustment_section,
                                        grid_linestyle_adjustment_section,grid_linewidth_adjustment_section,
                                        grid_alpha_adjustment_section,grid_zorder_adjustment_section,
                                        grid_dashes_adjustment_section,grid_snap_adjustment_section]
 
-        self.available_screens = dict()
+        self.available_sections = dict()
 
         self.setStyleSheet("""
             QDialog{
@@ -18105,11 +18421,11 @@ class grid_button(QDialog):
         for screen_name,screen in zip(self.grid_parameters,self.available_screen_names):
             parameter_screen = screen(self.selected_graph,self.graph_display)
             parameter_screen.hide()
-            self.available_screens[screen_name] = parameter_screen
+            self.available_sections[screen_name] = parameter_screen
             self.layout.addWidget(parameter_screen,stretch=1)
         
         #Show the first parameter screen
-        self.available_screens.get(self.grid_parameters[self.current_screen_idx]).show()
+        self.available_sections.get(self.grid_parameters[self.current_section_idx]).show()
 
         #Create a shortcut for the user to go to the previous column by press up
         up_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Up), self) 
@@ -18206,34 +18522,34 @@ class grid_button(QDialog):
         self.grid_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.grid_parameter_list_view.setSpacing(3)
 
-        self.grid_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+        self.grid_parameter_list_view.clicked.connect(self.change_current_parameter_section)
 
         grid_parameter_button_layout.addWidget(self.grid_parameter_list_view)
 
         # Add margins and spacing to make it look good and push content to the top
         grid_parameter_button_layout.setContentsMargins(10, 10, 10, 10)
 
-    def change_current_parameter_screen(self,index):
+    def change_current_parameter_section(self,index):
         current_screen_name = self.grid_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
-        self.available_screens.get(self.grid_parameters[self.current_screen_idx]).hide()
-        self.available_screens.get(current_screen_name).show()
-        self.current_screen_idx = index.row()
+        self.available_sections.get(self.grid_parameters[self.current_section_idx]).hide()
+        self.available_sections.get(current_screen_name).show()
+        self.current_section_idx = index.row()
     
     def columns_go_up(self):
-        self.available_screens.get(self.grid_parameters[self.current_screen_idx]).hide()
-        self.current_screen_idx -= 1
-        self.current_screen_idx %= len(self.grid_parameters)
-        self.available_screens.get(self.grid_parameters[self.current_screen_idx]).show()
-        new_screen_index = self.grid_parameter_model.index(self.current_screen_idx)
+        self.available_sections.get(self.grid_parameters[self.current_section_idx]).hide()
+        self.current_section_idx -= 1
+        self.current_section_idx %= len(self.grid_parameters)
+        self.available_sections.get(self.grid_parameters[self.current_section_idx]).show()
+        new_screen_index = self.grid_parameter_model.index(self.current_section_idx)
         self.grid_parameter_list_view.setCurrentIndex(new_screen_index)
         self.grid_parameter_list_view.scrollTo(new_screen_index,QAbstractItemView.ScrollHint.PositionAtCenter)
 
     def columns_go_down(self):
-        self.available_screens.get(self.grid_parameters[self.current_screen_idx]).hide()
-        self.current_screen_idx += 1
-        self.current_screen_idx %= len(self.grid_parameters)
-        self.available_screens.get(self.grid_parameters[self.current_screen_idx]).show()
-        new_screen_index = self.grid_parameter_model.index(self.current_screen_idx)
+        self.available_sections.get(self.grid_parameters[self.current_section_idx]).hide()
+        self.current_section_idx += 1
+        self.current_section_idx %= len(self.grid_parameters)
+        self.available_sections.get(self.grid_parameters[self.current_section_idx]).show()
+        new_screen_index = self.grid_parameter_model.index(self.current_section_idx)
         self.grid_parameter_list_view.setCurrentIndex(new_screen_index)
         self.grid_parameter_list_view.scrollTo(new_screen_index,QAbstractItemView.ScrollHint.PositionAtCenter)
 
@@ -19149,7 +19465,7 @@ class hue_button(QDialog):
         hue_adjustment_section_layout.setContentsMargins(0,0,0,0)
 
         #-----Initialize Screen Value-----
-        self.available_screens = [self.categorical_column_screen,
+        self.available_sections = [self.categorical_column_screen,
                                 self.numerical_column_screen,self.boolean_expression_screen,
                                 self.boolean_expression_manual_input_screen,
                                 self.boolean_expression_premade_select_column_screen,
@@ -19157,8 +19473,8 @@ class hue_button(QDialog):
                                 self.boolean_expression_premade_input_value_screen,
                                 self.logical_operator_screen,self.hue_mapping_screen,
                                 self.none_hue_screen]
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+        self.current_section_idx = 0
+        self.available_sections[self.current_section_idx].show()
 
         #-----Initialize the QDialog Screen-----
         self.setStyleSheet("""
@@ -19355,7 +19671,7 @@ class hue_button(QDialog):
         self.hue_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.hue_parameter_list_view.setSpacing(3)
 
-        self.hue_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+        self.hue_parameter_list_view.clicked.connect(self.change_current_parameter_section)
 
         hue_parameter_button_layout.addWidget(self.hue_parameter_list_view)
 
@@ -20238,7 +20554,7 @@ class hue_button(QDialog):
         none_hue_screen_layout.setContentsMargins(10,10,10,10)
         none_hue_screen_layout.addStretch()
 
-    def change_current_parameter_screen(self, index):
+    def change_current_parameter_section(self, index):
         screen_name = self.hue_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
         
         if (screen_name == "Categorical Column"):
@@ -20254,85 +20570,85 @@ class hue_button(QDialog):
             self.change_to_none_hue_screen()
 
     def change_to_previous_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        if (self.current_screen_idx == 3 or self.current_screen_idx == 4):
-            self.current_screen_idx = 2
+        self.available_sections[self.current_section_idx].hide()
+        if (self.current_section_idx == 3 or self.current_section_idx == 4):
+            self.current_section_idx = 2
             self.premade_boolean_expression_format["column"] = ""
-        elif (self.current_screen_idx >= 5 and self.current_screen_idx < 7):
-            self.current_screen_idx -= 1
-            if (self.current_screen_idx == 4):
+        elif (self.current_section_idx >= 5 and self.current_section_idx < 7):
+            self.current_section_idx -= 1
+            if (self.current_section_idx == 4):
                 self.premade_boolean_expression_format["operation"] = ""
-            if (self.current_screen_idx == 5):
+            if (self.current_section_idx == 5):
                 self.boolean_expression_value_input.clear()
                 self.premade_boolean_expression_format["value"] = ""
-        elif (self.current_screen_idx == 7):
-            self.current_screen_idx = 6
+        elif (self.current_section_idx == 7):
+            self.current_section_idx = 6
 
-        self.available_screens[self.current_screen_idx].show() 
+        self.available_sections[self.current_section_idx].show() 
 
     def change_to_categorical_column_hue_screen(self):
         self.categorical_column_list_view.clearSelection()
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 0
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_numerical_column_hue_screen(self):
         self.numerical_column_list_view.clearSelection()
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 1
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 1
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_boolean_expression_hue_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 2
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 2
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_manual_boolean_expression_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 3
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 3
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_premade_boolean_expression_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 4
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 4
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_operators_boolean_expression_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 5
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 5
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_value_boolean_expression_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 6
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 6
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_logical_operator_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
+        self.available_sections[self.current_section_idx].hide()
 
         [button.hide() for button in self.available_logical_operators]
-        if (self.current_screen_idx == 3): 
+        if (self.current_section_idx == 3): 
             self.available_logical_operators[2].show()
             self.available_logical_operators[3].show()
-        if (self.current_screen_idx == 6):
+        if (self.current_section_idx == 6):
             self.available_logical_operators[0].show()
             self.available_logical_operators[1].show()
 
-        self.current_screen_idx = 7
-        self.available_screens[self.current_screen_idx].show()
+        self.current_section_idx = 7
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_hue_mapping_screen(self):
-        if (self.hue[1] == None):
+        if (self.hue[1] is None):
             self.hue[1] = {True:"True",False:"False"}
 
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 8
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 8
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_none_hue_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 9
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 9
+        self.available_sections[self.current_section_idx].show()
 
     def change_categorical_hue_column(self,index):
         source_index = self.categorical_filter_proxy.mapToSource(index)
@@ -20697,9 +21013,9 @@ class hue_button(QDialog):
         self.manual_boolean_expression_operator_input.clear()
         self.manual_boolean_expression_value_input.clear()
 
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 0
+        self.available_sections[self.current_section_idx].show()
 
         self.hue_parameter_list_view.clearSelection()
         self.categorical_column_list_view.clearSelection()
@@ -20846,9 +21162,9 @@ class style_button(QDialog):
         style_adjustment_section_layout.setContentsMargins(0,0,0,0)
 
         #-----Available Screens-----
-        self.available_screens = [self.column_style_screen,self.list_style_screen,self.none_style_screen]
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections = [self.column_style_screen,self.list_style_screen,self.none_style_screen]
+        self.current_section_idx = 0
+        self.available_sections[self.current_section_idx].show()
 
         #-----Put the screens onto the main screen-----
         main_layout = QHBoxLayout(self)
@@ -20942,7 +21258,7 @@ class style_button(QDialog):
         self.style_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.style_parameter_list_view.setSpacing(3)
 
-        self.style_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+        self.style_parameter_list_view.clicked.connect(self.change_current_parameter_section)
 
         style_parameter_button_layout.addWidget(self.style_parameter_list_view)
 
@@ -21202,7 +21518,7 @@ class style_button(QDialog):
         none_style_screen_layout.setContentsMargins(10,10,10,10)
         none_style_screen_layout.addStretch()
 
-    def change_current_parameter_screen(self,index):
+    def change_current_parameter_section(self,index):
         screen_name = self.style_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
         
         if (screen_name == "Column Style"):
@@ -21216,19 +21532,19 @@ class style_button(QDialog):
 
     def change_to_column_style_screen(self):
         self.column_style_list_view.clearSelection()
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 0
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_list_style_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 1
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 1
+        self.available_sections[self.current_section_idx].show()
     
     def change_to_none_style_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 2
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 2
+        self.available_sections[self.current_section_idx].show()
 
     def change_column_style(self,index):
         source_index = self.column_style_filter_proxy.mapToSource(index)
@@ -21291,9 +21607,9 @@ class style_button(QDialog):
         self.column_style_arguments = self.get_column_style_arguments()
         self.y_axis_size = self.get_y_axis_size()
 
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 0
+        self.available_sections[self.current_section_idx].show()
 
         self.style_parameter_list_view.clearSelection()
         self.column_style_list_view.clearSelection()
@@ -21627,10 +21943,10 @@ class size_button(QDialog):
         size_adjustment_section_layout.setContentsMargins(0,0,0,0)
 
         #-----Available Screens-----
-        self.available_screens = [self.column_size_screen,self.list_size_screen,
+        self.available_sections = [self.column_size_screen,self.list_size_screen,
                                 self.interval_size_screen,self.none_size_screen]
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+        self.current_section_idx = 0
+        self.available_sections[self.current_section_idx].show()
 
         #-----Put the screens onto the main screen-----
         main_layout = QHBoxLayout(self)
@@ -21724,7 +22040,7 @@ class size_button(QDialog):
         self.size_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.size_parameter_list_view.setSpacing(3)
 
-        self.size_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+        self.size_parameter_list_view.clicked.connect(self.change_current_parameter_section)
 
         size_parameter_button_layout.addWidget(self.size_parameter_list_view)
 
@@ -22039,7 +22355,7 @@ class size_button(QDialog):
         none_size_screen_layout.setContentsMargins(10,10,10,10)
         none_size_screen_layout.addStretch()
 
-    def change_current_parameter_screen(self,index):
+    def change_current_parameter_section(self,index):
         screen_name = self.size_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
         
         if (screen_name == "Column Size"):
@@ -22056,19 +22372,19 @@ class size_button(QDialog):
 
     def change_to_column_size_screen(self):
         self.column_size_list_view.clearSelection()
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 0
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_list_size_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 1
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 1
+        self.available_sections[self.current_section_idx].show()
     
     def change_to_interval_size_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 2
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 2
+        self.available_sections[self.current_section_idx].show()
 
         if (self.size is not None):
             self.interval_size_screen.show()
@@ -22076,9 +22392,9 @@ class size_button(QDialog):
             self.interval_size_screen.hide()
 
     def change_to_none_size_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 3
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 3
+        self.available_sections[self.current_section_idx].show()
 
     def change_column_size(self,index):
         source_index = self.column_size_filter_proxy.mapToSource(index)
@@ -22210,9 +22526,9 @@ class size_button(QDialog):
             self.column_size_arguments = self.get_column_size_arguments()
             self.y_axis_size = self.get_y_axis_size()
 
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 0
+        self.available_sections[self.current_section_idx].show()
 
         self.size_parameter_list_view.clearSelection()
         self.column_size_list_view.clearSelection()
@@ -22788,13 +23104,13 @@ class palette_button(QDialog):
         palette_adjustment_section_layout.setSpacing(0)
 
         #-----Available Screens-----
-        self.available_screens = [self.single_palette_screen,self.single_palette_selection_screen,self.list_palette_screen,
+        self.available_sections = [self.single_palette_screen,self.single_palette_selection_screen,self.list_palette_screen,
                                 self.list_palette_premade_selection_screen,self.list_palette_custom_selection_screen,
                                 self.list_palette_hex_selection_screen,self.list_palette_rgba_selection_screen,
                                 self.list_palette_grayscale_selection_screen,self.dictionary_palette_adjustment_screen,
                                 self.none_palette_adjustment_screen]
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+        self.current_section_idx = 0
+        self.available_sections[self.current_section_idx].show()
 
         main_layout = QHBoxLayout(self)
         main_layout.addWidget(self.palette_parameter_screen,stretch=1)
@@ -22891,7 +23207,7 @@ class palette_button(QDialog):
         self.palette_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.palette_parameter_list_view.setSpacing(3)
 
-        self.palette_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+        self.palette_parameter_list_view.clicked.connect(self.change_current_parameter_section)
 
         palette_parameter_button_layout.addWidget(self.palette_parameter_list_view)
 
@@ -23956,7 +24272,7 @@ class palette_button(QDialog):
         none_palette_adjustment_screen_layout.setSpacing(10)
         none_palette_adjustment_screen_layout.addStretch()
 
-    def change_current_parameter_screen(self,index):
+    def change_current_parameter_section(self,index):
         screen_name = self.palette_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
         
         if (screen_name == "Single Palette"):
@@ -23993,9 +24309,9 @@ class palette_button(QDialog):
             self.change_to_list_palette_grayscale_selection_screen()
 
     def change_to_single_palette_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 0
+        self.available_sections[self.current_section_idx].show()
 
         self.palette = None
 
@@ -24006,64 +24322,64 @@ class palette_button(QDialog):
         self.single_palette_selection_model = QStringListModel(self.palette_values)
         self.single_filter_proxy.setSourceModel(self.single_palette_selection_model)
 
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 1
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 1
+        self.available_sections[self.current_section_idx].show()
 
         self.palette = None
 
     def change_to_list_palette_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 2
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 2
+        self.available_sections[self.current_section_idx].show()
 
         self.palette = None
 
     def change_to_list_palette_premade_selection_screen(self):
         self.list_palette_premade_selection_list_view.clearSelection()
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 3
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 3
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_list_palette_custom_selection_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 4
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 4
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_list_palette_hex_selection_screen(self): 
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 5
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 5
+        self.available_sections[self.current_section_idx].show()
 
         self.hex_code = None
 
     def change_to_list_palette_rgba_selection_screen(self): 
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 6
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 6
+        self.available_sections[self.current_section_idx].show()
 
         self.rgba_value = None
 
     def change_to_list_palette_grayscale_selection_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 7
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 7
+        self.available_sections[self.current_section_idx].show()
 
         self.grayscale_value = None
 
     def change_to_dictionary_palette_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 8
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 8
+        self.available_sections[self.current_section_idx].show()
 
         self.dictionary_palette = dict()
         self.dictionary_palette_key = None
         self.dictionary_palette_value = None
 
     def change_to_no_palette_screen(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 9
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 9
+        self.available_sections[self.current_section_idx].show()
 
     def change_single_palette_selection(self,index):
         source_index = self.single_filter_proxy.mapToSource(index)
@@ -24214,7 +24530,7 @@ class palette_button(QDialog):
 
     def change_palette_state(self):
         self.palette_state = not self.palette_state
-        if (self.palette_state == True):
+        if (self.palette_state):
             self.none_palette_label.setText("Disable Palette")
         else:
             self.none_palette_label.setText("Enable Palette")
@@ -24228,7 +24544,7 @@ class palette_button(QDialog):
                 self.plot_manager.update_palette([self.palette])
             else:
                 self.plot_manager.update_palette(self.palette)
-        elif (self.palette_state == False):
+        elif (not self.palette_state):
             self.plot_manager.update_palette(None)
         else:
             plot_parameter = plot_json[self.selected_graph].copy()
@@ -24238,10 +24554,6 @@ class palette_button(QDialog):
                 plot_parameter["palette"] = self.palette
             self.plot_manager.insert_plot_parameter(plot_parameter)
         self.graph_display.show_graph()
-
-    def showEvent(self, event):
-        super().showEvent(event)
-        self.palette_idx = 0
 
     def mousePressEvent(self, event):
         if not self.single_palette_search_bar.geometry().contains(event.position().toPoint()):
@@ -24262,18 +24574,18 @@ class palette_button(QDialog):
 
     def new_custom_list_palette(self):
         if (isinstance(self.palette,list)):
-            if (self.current_screen_idx == 5):
+            if (self.current_section_idx == 5):
                 self.palette.append(self.hex_code)
-            if (self.current_screen_idx == 6):
+            if (self.current_section_idx == 6):
                 self.palette.append(self.rgba_value)
-            if (self.current_screen_idx == 7):
+            if (self.current_section_idx == 7):
                 self.palette.append(self.grayscale_value)
         else:
-            if (self.current_screen_idx == 5):
+            if (self.current_section_idx == 5):
                 self.palette = [self.hex_code]
-            if (self.current_screen_idx == 6):
+            if (self.current_section_idx == 6):
                 self.palette = [self.rgba_value]
-            if (self.current_screen_idx == 7):
+            if (self.current_section_idx == 7):
                 self.palette = [self.grayscale_value]
             
         if (len(self.palette) > 3):
@@ -24502,9 +24814,9 @@ class alpha_button(QDialog):
         self.none_alpha_adjustment_section.hide()
 
         #-----Available Screens-----
-        self.available_screens = [self.float_alpha_adjustment_section,self.none_alpha_adjustment_section]
+        self.available_sections = [self.float_alpha_adjustment_section,self.none_alpha_adjustment_section]
         self.current_screen_index = 0
-        self.available_screens[self.current_screen_index].show()
+        self.available_sections[self.current_screen_index].show()
 
         #-----Create Alpha Adjustment Section-----
         self.alpha_adjustment_section = QWidget()
@@ -24607,7 +24919,7 @@ class alpha_button(QDialog):
         self.alpha_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.alpha_parameter_list_view.setSpacing(3)
 
-        self.alpha_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+        self.alpha_parameter_list_view.clicked.connect(self.change_current_parameter_section)
 
         alpha_parameter_button_layout.addWidget(self.alpha_parameter_list_view)
 
@@ -24716,7 +25028,7 @@ class alpha_button(QDialog):
         none_alpha_adjustment_section_layout.setSpacing(10)
         none_alpha_adjustment_section_layout.addStretch()
 
-    def change_current_parameter_screen(self,index):
+    def change_current_parameter_section(self,index):
         screen_name = self.alpha_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
         
         if (screen_name == "Float"):
@@ -24726,14 +25038,14 @@ class alpha_button(QDialog):
             self.change_to_none_alpha_adjustment_section()
 
     def change_to_float_alpha_adjustment_section(self):
-        self.available_screens[self.current_screen_index].hide()
+        self.available_sections[self.current_screen_index].hide()
         self.current_screen_index = 0
-        self.available_screens[self.current_screen_index].show()
+        self.available_sections[self.current_screen_index].show()
 
     def change_to_none_alpha_adjustment_section(self):
-        self.available_screens[self.current_screen_index].hide()
+        self.available_sections[self.current_screen_index].hide()
         self.current_screen_index = 1
-        self.available_screens[self.current_screen_index].show()
+        self.available_sections[self.current_screen_index].show()
 
     def change_float_alpha_value(self):
         float_alpha_value = self.float_alpha_value_input.text().strip()
@@ -24874,9 +25186,9 @@ class marker_button(QDialog):
         self.none_marker_adjustment_section.hide()
 
         #-----Available Screens-----
-        self.available_screens = [self.marker_selection_section,self.none_marker_adjustment_section]
+        self.available_sections = [self.marker_selection_section,self.none_marker_adjustment_section]
         self.current_screen_index = 0
-        self.available_screens[self.current_screen_index].show()
+        self.available_sections[self.current_screen_index].show()
 
         #-----Create Alpha Adjustment Section-----
         self.marker_adjustment_section = QWidget()
@@ -24979,7 +25291,7 @@ class marker_button(QDialog):
         self.marker_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.marker_parameter_list_view.setSpacing(3)
 
-        self.marker_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+        self.marker_parameter_list_view.clicked.connect(self.change_current_parameter_section)
 
         marker_parameter_button_layout.addWidget(self.marker_parameter_list_view)
 
@@ -25144,7 +25456,7 @@ class marker_button(QDialog):
         none_marker_adjustment_section_layout.setSpacing(10)
         none_marker_adjustment_section_layout.addStretch()
 
-    def change_current_parameter_screen(self,index):
+    def change_current_parameter_section(self,index):
         screen_name = self.marker_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
         
         if (screen_name == "Marker"):
@@ -25154,14 +25466,14 @@ class marker_button(QDialog):
             self.change_to_none_marker_adjustment_section()
 
     def change_to_marker_selection_section(self):
-        self.available_screens[self.current_screen_index].hide()
+        self.available_sections[self.current_screen_index].hide()
         self.current_screen_index = 0
-        self.available_screens[self.current_screen_index].show()
+        self.available_sections[self.current_screen_index].show()
 
     def change_to_none_marker_adjustment_section(self):
-        self.available_screens[self.current_screen_index].hide()
+        self.available_sections[self.current_screen_index].hide()
         self.current_screen_index = 1
-        self.available_screens[self.current_screen_index].show()
+        self.available_sections[self.current_screen_index].show()
 
     def change_selected_marker_value(self,index):
         self.marker = self.marker_selection_model.data(index,Qt.ItemDataRole.DisplayRole)
@@ -25447,10 +25759,10 @@ class s_button(QDialog):
         self.none_s_value_adjustment_section.hide()
 
         #-----Available Screens-----
-        self.available_screens = [self.single_s_value_adjustment_section,self.list_s_value_adjustment_section,
+        self.available_sections = [self.single_s_value_adjustment_section,self.list_s_value_adjustment_section,
                                   self.none_s_value_adjustment_section]
         self.current_screen_index = 0
-        self.available_screens[self.current_screen_index].show()
+        self.available_sections[self.current_screen_index].show()
 
         #-----Create Alpha Adjustment Section-----
         self.s_adjustment_section = QWidget()
@@ -25554,7 +25866,7 @@ class s_button(QDialog):
         self.s_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.s_parameter_list_view.setSpacing(3)
 
-        self.s_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+        self.s_parameter_list_view.clicked.connect(self.change_current_parameter_section)
 
         s_parameter_button_layout.addWidget(self.s_parameter_list_view)
 
@@ -25730,7 +26042,7 @@ class s_button(QDialog):
         none_s_value_adjustment_section_layout.setSpacing(10)
         none_s_value_adjustment_section_layout.addStretch()
 
-    def change_current_parameter_screen(self,index):
+    def change_current_parameter_section(self,index):
         screen_name = self.s_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
         
         if (screen_name == "Single s Value"):
@@ -25743,19 +26055,19 @@ class s_button(QDialog):
             self.change_to_none_s_value_adjustment_section()
 
     def change_to_single_s_value_adjustment_section(self):
-        self.available_screens[self.current_screen_index].hide()
+        self.available_sections[self.current_screen_index].hide()
         self.current_screen_index = 0
-        self.available_screens[self.current_screen_index].show()
+        self.available_sections[self.current_screen_index].show()
 
     def change_to_list_s_value_adjustment_section(self):
-        self.available_screens[self.current_screen_index].hide()
+        self.available_sections[self.current_screen_index].hide()
         self.current_screen_index = 1
-        self.available_screens[self.current_screen_index].show()
+        self.available_sections[self.current_screen_index].show()
 
     def change_to_none_s_value_adjustment_section(self):
-        self.available_screens[self.current_screen_index].hide()
+        self.available_sections[self.current_screen_index].hide()
         self.current_screen_index = 2
-        self.available_screens[self.current_screen_index].show()
+        self.available_sections[self.current_screen_index].show()
 
     def change_single_s_value(self):
         single_s_value = self.single_s_value_input.text().strip()
@@ -26204,12 +26516,12 @@ class edgecolor_button(QDialog):
         edgecolor_adjustment_section.setSpacing(0)
 
         #-----Available Screens-----
-        self.available_screens = [self.named_color_adjustment_section,self.short_code_color_adjustment_section,
+        self.available_sections = [self.named_color_adjustment_section,self.short_code_color_adjustment_section,
                                   self.hex_code_adjustment_section,self.rgba_value_adjustment_section,
                                   self.face_edgecolor_adjustment_section,self.none_edgecolor_adjustment_section,
                                   self.reset_edgecolor_adjustment_section]
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+        self.current_section_idx = 0
+        self.available_sections[self.current_section_idx].show()
 
         main_layout = QHBoxLayout(self)
         main_layout.addWidget(self.edgecolor_parameter_section,stretch=1)
@@ -26302,7 +26614,7 @@ class edgecolor_button(QDialog):
         self.edgecolor_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.edgecolor_parameter_list_view.setSpacing(3)
 
-        self.edgecolor_parameter_list_view.clicked.connect(self.change_current_parameter_screen)
+        self.edgecolor_parameter_list_view.clicked.connect(self.change_current_parameter_section)
 
         edgecolor_parameter_section_layout.addWidget(self.edgecolor_parameter_list_view)
 
@@ -26846,7 +27158,7 @@ class edgecolor_button(QDialog):
         reset_edgecolor_adjustment_section_layout.setSpacing(10)
         reset_edgecolor_adjustment_section_layout.addStretch()
 
-    def change_current_parameter_screen(self,index):
+    def change_current_parameter_section(self,index):
         screen_name = self.edgecolor_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
         
         if (screen_name == "Named Color"):
@@ -26871,39 +27183,39 @@ class edgecolor_button(QDialog):
             self.change_to_reset_edgecolor_adjustment_section()
 
     def change_to_named_color_adjustment_section(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 0
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 0
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_short_code_color_adjustment_section(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 1
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 1
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_hex_code_color_adjustment_section(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.available_screens = 2
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.available_sections = 2
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_rgba_value_adjustment_section(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 3
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 3
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_face_edgecolor_adjustment_section(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 4
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 4
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_none_edgecolor_adjustment_section(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 5
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 5
+        self.available_sections[self.current_section_idx].show()
 
     def change_to_reset_edgecolor_adjustment_section(self):
-        self.available_screens[self.current_screen_idx].hide()
-        self.current_screen_idx = 6
-        self.available_screens[self.current_screen_idx].show()
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 6
+        self.available_sections[self.current_section_idx].show()
 
     def change_named_color_selection(self,index):
         source_index = self.filter_proxy.mapToSource(index)
