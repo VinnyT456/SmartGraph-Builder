@@ -74,11 +74,6 @@ class MainWindow(QMainWindow):
         window.setObjectName("MainWindow")
         window.setLayout(window_layout)
 
-        window.setStyleSheet("""
-            QWidget#MainWindow {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #7f9cf5, stop:0.5 #b299f8, stop:1 #a15ee0);
-            }
-        """)
         self.setCentralWidget(window)
 
         esc_shortcut = QShortcut(QKeySequence("esc"),self)
@@ -104,6 +99,10 @@ class MainWindow(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+
+    with open("styles.qss") as f:
+        app.setStyleSheet(f.read())
+
     window = MainWindow()
     window.show()
     app.exec()

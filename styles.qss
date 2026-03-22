@@ -1,0 +1,258 @@
+/*Main Window*/
+QWidget#MainWindow {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0, 
+        stop:0 #7f9cf5, 
+        stop:0.5 #b299f8, 
+        stop:1 #a15ee0
+    );
+}
+
+/*Column Management Window*/
+QDialog#column_management_window{
+    background: qlineargradient(
+        x1:0, y1:1, x2:0, y2:0,
+        stop:0 rgba(255, 0, 255, 255),
+        stop:0.22 rgba(252, 86, 191, 255),
+        stop:0.46 rgba(247, 96, 96, 255),
+        stop:0.71 rgba(255, 180, 82, 255),
+        stop:0.90 rgba(245, 219, 51, 255)
+    );
+}
+
+/*Data Point Window*/
+QDialog#data_point_window{
+    background: qlineargradient(
+        x1:0, y1:1, x2:0, y2:0,
+        stop:0.02 rgba(131, 125, 255, 1),
+        stop:0.36 rgba(97, 97, 255, 1),
+        stop:0.66 rgba(31, 162, 255, 1),
+        stop:1 rgba(0, 212, 255, 1)
+    );
+    color: black;
+}
+
+QLineEdit{
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #f5f5ff,
+        stop:0.5 #f7f5fc,
+        stop:1 #f0f0ff
+    );
+    font-size: 24pt;
+    border: 1px solid black;
+    border-radius: 24px;
+    color: black;
+}
+
+QPushButton#submit_button{  
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #f5f5ff,
+        stop:0.5 #f7f5fc,
+        stop:1 #f0f0ff
+    );
+    border: 1px solid black;
+    border-radius: 24px;
+    font-family: "SF Pro Display";
+    font-size: 32px;
+    font-weight: 600;
+    color: black;
+}
+
+QTableView#displayDataset {
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+
+    gridline-color: transparent;
+
+    font-family: "SF Pro Display";
+    font-size: 11pt;
+    color: #111827;
+
+    padding: 8px;
+
+    selection-background-color: #4f46e5;
+    selection-color: #ffffff;
+
+    outline: 0;
+}
+
+/* Alternating rows (soft contrast) */
+QTableView#displayDataset::item:alternate {
+    background: #fafbfc;
+}
+
+/* Default cells */
+QTableView#displayDataset::item {
+    padding: 10px;
+    border-bottom: 1px solid #f1f3f6;
+}
+
+/* Hover state (super subtle glow) */
+QTableView#displayDataset::item:hover {
+    background: #eef2ff;
+}
+
+/* Selected row */
+QTableView#displayDataset::item:selected {
+    background: #4f46e5;
+    color: #ffffff;
+}
+
+/* Header (clean + modern) */
+QHeaderView::section {
+    background: #f1f5f9;  /* softer than white */
+
+    border: none;
+    border-bottom: 2px solid #e2e8f0;
+
+    padding: 8px;
+
+    font-size: 10pt;
+    font-weight: 600;
+    color: #334155;
+
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Remove ugly corner */
+QTableCornerButton::section {
+    background: #f9fafb;
+    border: none;
+}
+
+/* Scrollbars (this is HUGE for polish) */
+QScrollBar:vertical {
+    background: transparent;
+    width: 10px;
+    margin: 6px;
+}
+
+QScrollBar::handle:vertical {
+    background: #d1d5db;
+    border-radius: 5px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #9ca3af;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+/* Horizontal scrollbar */
+QScrollBar:horizontal {
+    background: transparent;
+    height: 10px;
+    margin: 6px;
+}
+
+QScrollBar::handle:horizontal {
+    background: #d1d5db;
+    border-radius: 5px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: #9ca3af;
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+
+/* Import Replace Dataset Button*/
+QPushButton#import_dataset{
+    background: qlineargradient(
+        x1:0, y1:1,
+        x2:0, y2:0,
+        stop:0.02 rgba(131, 125, 255, 1),
+        stop:0.36 rgba(97, 97, 255, 1),
+        stop:0.66 rgba(31, 162, 255, 1),
+        stop:1 rgba(0, 212, 255, 1)
+    );
+    color: #c8f7ff;
+    border-radius: 16px;
+    padding: 2px; 
+}
+
+QLabel#import_dataset_label{
+    font-family: "SF Pro Display";
+    font-weight: 600;
+    border-radius: 16px;
+    color: #c8f7ff; 
+}
+
+/*Enter Data Points Button*/
+QPushButton#enter_data_points_button{
+    background: qlineargradient(
+        x1:0, y1:1,
+        x2:0, y2:0,
+        stop:0.02 rgba(131, 125, 255, 1),
+        stop:0.36 rgba(97, 97, 255, 1),
+        stop:0.66 rgba(31, 162, 255, 1),
+        stop:1 rgba(0, 212, 255, 1)
+    );
+    color: #c8f7ff;
+    border-radius: 16px;
+    padding: 2px; 
+}
+
+QLabel#enter_data_points_label{
+    font-family: "SF Pro Display";
+    font-weight: 600;
+    border-radius: 16px;
+    color: #c8f7ff; 
+}
+
+/*Column Management Button*/
+QPushButton#column_management_button{
+    background: qlineargradient(
+        x1:0, y1:1,
+        x2:0, y2:0,
+        stop:0.02 rgba(131, 125, 255, 1),
+        stop:0.36 rgba(97, 97, 255, 1),
+        stop:0.66 rgba(31, 162, 255, 1),
+        stop:1 rgba(0, 212, 255, 1)
+    );
+    color: #c8f7ff;
+    border-radius: 16px;
+    padding: 2px; 
+}
+
+QLabel#column_management_label{
+    font-family: "SF Pro Display";
+    font-weight: 600;
+    border-radius: 16px;
+    color: #c8f7ff; 
+}
+
+/*Dataset Top Bar*/
+QWidget#dataset_topbar{
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #f5f5ff,
+        stop:0.5 #f7f5fc,
+        stop:1 #f0f0ff
+    );
+    border: 2px solid #c0c0ff;
+    border-radius: 24px;
+}
+
+/*Dataset Table*/
+QWidget#dataset_table{
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #f5f5ff,
+        stop:0.5 #f7f5fc,
+        stop:1 #f0f0ff
+    );
+    border: 2px solid #d0d0ff;
+    border-radius: 24px;
+}

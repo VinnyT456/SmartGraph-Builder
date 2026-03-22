@@ -1,7 +1,7 @@
 import re
-from PyQt6.QtCore import QAbstractTableModel, Qt
+from PyQt6.QtCore import QAbstractTableModel, Qt, QPropertyAnimation, QEasingCurve
 from PyQt6.QtWidgets import (
-    QDialog, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QPushButton, QSizePolicy, QTableView, QWidget, QVBoxLayout
+    QDialog, QFileDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QPushButton, QSizePolicy, QTableView, QWidget, QVBoxLayout
 )
 import pandas as pd
 import os
@@ -30,6 +30,32 @@ class ColumnManagementWindow(QDialog):
             }
         """)
 
+    def showEvent(self, event):
+        super().showEvent(event)
+
+        # Fade animation
+        self.fade_anim = QPropertyAnimation(self, b"windowOpacity")
+        self.fade_anim.setDuration(200)
+        self.fade_anim.setStartValue(0)
+        self.fade_anim.setEndValue(1)
+        self.fade_anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
+
+        # Slight scale effect (resize)
+        start_rect = self.geometry()
+        self.setGeometry(
+            start_rect.adjusted(20, 20, -20, -20)  # slightly smaller
+        )
+
+        self.scale_anim = QPropertyAnimation(self, b"geometry")
+        self.scale_anim.setDuration(200)
+        self.scale_anim.setStartValue(self.geometry())
+        self.scale_anim.setEndValue(start_rect)
+        self.scale_anim.setEasingCurve(QEasingCurve.Type.OutBack)
+
+        # Start animations
+        self.fade_anim.start()
+        self.scale_anim.start()
+
 class DatapointWindow(QDialog):
     def __init__(self,dataset_table):
         super().__init__()
@@ -40,87 +66,24 @@ class DatapointWindow(QDialog):
         self.setFixedHeight(300)
         self.setFixedWidth(500)
 
-        self.setStyleSheet("""
-            background: qlineargradient(
-                x1:0, y1:1,
-                x2:0, y2:0,
-                stop:0.02 rgba(131, 125, 255, 1),
-                stop:0.36 rgba(97, 97, 255, 1),
-                stop:0.66 rgba(31, 162, 255, 1),
-                stop:1 rgba(0, 212, 255, 1)
-            );
-            color: black;
-        """)
+        self.setObjectName("data_point_window")
 
         layout = QVBoxLayout()
 
         self.x_datapoints = QLineEdit()
         self.x_datapoints.setPlaceholderText("X:")
         self.x_datapoints.setObjectName("X_data")
-        self.x_datapoints.setStyleSheet("""
-            QLineEdit#X_data{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                font-size: 24pt;
-                border: 1px solid black;
-                border-radius: 24px;
-            }
-        """)
 
         self.y_datapoints = QLineEdit()
         self.y_datapoints.setPlaceholderText("Y:")
         self.y_datapoints.setObjectName("Y_data")
-        self.y_datapoints.setStyleSheet("""
-            QLineEdit#Y_data{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                font-size: 24pt;
-                border: 1px solid black;
-                border-radius: 24px;
-            }
-        """)
 
         self.z_datapoints = QLineEdit()
         self.z_datapoints.setPlaceholderText("Z:")
         self.z_datapoints.setObjectName("Z_data")
-        self.z_datapoints.setStyleSheet("""
-            QLineEdit#Z_data{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                font-size: 24pt;
-                border: 1px solid black;
-                border-radius: 24px;
-            }
-        """)
 
         self.submit_button = QPushButton("Submit")
-        self.submit_button.setStyleSheet("""
-            QPushButton{  
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 1px solid black;
-                border-radius: 24px;
-                font-family: "SF Pro Display";
-                font-size: 32px;
-                font-weight: 600;
-            }
-        """)
+        self.submit_button.setObjectName("submit_button")
 
         self.x_datapoints.setFixedHeight(60)
         self.y_datapoints.setFixedHeight(60)
@@ -170,7 +133,7 @@ class DatapointWindow(QDialog):
                 x_points = list(map(float,x_points.replace(","," ").split(" ")))
                 y_points = list(map(float,y_points.replace(","," ").split(" ")))
                 z_points = list(map(float,z_points.replace(","," ").split(" ")))
-            except:
+            except ValueError:
                 pass
 
             if (len(x_points) != len(y_points) != len(z_points)):
@@ -207,6 +170,32 @@ class DatapointWindow(QDialog):
             return True
         except ValueError:
             return False
+
+    def showEvent(self, event):
+        super().showEvent(event)
+
+        # Fade animation
+        self.fade_anim = QPropertyAnimation(self, b"windowOpacity")
+        self.fade_anim.setDuration(200)
+        self.fade_anim.setStartValue(0)
+        self.fade_anim.setEndValue(1)
+        self.fade_anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
+
+        # Slight scale effect (resize)
+        start_rect = self.geometry()
+        self.setGeometry(
+            start_rect.adjusted(20, 20, -20, -20)  # slightly smaller
+        )
+
+        self.scale_anim = QPropertyAnimation(self, b"geometry")
+        self.scale_anim.setDuration(200)
+        self.scale_anim.setStartValue(self.geometry())
+        self.scale_anim.setEndValue(start_rect)
+        self.scale_anim.setEasingCurve(QEasingCurve.Type.OutBack)
+
+        # Start animations
+        self.fade_anim.start()
+        self.scale_anim.start()
 
 class PrepareDataset(QAbstractTableModel):
     def __init__(self, df):
@@ -254,31 +243,18 @@ class PrepareDataset(QAbstractTableModel):
 class displayDataset(QTableView):
     def __init__(self):
         super().__init__()
+        
+        self.setObjectName("displayDataset")
 
-        self.setStyleSheet("""
-            QTableView {
-                border-radius: 24px;
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                font-family: "SF Pro Display";
-                font-size: 11pt;
-                color: black;
-                margin: 10px;
-                padding: 10px;           
-            }
-            QHeaderView::section {
-                background-color: white;
-                border: 1px solid black;
-                color: white;
-                padding: 4px;
-                font-weight: bold;
-                margin: 10px;
-            }
-        """)
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.horizontalHeader().setSectionsClickable(False)
+        self.horizontalHeader().setStretchLastSection(True)
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+        self.horizontalHeader().setHighlightSections(False)
+
+        self.setAlternatingRowColors(True)
+        self.setShowGrid(False)
+
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
     def import_file(self,file_path):
@@ -287,57 +263,25 @@ class displayDataset(QTableView):
         self.verticalHeader().setVisible(False)
         self.setShowGrid(True)
         self.setSortingEnabled(False)
-        self.setStyleSheet("""
-            QTableView {
-                border-radius: 24px;
-                border: 2px solid black;
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                font-family: "SF Pro Display";
-                font-size: 11pt;
-                color: black;
-                margin: 10px;
-                padding: 10px;           
-            }
-            QHeaderView::section {
-                background-color: white;
-                border: 1px solid black;
-                color: black;
-                padding: 4px;
-                font-weight: bold;
-                margin: 10px;
-            }
-        """)
+
+    def mousePressEvent(self, event):
+        index = self.indexAt(event.pos())
+
+        if index.isValid() and self.selectionModel().isSelected(index):
+            self.clearSelection()
+        else:
+            super().mousePressEvent(event)
 
 class import_replace_dataset_button(QPushButton):
     def __init__(self,dataset_table):
         super().__init__()
         self.dataset_table = dataset_table
         self.setObjectName("import_dataset")
-        self.setStyleSheet("""
-            background: qlineargradient(
-                x1:0, y1:1,
-                x2:0, y2:0,
-                stop:0.02 rgba(131, 125, 255, 1),
-                stop:0.36 rgba(97, 97, 255, 1),
-                stop:0.66 rgba(31, 162, 255, 1),
-                stop:1 rgba(0, 212, 255, 1)
-            );
-            color: #c8f7ff;
-        """)
 
         self.label = QLabel("Import Dataset")
+        self.label.setObjectName("import_dataset_label")
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.label.setStyleSheet("""
-            font-family: "SF Pro Display";
-            font-weight: 600;
-            border-radius: 16px;
-        """) 
         self.label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
         self.setMinimumHeight(35)
@@ -374,27 +318,13 @@ class import_replace_dataset_button(QPushButton):
 class enter_datapoints_button(QPushButton):
     def __init__(self,dataset_table):
         super().__init__()
+        self.setObjectName("enter_data_points_button")
         self.dataset_table = dataset_table
-        self.setStyleSheet("""
-            background: qlineargradient(
-                        x1:0, y1:1,
-                        x2:0, y2:0,
-                        stop:0.02 rgba(131, 125, 255, 1),
-                        stop:0.36 rgba(97, 97, 255, 1),
-                        stop:0.66 rgba(31, 162, 255, 1),
-                        stop:1 rgba(0, 212, 255, 1)
-                    );
-            color: #c8f7ff;
-        """)
 
         self.label = QLabel("Enter Datapoints")
+        self.label.setObjectName("enter_data_points_label")
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.label.setStyleSheet("""
-            font-family: "SF Pro Display";
-            font-weight: 600;
-            border-radius: 16px;
-        """) 
         self.label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
         self.setMinimumHeight(35)
@@ -413,28 +343,13 @@ class enter_datapoints_button(QPushButton):
 class column_management_button(QPushButton):
     def __init__(self,dataset_table):
         super().__init__()
-        self.setStyleSheet("""
-            background: qlineargradient(
-                x1:0, y1:1,
-                x2:0, y2:0,
-                stop:0.02 rgba(131, 125, 255, 1),
-                stop:0.36 rgba(97, 97, 255, 1),
-                stop:0.66 rgba(31, 162, 255, 1),
-                stop:1 rgba(0, 212, 255, 1)
-            );
-            color: #c8f7ff;
-        """)
-
+        self.setObjectName("column_management_button")
         self.dataset_table = dataset_table
 
         self.label = QLabel("Column Management")
+        self.label.setObjectName("column_management_label")
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.label.setStyleSheet("""
-            font-family: "SF Pro Display";
-            font-weight: 600;
-            border-radius: 16px;
-        """) 
         self.label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
         self.setMinimumHeight(35)
@@ -453,34 +368,18 @@ class Dataset_TopBar(QWidget):
     def __init__(self,table):
         super().__init__()
 
+        self.setObjectName("dataset_topbar")
         self.dataset_table = table
+
+        self.setFixedHeight(50)
+        self.setFixedWidth(350)
         
-        layout = QHBoxLayout()
+        layout = QHBoxLayout(self)
         layout.addWidget(import_replace_dataset_button(self.dataset_table))
         layout.addWidget(enter_datapoints_button(self.dataset_table))
         layout.addWidget(column_management_button(self.dataset_table))
         layout.setContentsMargins(5,5,5,5) 
         layout.setSpacing(5)
-
-        self.setStyleSheet("""
-            QWidget{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border-radius: 24px;
-            }
-            QPushButton{
-                border-radius: 16px;
-                padding: 2px; 
-            }
-        """)
-
-        self.setFixedHeight(50)
-        self.setFixedWidth(350)
-        self.setLayout(layout)
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
@@ -488,20 +387,6 @@ class Dataset_Table(QWidget):
     def __init__(self,table):
         super().__init__()
         self.setObjectName("dataset_table")
-        self.setStyleSheet("""
-            QWidget{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border-radius: 24px;
-            }
-            QWidget#dataset_table{
-                border: 2px solid #d0d0ff;
-            }
-        """)
 
         self.dataset_table = table
 
