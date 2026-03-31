@@ -167,74 +167,8 @@ QScrollBar::sub-line:horizontal {
     width: 0px;
 }
 
-/* Import Replace Dataset Button*/
-QPushButton#import_dataset{
-    background: qlineargradient(
-        x1:0, y1:1,
-        x2:0, y2:0,
-        stop:0.02 rgba(131, 125, 255, 1),
-        stop:0.36 rgba(97, 97, 255, 1),
-        stop:0.66 rgba(31, 162, 255, 1),
-        stop:1 rgba(0, 212, 255, 1)
-    );
-    color: #c8f7ff;
-    border-radius: 16px;
-    padding: 2px; 
-}
-
-QLabel#import_dataset_label{
-    font-family: "SF Pro Display";
-    font-weight: 600;
-    border-radius: 16px;
-    color: #c8f7ff; 
-}
-
-/*Enter Data Points Button*/
-QPushButton#enter_data_points_button{
-    background: qlineargradient(
-        x1:0, y1:1,
-        x2:0, y2:0,
-        stop:0.02 rgba(131, 125, 255, 1),
-        stop:0.36 rgba(97, 97, 255, 1),
-        stop:0.66 rgba(31, 162, 255, 1),
-        stop:1 rgba(0, 212, 255, 1)
-    );
-    color: #c8f7ff;
-    border-radius: 16px;
-    padding: 2px; 
-}
-
-QLabel#enter_data_points_label{
-    font-family: "SF Pro Display";
-    font-weight: 600;
-    border-radius: 16px;
-    color: #c8f7ff; 
-}
-
-/*Column Management Button*/
-QPushButton#column_management_button{
-    background: qlineargradient(
-        x1:0, y1:1,
-        x2:0, y2:0,
-        stop:0.02 rgba(131, 125, 255, 1),
-        stop:0.36 rgba(97, 97, 255, 1),
-        stop:0.66 rgba(31, 162, 255, 1),
-        stop:1 rgba(0, 212, 255, 1)
-    );
-    color: #c8f7ff;
-    border-radius: 16px;
-    padding: 2px; 
-}
-
-QLabel#column_management_label{
-    font-family: "SF Pro Display";
-    font-weight: 600;
-    border-radius: 16px;
-    color: #c8f7ff; 
-}
-
-/*Dataset Top Bar*/
-QWidget#dataset_topbar{
+/* Topbar */
+QWidget[class="topbar"]{
     background: qlineargradient(
         x1:0, y1:0, x2:1, y2:0,
         stop:0 #f5f5ff,
@@ -245,8 +179,31 @@ QWidget#dataset_topbar{
     border-radius: 24px;
 }
 
-/*Dataset Table*/
-QWidget#dataset_table{
+/* Topbar Button */
+QPushButton[class="topbar_button"]{
+    background: qlineargradient(
+        x1:0, y1:1,
+        x2:0, y2:0,
+        stop:0.02 rgba(131, 125, 255, 1),
+        stop:0.36 rgba(97, 97, 255, 1),
+        stop:0.66 rgba(31, 162, 255, 1),
+        stop:1 rgba(0, 212, 255, 1)
+    );
+    color: #c8f7ff;
+    border-radius: 16px;
+    padding: 2px; 
+}
+
+/* Topbar Button Label */
+QLabel[class="topbar_button_label"]{
+    font-family: "SF Pro Display";
+    font-weight: 600;
+    border-radius: 16px;
+    color: #c8f7ff; 
+}
+
+/* Adjustment Section */
+QWidget[class="adjustment_section"]{
     background: qlineargradient(
         x1:0, y1:0, x2:1, y2:0,
         stop:0 #f5f5ff,
@@ -255,4 +212,132 @@ QWidget#dataset_table{
     );
     border: 2px solid #d0d0ff;
     border-radius: 24px;
+}
+
+/* Graph Parameter Table */
+QWidget#ParamTable {
+    border-radius: 24px;
+    background: transparent;
+}
+
+/* Graph Parameter Buttons */
+QWidget#ParamTable QPushButton{
+    background: qlineargradient(
+        x1:0, y1:0,
+        x2:1, y2:0,
+        stop:0 rgba(94, 255, 234, 1),
+        stop:0.29 rgba(63, 252, 180, 1),
+        stop:0.61 rgba(2, 247, 207, 1),
+        stop:0.89 rgba(0, 212, 255, 1)
+    );
+    border: 2px solid black;
+    border-radius: 16px;
+    font-family: "SF Pro Display";
+    font-weight: 600;
+    font-size: 20px;
+    padding: 6px;
+    color: black;
+}
+QWidget#ParamTable QPushButton:hover{
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(255, 0, 255, 255),
+        stop:0.22 rgba(252, 86, 191, 255),
+        stop:0.46 rgba(247, 96, 96, 255),
+        stop:0.71 rgba(255, 180, 82, 255),
+        stop:0.90 rgba(245, 219, 51, 255)
+    );
+    border: 2px solid black;
+    border-radius: 16px;
+    font-family: "SF Pro Display";
+    font-weight: 600;
+    font-size: 20px;
+    padding: 6px;
+    color: black;
+}
+QWidget#ParamTable QPushButton:pressed{
+    background: qlineargradient(
+        x1:0, y1:0,
+        x2:1, y2:0,
+        stop:0 rgba(94, 255, 234, 1),
+        stop:0.29 rgba(63, 252, 180, 1),
+        stop:0.61 rgba(2, 247, 207, 1),
+        stop:0.89 rgba(0, 212, 255, 1)
+    );
+    border: 2px solid black;
+    border-radius: 16px;
+    font-family: "SF Pro Display";
+    font-weight: 600;
+    font-size: 20px;
+    padding: 6px;
+    color: black;
+}
+
+/* Select Graph Window */
+QDialog#select_graph_window{
+    background: qlineargradient(
+        x1: 0, y1: 1, 
+        x2: 0, y2: 0,
+        stop: 0 rgba(25, 191, 188, 1),
+        stop: 0.28 rgba(27, 154, 166, 1),
+        stop: 0.65 rgba(78, 160, 242, 1),
+        stop: 0.89 rgba(33, 218, 255, 1)
+    );
+    color: black;
+}
+
+QWidget[class="graph_window_widget"]{
+    background: #ffffff;
+    border: 2px solid black;
+    border-radius: 16px;
+}
+
+QLabel[class="graph_label"]{
+    font-family: "SF Pro Display";
+    font-weight: 600;
+    font-size: 32px;
+    padding: 6px;
+    color: black;
+    border: none;
+    background: transparent;
+}
+
+QPushButton[class="graph_button"]{
+    background: qlineargradient(
+        x1:0, y1:0,
+        x2:1, y2:0,
+        stop:0 rgba(94, 255, 234, 1),
+        stop:0.29 rgba(63, 252, 180, 1),
+        stop:0.61 rgba(2, 247, 207, 1),
+        stop:0.89 rgba(0, 212, 255, 1)
+    );
+    border: 2px solid black;
+    border-radius: 16px;
+    padding: 0px;  
+}
+
+QPushButton[class="graph_button"]:pressed{
+    background: qlineargradient(
+        x1:0, y1:0,
+        x2:1, y2:0,
+        stop:0 rgba(94, 255, 234, 1),
+        stop:0.5 rgba(171, 156, 255, 1),
+        stop:1 rgba(255, 203, 255, 1)
+    );
+    border: 2px solid black;
+    border-radius: 16px;
+    padding: 0px;  
+}
+
+QPushButton[class="graph_button"]:selected{
+    background: qlineargradient(
+        x1:0, y1:0,
+        x2:1, y2:0,
+        stop:0 rgba(94, 255, 234, 1),
+        stop:0.5 rgba(171, 156, 255, 1),
+        stop:1 rgba(255, 203, 255, 1)
+    );
+    border: 2px solid black;
+    border-radius: 16px;
+    padding: 0px;  
 }
