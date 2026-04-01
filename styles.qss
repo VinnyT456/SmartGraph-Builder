@@ -316,7 +316,7 @@ QPushButton[class="graph_button"]{
     padding: 0px;  
 }
 
-QPushButton[class="graph_button"]:pressed{
+QPushButton[class="graph_button"]:checked{
     background: qlineargradient(
         x1:0, y1:0,
         x2:1, y2:0,
@@ -329,15 +329,14 @@ QPushButton[class="graph_button"]:pressed{
     padding: 0px;  
 }
 
-QPushButton[class="graph_button"]:selected{
-    background: qlineargradient(
-        x1:0, y1:0,
-        x2:1, y2:0,
-        stop:0 rgba(94, 255, 234, 1),
-        stop:0.5 rgba(171, 156, 255, 1),
-        stop:1 rgba(255, 203, 255, 1)
-    );
-    border: 2px solid black;
-    border-radius: 16px;
-    padding: 0px;  
+QPushButton[class="dot_button"]{
+    background-color: transparent;
+    border: 1.5px solid black;
+    border-radius: 6px;
+}
+
+QPushButton[class="dot_button"]:checked{
+    background-color: black;
+    border: 1.5px solid black;
+    border-radius: 6px;
 }
