@@ -1,11 +1,10 @@
 import os
 from PyQt6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QPixmap, QShortcut, QKeySequence
 from PyQt6.QtWidgets import (
-    QDialog, QGraphicsOpacityEffect, QGridLayout, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QStackedWidget, QWidget, QVBoxLayout
+    QDialog, QGraphicsOpacityEffect, QGridLayout, QHBoxLayout, 
+    QLabel, QPushButton, QSizePolicy, QStackedWidget, QWidget, QVBoxLayout,
 )
-from matplotlib.backend_bases import button_press_handler
-from sections import graph
 from sections.buttons import *
 
 
@@ -310,8 +309,8 @@ class select_graph_window(QDialog):
         #List for representing the dots (pages)
         self.dots = []
 
-        #List for representing the graph button labels
-        self.button_labels = []
+        #List for representing the graph buttons
+        self.graph_buttons = []
 
         #Dot Index representing the current page for the graphs
         self.dot_idx = 0
@@ -377,6 +376,17 @@ class select_graph_window(QDialog):
         main_layout.addWidget(self.container_widget)
         main_layout.setContentsMargins(0,0,0,0)
 
+        self.graph_buttons[0].setChecked(True)
+        self.select_graph(self.available_graphs[0])
+
+        left_key_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left), self) 
+        left_key_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
+        left_key_shortcut.activated.connect(lambda: self.change_graphs_shown(-1))
+
+        right_key_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Right), self) 
+        right_key_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
+        right_key_shortcut.activated.connect(lambda: self.change_graphs_shown(1))
+
     def create_select_graph_widget(self):
         select_graph_section_layout = QHBoxLayout(self.select_graph_section)
 
@@ -425,19 +435,25 @@ class select_graph_window(QDialog):
         graph_pages_section_layout.setSpacing(5)
 
         for i in range(int(len(self.available_graphs) / 3)):
-            dot = QLabel("●" if i == 0 else "○")
-            dot.setStyleSheet("color: black;")
-            dot.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            dot = QPushButton()
+            dot.setObjectName(str(i))
+            dot.setProperty("class","dot_button")
+            dot.setFixedSize(12,12)
+            dot.setCheckable(True)
+            dot.clicked.connect(lambda checked, b=dot: self.change_graph_page(b))
+
             self.dots.append(dot)
-            graph_pages_section_layout.addWidget(dot)
+            graph_pages_section_layout.addWidget(dot,alignment=Qt.AlignmentFlag.AlignVCenter)
+
+        self.dots[0].setChecked(True)
 
         return graph_pages_section
 
     def add_graph_buttons(self):
-        graph_button_pages = QStackedWidget(self.select_graph_widget)
+        self.graph_button_pages = QStackedWidget(self.select_graph_widget)
 
         self.select_graph_widget_layout = QVBoxLayout(self.select_graph_widget)
-        self.select_graph_widget_layout.addWidget(graph_button_pages)
+        self.select_graph_widget_layout.addWidget(self.graph_button_pages)
         self.select_graph_widget_layout.setContentsMargins(0,0,0,0)
         self.select_graph_widget_layout.setSpacing(0)
 
@@ -459,8 +475,7 @@ class select_graph_window(QDialog):
 
         for i in range(len(self.available_graphs)):
             if (i % 3 == 0 and i != 0):
-                graph_button_pages.addWidget(page)
-
+                self.graph_button_pages.addWidget(page)
                 page, page_layout = create_page()
 
             graph_label = QLabel(self.available_graphs[i])
@@ -472,6 +487,7 @@ class select_graph_window(QDialog):
             graph_button = QPushButton()
             graph_button.setProperty("class","graph_button")
             graph_button.setFixedHeight(35)
+            graph_button.setCheckable(True)
             graph_button.clicked.connect(lambda checked, b=graph_button: self.update_graph_image(b))
 
             graph_button_layout = QVBoxLayout(graph_button)
@@ -481,9 +497,9 @@ class select_graph_window(QDialog):
 
             page_layout.addWidget(graph_button,alignment=Qt.AlignmentFlag.AlignVCenter)
 
-            self.button_labels.append(graph_label)
+            self.graph_buttons.append(graph_button)
 
-        graph_button_pages.addWidget(page)
+        self.graph_button_pages.addWidget(page)
 
     def get_graph_images(self):
         self.sample_graphs = dict()
@@ -496,15 +512,25 @@ class select_graph_window(QDialog):
 
             self.sample_graphs[img_name] = image
 
+    def change_graph_page(self, button):
+        dot_page = int(button.objectName())
+
+        for dot in self.dots:
+            dot.setChecked(False)
+        
+        self.dots[dot_page].setChecked(True)
+
+        self.graph_button_pages.setCurrentIndex(dot_page)
+
     def change_graphs_shown(self,direction): 
         self.dot_idx = (self.dot_idx + direction) % len(self.dots)
         self.update_dots()
-        self.update_buttons()
+        self.update_buttons(direction)
 
-    def select_graph(self):
+    def select_graph(self, graph_selected):
         #Update the selected graph variable, display the associated parameter buttons, and close the window.
         global selected_graph
-        selected_graph = self.available_graphs[idx]
+        selected_graph = graph_selected
         self.select_graph_button.label.setText(selected_graph)
         self.select_graph_button.label.setStyleSheet("""
             font-family: "SF Pro Display";
@@ -512,21 +538,44 @@ class select_graph_window(QDialog):
             font-size: 18px;
             border-radius: 16px;
         """)
-        self.graph_parameter_table.update_parameter_buttons()
-        self.close() 
+        self.graph_parameter_table.update_parameter_buttons() 
 
-    def update_buttons(self):
-        start = self.dot_idx * 3
-        end = start + 3
+    def update_buttons(self, direction):
+        current_idx = self.graph_button_pages.currentIndex()
+        next_idx = (current_idx + direction) % self.graph_button_pages.count()
 
-        for graph_name, button_label in zip(self.available_graphs[start:end],self.button_labels):
-            button_label.setText(graph_name)
+        self.graph_button_pages.setCurrentIndex(next_idx)
+
+        width = self.graph_button_pages.width()
+
+        if direction == 1:
+            start_pos = QPoint(width, 0)
+        else:
+            start_pos = QPoint(-width, 0)
+
+        self.graph_button_pages.move(start_pos)
+
+        # ✅ STORE animation on self
+        self.slide_anim = QPropertyAnimation(self.graph_button_pages, b"pos")
+        self.slide_anim.setDuration(700)
+        self.slide_anim.setStartValue(start_pos)
+        self.slide_anim.setEndValue(QPoint(0, 0))
+        self.slide_anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
+
+        self.slide_anim.start()
 
     def update_dots(self):
         for idx, dot in enumerate(self.dots):
-            dot.setText("●" if idx == self.dot_idx else "○")
+            dot.setChecked(False)
+            if (idx == self.dot_idx): 
+                dot.setChecked(True)
     
     def update_graph_image(self,button):
+        for graph_button in self.graph_buttons:
+            graph_button.setChecked(False)
+
+        button.setChecked(True)
+
         graph_label = button.findChild(QLabel)
         new_graph = self.sample_graphs[graph_label.text().upper()] 
 
@@ -552,6 +601,8 @@ class select_graph_window(QDialog):
 
         self.fade_out.finished.connect(on_fade_out_finished)
         self.fade_out.start()
+
+        self.select_graph(graph_label.text())
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -600,6 +651,12 @@ class select_graph(QPushButton):
         self.setMinimumHeight(35)
         self.label.setMinimumHeight(25)
 
+        self.graph_window = select_graph_window(
+            list(SEABORN_PLOTS.keys()),
+            self.graph_parameter_table,
+            self
+        )
+
         #Put the label onto the button with a vertical layout and center it.
         layout = QVBoxLayout(self)
         layout.addWidget(self.label)
@@ -612,11 +669,6 @@ class select_graph(QPushButton):
         #Only proceed when the user has already selected a graphing module.
         if (graph_module != ''):
             #Open a select graph window for the user to choose what graph they wanna plot
-            self.graph_window = select_graph_window(
-                list(SEABORN_PLOTS.keys()),
-                self.graph_parameter_table,
-                self
-            )
             self.graph_window.setModal(True)   
             self.graph_window.show() 
 
