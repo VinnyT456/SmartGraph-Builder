@@ -1,8 +1,8 @@
 import os
-from PyQt6.QtCore import QEasingCurve, QPropertyAnimation, Qt
+from PyQt6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import (
-    QDialog, QGridLayout, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QWidget, QVBoxLayout
+    QDialog, QGraphicsOpacityEffect, QGridLayout, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QStackedWidget, QWidget, QVBoxLayout
 )
 from matplotlib.backend_bases import button_press_handler
 from sections import graph
@@ -327,8 +327,6 @@ class select_graph_window(QDialog):
         #Create a dictionary to store the images for the sample graphs
         self.get_graph_images()
 
-        print(list(self.sample_graphs.keys()))
-
         #Create a containers for the widgets that sits on top of the QDialog Window
         self.container_widget = QWidget(self)
         self.container_widget.setObjectName("container_widget")
@@ -358,6 +356,10 @@ class select_graph_window(QDialog):
         self.graph_image.setPixmap(self.sample_graphs["SCATTER PLOT"])
         self.graph_image.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self.graph_image.setScaledContents(True)
+
+        self.opacity_effect = QGraphicsOpacityEffect()
+        self.graph_image.setGraphicsEffect(self.opacity_effect)
+        self.opacity_effect.setOpacity(1)
     
         graph_image_section_layout = QVBoxLayout(self.graph_image_section)
         graph_image_section_layout.addWidget(self.graph_image)
@@ -432,9 +434,35 @@ class select_graph_window(QDialog):
         return graph_pages_section
 
     def add_graph_buttons(self):
-        select_graph_widget_layout = QHBoxLayout(self.select_graph_widget)
+        graph_button_pages = QStackedWidget(self.select_graph_widget)
 
-        for i in range(3):
+        self.select_graph_widget_layout = QVBoxLayout(self.select_graph_widget)
+        self.select_graph_widget_layout.addWidget(graph_button_pages)
+        self.select_graph_widget_layout.setContentsMargins(0,0,0,0)
+        self.select_graph_widget_layout.setSpacing(0)
+
+        def create_page():
+            page = QWidget()
+            page.setObjectName("page")
+            page.setStyleSheet("""
+                QWidget#page{
+                    background: transparent;
+                    border: none;
+                }
+            """)
+            layout = QHBoxLayout(page)
+            layout.setContentsMargins(10,0,10,0)
+            layout.setSpacing(10)
+            return page, layout
+
+        page, page_layout = create_page()
+
+        for i in range(len(self.available_graphs)):
+            if (i % 3 == 0 and i != 0):
+                graph_button_pages.addWidget(page)
+
+                page, page_layout = create_page()
+
             graph_label = QLabel(self.available_graphs[i])
             graph_label.setProperty("class","graph_label")
             graph_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -451,12 +479,11 @@ class select_graph_window(QDialog):
             graph_button_layout.setContentsMargins(0,0,0,0)
             graph_button_layout.setSpacing(0)
 
-            select_graph_widget_layout.addWidget(graph_button,alignment=Qt.AlignmentFlag.AlignVCenter)
+            page_layout.addWidget(graph_button,alignment=Qt.AlignmentFlag.AlignVCenter)
 
             self.button_labels.append(graph_label)
 
-        select_graph_widget_layout.setContentsMargins(5,0,5,0)
-        select_graph_widget_layout.setSpacing(5)
+        graph_button_pages.addWidget(page)
 
     def get_graph_images(self):
         self.sample_graphs = dict()
@@ -502,7 +529,29 @@ class select_graph_window(QDialog):
     def update_graph_image(self,button):
         graph_label = button.findChild(QLabel)
         new_graph = self.sample_graphs[graph_label.text().upper()] 
-        self.graph_image.setPixmap(new_graph)
+
+        self.fade_out = QPropertyAnimation(self.opacity_effect, b"opacity")
+        self.fade_out.setDuration(300)  # ms
+        self.fade_out.setStartValue(1)
+        self.fade_out.setEndValue(0)
+
+        self.fade_out.setEasingCurve(QEasingCurve.Type.InOutQuad)
+
+        # When fade out finishes → change image → fade in
+        def on_fade_out_finished():
+            self.graph_image.setPixmap(new_graph)
+
+            self.fade_in = QPropertyAnimation(self.opacity_effect, b"opacity")
+            self.fade_in.setDuration(300)
+            self.fade_in.setStartValue(0)
+            self.fade_in.setEndValue(1)
+
+            self.fade_in.setEasingCurve(QEasingCurve.Type.InOutQuad)
+
+            self.fade_in.start()
+
+        self.fade_out.finished.connect(on_fade_out_finished)
+        self.fade_out.start()
 
     def showEvent(self, event):
         super().showEvent(event)
