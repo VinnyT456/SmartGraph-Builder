@@ -514,6 +514,7 @@ class select_graph_window(QDialog):
 
     def change_graph_page(self, button):
         dot_page = int(button.objectName())
+        self.dot_idx = dot_page
 
         for dot in self.dots:
             dot.setChecked(False)
