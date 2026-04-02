@@ -1,5 +1,9 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QWidget
+from pygments import highlight
+from pygments.lexers import PythonLexer
+from pygments.formatters import TerminalFormatter
+import textwrap
 import json
 
 
@@ -46,12 +50,17 @@ class plot_config_cleaner:
             self.clean_plot_config.pop("legend")
 
     def clean_seaborn_legend_data(self):
-        for parameter, argument in self.current_plot_config["legend"]["seaborn_legends"].items():
-            if (argument != self.default_plot_config["legend"]["seaborn_legends"][parameter]):
+        for parameter, argument in self.current_plot_config["legend"][
+            "seaborn_legends"
+        ].items():
+            if (
+                argument
+                != self.default_plot_config["legend"]["seaborn_legends"][parameter]
+            ):
                 self.clean_plot_config["seaborn_legends"][parameter] = argument
 
         self.current_plot_config["legend"].pop("seaborn_legends")
-        if (self.clean_plot_config["seaborn_legends"] == dict()):
+        if self.clean_plot_config["seaborn_legends"] == dict():
             self.clean_plot_config.pop("seaborn_legend")
 
     def clean_grid_data(self):
@@ -65,6 +74,7 @@ class plot_config_cleaner:
 
     def get_clean_plot_config(self):
         return self.clean_plot_config
+
 
 class Code_Generator:
     def __init__(self):
@@ -80,24 +90,24 @@ class Code_Generator:
 
         self.plot_config = self.create_plot_config()
 
-        self.import_statements = """
+        self.starter_code = textwrap.dedent("""
             import pandas as pd
             import seaborn as sns
             import matplotlib.pyplot as plt
-        """
-        
-        self.dataset_statement = "df = pd.read_csv('dataset.csv')"
 
-        self.seaborn_plot_code_statements = {
-            "Scatter Plot":"sns.scatterplot("
-        }
+            df = pd.read_csv('user_dataset.csv')
+
+            plt.figure(figsize=(7,6))
+        """)
+
+        self.seaborn_plot_code_statements = {"Scatter Plot": "sns.scatterplot("}
 
         self.matplotlib_plot_code_statements = {
-            "x-axis-title":"plt.xlabel(",
-            "y-axis-title":"plt.ylabel(",
-            "title":"plt.title(",
-            "legend":"plt.legend(",
-            "grid":"plt.grid(",
+            "x-axis-title": "plt.xlabel(",
+            "y-axis-title": "plt.ylabel(",
+            "title": "plt.title(",
+            "legend": "plt.legend(",
+            "grid": "plt.grid(",
         }
 
         self.show_graph_statement = "plt.show()"
@@ -125,25 +135,59 @@ class Code_Generator:
     def create_plot_config(self):
         plot_config = dict()
 
-        plot_config = {k: v for k, v in {
-            "axis_title": self.clean_plot_config.pop("axis-title", {}),
-            "legend": self.clean_plot_config.pop("legend", {}),
-            "title": self.clean_plot_config.pop("title", {}),
-            "grid": self.clean_plot_config.pop("grid", {}),
-            "graph_data": self.clean_plot_config.pop("seaborn_legend", {}) | self.clean_plot_config,
-        }.items() if v}
+        plot_config = {
+            k: v
+            for k, v in {
+                "axis_title": self.clean_plot_config.pop("axis-title", {}),
+                "legend": self.clean_plot_config.pop("legend", {}),
+                "title": self.clean_plot_config.pop("title", {}),
+                "grid": self.clean_plot_config.pop("grid", {}),
+                "graph_data": self.clean_plot_config.pop("seaborn_legend", {})
+                | self.clean_plot_config,
+            }.items()
+            if v
+        }
 
         graph_data = plot_config.get("graph_data", {})
         seaborn_legends = graph_data.pop("seaborn_legends", {})
-        graph_data = {**seaborn_legends, **graph_data}
+        graph_data = {**graph_data,**seaborn_legends}
         plot_config["graph_data"] = graph_data
 
-        order = ["graph_data","title","axis_title","legend","grid"]
+        order = ["graph_data", "title", "axis_title", "legend", "grid"]
 
-        plot_config = {k: plot_config.pop(k, {}) 
-               for k in order if plot_config.get(k, {})}
+        plot_config = {
+            k: plot_config.pop(k, {}) for k in order if plot_config.get(k, {})
+        }
 
         return plot_config
+
+    def generate_python_code(self):
+        indent = " " * 4
+
+        full_code = self.starter_code
+
+        plot_code_statement = self.seaborn_plot_code_statements[self.graph_type] + f"\n{indent}data=df,"
+
+        def format_value(value):
+            if (isinstance(value,str)):
+                return f'"{value}"'
+            elif isinstance(value, list):
+                return format_value(value[0])
+            elif value is None:
+                return "None"
+            else:
+                return str(value)
+
+        for parameter, argument in self.plot_config["graph_data"].items():
+            argument = format_value(argument)
+            new_line = f"\n{indent}{parameter}={argument},"
+            plot_code_statement += new_line
+
+        plot_code_statement += "\n)"
+
+        full_code += plot_code_statement
+
+        print(highlight(full_code, PythonLexer(), TerminalFormatter()))
 
 class Code_Section(QWidget):
     def __init__(self):
@@ -165,3 +209,7 @@ class Code_Section(QWidget):
             }
         """)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+
+if __name__ == "__main__":
+    Code_Generator().generate_python_code()
