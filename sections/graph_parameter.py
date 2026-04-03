@@ -1,6 +1,6 @@
 import os
 from PyQt6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt
-from PyQt6.QtGui import QPixmap, QShortcut, QKeySequence
+from PyQt6.QtGui import QPixmap, QShortcut, QKeySequence, QShowEvent
 from PyQt6.QtWidgets import (
     QDialog, QGraphicsOpacityEffect, QGridLayout, QHBoxLayout, 
     QLabel, QPushButton, QSizePolicy, QStackedWidget, QWidget, QVBoxLayout,
@@ -377,7 +377,6 @@ class select_graph_window(QDialog):
         main_layout.setContentsMargins(0,0,0,0)
 
         self.graph_buttons[0].setChecked(True)
-        self.select_graph(self.available_graphs[0])
 
         left_key_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left), self) 
         left_key_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
@@ -386,6 +385,10 @@ class select_graph_window(QDialog):
         right_key_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Right), self) 
         right_key_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         right_key_shortcut.activated.connect(lambda: self.change_graphs_shown(1))
+
+        enter_key_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Return), self)
+        enter_key_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
+        enter_key_shortcut.activated.connect(lambda: self.close())
 
     def create_select_graph_widget(self):
         select_graph_section_layout = QHBoxLayout(self.select_graph_section)
@@ -514,14 +517,13 @@ class select_graph_window(QDialog):
 
     def change_graph_page(self, button):
         dot_page = int(button.objectName())
-        self.dot_idx = dot_page
 
         for dot in self.dots:
             dot.setChecked(False)
-        
         self.dots[dot_page].setChecked(True)
 
-        self.graph_button_pages.setCurrentIndex(dot_page)
+        self.update_buttons(dot_page - self.dot_idx)
+        self.dot_idx = dot_page
 
     def change_graphs_shown(self,direction): 
         self.dot_idx = (self.dot_idx + direction) % len(self.dots)
@@ -549,7 +551,7 @@ class select_graph_window(QDialog):
 
         width = self.graph_button_pages.width()
 
-        if direction == 1:
+        if direction > 0:
             start_pos = QPoint(width, 0)
         else:
             start_pos = QPoint(-width, 0)
@@ -630,6 +632,11 @@ class select_graph_window(QDialog):
         # Start animations
         self.fade_anim.start()
         self.scale_anim.start()
+
+        if (selected_graph == ""):
+            self.select_graph(self.available_graphs[0])
+        else:
+            self.select_graph(selected_graph)
         
 class select_graph(QPushButton):
     def __init__(self,graph_parameter_table):
