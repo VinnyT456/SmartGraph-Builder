@@ -7,75 +7,6 @@ import textwrap
 import json
 
 
-class plot_config_cleaner:
-    def __init__(self, current_plot_config, default_plot_config):
-        self.current_plot_config = current_plot_config
-        self.default_plot_config = default_plot_config
-
-        self.clean_plot_config = dict()
-        self.clean_data()
-
-    def clean_data(self):
-        self.clean_plot_config["axis-title"] = dict()
-        self.clean_plot_config["legend"] = dict()
-        self.clean_plot_config["grid"] = dict()
-
-        self.clean_axis_title_data()
-        self.clean_legend_data()
-        self.clean_grid_data()
-
-        for parameter, argument in self.current_plot_config.items():
-            if argument != self.default_plot_config[parameter]:
-                self.clean_plot_config[parameter] = argument
-
-    def clean_axis_title_data(self):
-        for parameter, argument in self.current_plot_config["axis-title"].items():
-            if argument != self.default_plot_config["axis-title"][parameter]:
-                self.clean_plot_config["axis-title"][parameter] = argument
-
-        self.current_plot_config.pop("axis-title")
-        if self.clean_plot_config["axis-title"] == dict():
-            self.clean_plot_config.pop("axis-title")
-
-    def clean_legend_data(self):
-        self.clean_plot_config["seaborn_legends"] = dict()
-        self.clean_seaborn_legend_data()
-
-        for parameter, argument in self.current_plot_config["legend"].items():
-            if argument != self.default_plot_config["legend"][parameter]:
-                self.clean_plot_config["legend"][parameter] = argument
-
-        self.current_plot_config.pop("legend")
-        if self.clean_plot_config["legend"] == dict():
-            self.clean_plot_config.pop("legend")
-
-    def clean_seaborn_legend_data(self):
-        for parameter, argument in self.current_plot_config["legend"][
-            "seaborn_legends"
-        ].items():
-            if (
-                argument
-                != self.default_plot_config["legend"]["seaborn_legends"][parameter]
-            ):
-                self.clean_plot_config["seaborn_legends"][parameter] = argument
-
-        self.current_plot_config["legend"].pop("seaborn_legends")
-        if self.clean_plot_config["seaborn_legends"] == dict():
-            self.clean_plot_config.pop("seaborn_legend")
-
-    def clean_grid_data(self):
-        for parameter, argument in self.current_plot_config["grid"].items():
-            if argument != self.default_plot_config["grid"][parameter]:
-                self.clean_plot_config["grid"][parameter] = argument
-
-        self.current_plot_config.pop("grid")
-        if self.clean_plot_config["grid"] == dict():
-            self.clean_plot_config.pop("grid")
-
-    def get_clean_plot_config(self):
-        return self.clean_plot_config
-
-
 class Code_Generator:
     def __init__(self):
         self.current_plot_config = self.read_plot_config()
@@ -83,10 +14,17 @@ class Code_Generator:
         self.graph_type = self.current_plot_config.pop("type")
         self.default_plot_config = self.read_default_plot_config()
 
-        self.plot_config_cleaner = plot_config_cleaner(
-            self.current_plot_config, self.default_plot_config
-        )
-        self.clean_plot_config = self.plot_config_cleaner.get_clean_plot_config()
+        self.parameters_to_skip = [
+            "x-axis-title",
+            "y-axis-title",
+            "title",
+            "legend",
+            "seaborn_legends",
+            "grid",
+        ]
+
+        self.new_plot_config = dict()
+        self.clean_plot_config(self.current_plot_config, self.default_plot_config)
 
         self.plot_config = self.create_plot_config()
 
@@ -95,7 +33,7 @@ class Code_Generator:
             import seaborn as sns
             import matplotlib.pyplot as plt
 
-            df = pd.read_csv('user_dataset.csv')
+            df = pd.read_csv('path/to/your_dataset.csv')
 
             plt.figure(figsize=(7,6))
         """)
@@ -132,28 +70,42 @@ class Code_Generator:
             new_data = data[self.graph_type]
         return new_data
 
+    def clean_plot_config(self,current_plot_config, default_plot_config,special_parameter=""):
+        for parameter, argument in current_plot_config.items():
+            if parameter in self.parameters_to_skip:
+                self.parameters_to_skip.remove(parameter)
+                self.new_plot_config[parameter] = dict()
+                self.clean_plot_config(
+                    current_plot_config[parameter], default_plot_config[parameter], parameter
+                )
+            elif special_parameter == "" and argument != default_plot_config[parameter]:
+                self.new_plot_config[parameter] = argument
+            elif special_parameter != "" and argument != default_plot_config[parameter]:
+                self.new_plot_config[special_parameter][parameter] = argument
+
     def create_plot_config(self):
         plot_config = dict()
 
         plot_config = {
             k: v
             for k, v in {
-                "axis_title": self.clean_plot_config.pop("axis-title", {}),
-                "legend": self.clean_plot_config.pop("legend", {}),
-                "title": self.clean_plot_config.pop("title", {}),
-                "grid": self.clean_plot_config.pop("grid", {}),
-                "graph_data": self.clean_plot_config.pop("seaborn_legend", {})
-                | self.clean_plot_config,
+                "x-axis-title": self.new_plot_config.pop("x-axis-title", {}),
+                "y-axis-title": self.new_plot_config.pop("y-axis-title", {}), 
+                "legend": self.new_plot_config.pop("legend", {}),
+                "title": self.new_plot_config.pop("title", {}),
+                "grid": self.new_plot_config.pop("grid", {}),
+                "graph_data": self.new_plot_config.pop("seaborn_legend", {})
+                | self.new_plot_config,
             }.items()
             if v
         }
 
         graph_data = plot_config.get("graph_data", {})
         seaborn_legends = graph_data.pop("seaborn_legends", {})
-        graph_data = {**graph_data,**seaborn_legends}
+        graph_data = {**graph_data, **seaborn_legends}
         plot_config["graph_data"] = graph_data
 
-        order = ["graph_data", "title", "axis_title", "legend", "grid"]
+        order = ["graph_data", "title", "x-axis-title", "y-axis-title", "legend", "grid"]
 
         plot_config = {
             k: plot_config.pop(k, {}) for k in order if plot_config.get(k, {})
@@ -164,12 +116,12 @@ class Code_Generator:
     def generate_python_code(self):
         indent = " " * 4
 
-        full_code = self.starter_code
-
-        plot_code_statement = self.seaborn_plot_code_statements[self.graph_type] + f"\n{indent}data=df,"
+        plot_code_statement = (
+            self.seaborn_plot_code_statements[self.graph_type] + f"\n{indent}data=df,"
+        )
 
         def format_value(value):
-            if (isinstance(value,str)):
+            if isinstance(value, str):
                 return f'"{value}"'
             elif isinstance(value, list):
                 return format_value(value[0])
@@ -182,12 +134,28 @@ class Code_Generator:
             argument = format_value(argument)
             new_line = f"\n{indent}{parameter}={argument},"
             plot_code_statement += new_line
+        plot_code_statement += "\n)\n"
 
-        plot_code_statement += "\n)"
+        self.plot_config.pop("graph_data")
 
-        full_code += plot_code_statement
+        plot_adjustment = ""
+
+        for adjustment in list(self.plot_config.keys()):
+            plot_adjustment_line = self.matplotlib_plot_code_statements[adjustment]
+
+            for parameter, argument in self.plot_config[adjustment].items():
+                if parameter == "label":
+                    plot_adjustment_line += format_value(argument)
+                else:
+                    plot_adjustment_line += f"{parameter}={format_value(argument)}"
+                plot_adjustment_line += ", "
+            plot_adjustment_line = plot_adjustment_line[:-2] + ")"
+            plot_adjustment += plot_adjustment_line + "\n"
+
+        full_code = self.starter_code + plot_code_statement + plot_adjustment + self.show_graph_statement
 
         print(highlight(full_code, PythonLexer(), TerminalFormatter()))
+
 
 class Code_Section(QWidget):
     def __init__(self):
