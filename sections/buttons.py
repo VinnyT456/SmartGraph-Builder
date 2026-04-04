@@ -1,11 +1,11 @@
-from PyQt6.QtCore import QItemSelectionModel, QSortFilterProxyModel, QStringListModel, Qt
+from PyQt6.QtCore import QEasingCurve, QItemSelectionModel, QPropertyAnimation, QSortFilterProxyModel, QStringListModel, Qt
 from PyQt6.QtGui import QFont, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QAbstractItemView, QDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListView, QListWidget, QListWidgetItem, QPushButton, QStyle, 
     QTableView, QWidget, QVBoxLayout, QStyledItemDelegate, QSizePolicy
 )
 from sections import plot_manager
-from sections.dataset import PrepareDataset
+from sections.dataset import PrepareDataset, displayDataset
 from sections.plot_manager import PlotManager
 from collections import deque
 import matplotlib.colors as mcolors
@@ -22,11 +22,102 @@ plot_json = {
         "data":"./dataset/user_dataset.csv",
         "x":None,
         "y":None,
-        "axis-title":{
-            "x-axis-title":"",
-            "y-axis-title":"",
+        "x-axis-title": {
+            "label": "",
+            "labelpad": 4.0,
+            "loc": "center",
+            "fontsize": 12,
+            "fontweight": "normal",
+            "fontstyle": "normal",
+            "fontfamily": "sans-serif",
+            "fontname": None,
+            "family": "sans-serif",
+            "style": "normal",
+            "weight": "normal",
+            "size": 12,
+            "stretch": "normal",
+            "variant": "normal",
+            "color": "black",
+            "backgroundcolor": None,
+            "alpha": None,
+            "horizontalalignment": "center",
+            "verticalalignment": "center",
+            "multialignment": None,
+            "rotation": 0,
+            "rotation_mode": "default",
+            "linespacing": None,
+            "in_layout": True,
+            "bbox": None,
+            "visible": True,
+            "zorder": 0,
+            "clip_on": False,
+            "clip_box": None,
+            "clip_path": None
         },
-        "title":None,
+        "y-axis-title": {
+            "label": "",
+            "labelpad": 4.0,
+            "loc": "center",
+            "fontsize": 12,
+            "fontweight": "normal",
+            "fontstyle": "normal",
+            "fontfamily": "sans-serif",
+            "fontname": None,
+            "family": "sans-serif",
+            "style": "normal",
+            "weight": "normal",
+            "size": 12,
+            "stretch": "normal",
+            "variant": "normal",
+            "color": "black",
+            "backgroundcolor": None,
+            "alpha": None,
+            "horizontalalignment": "center",
+            "verticalalignment": "center",
+            "multialignment": None,
+            "rotation": 0,
+            "rotation_mode": "default",
+            "linespacing": None,
+            "in_layout": True,
+            "bbox": None,
+            "visible": True,
+            "zorder": 0,
+            "clip_on": False,
+            "clip_box": None,
+            "clip_path": None
+        },
+        "title": {
+            "label": "",
+            "pad": 4.0,
+            "loc": "center",
+            "fontsize": 12,
+            "fontweight": "normal",
+            "fontstyle": "normal",
+            "fontfamily": "sans-serif",
+            "fontname": None,
+            "family": "sans-serif",
+            "style": "normal",
+            "weight": "normal",
+            "size": 12,
+            "stretch": "normal",
+            "variant": "normal",
+            "color": "black",
+            "backgroundcolor": None,
+            "alpha": None,
+            "horizontalalignment": "center",
+            "verticalalignment": "center",
+            "multialignment": None,
+            "rotation": 0,
+            "rotation_mode": "default",
+            "linespacing": None,
+            "in_layout": True,
+            "bbox": None,
+            "visible": True,
+            "zorder": 0,
+            "clip_on": False,
+            "clip_box": None,
+            "clip_path": None
+        },
         "legend":{
             "visible":True,
             "label":"__nolegend__",
@@ -73,7 +164,7 @@ plot_json = {
             "dashes":[None,None],
             "snap":None
         },
-        "hue":[None,{True:"True",False:"False"}],
+        "hue":[None,None],
         "style":None,
         "size":None,
         "palette":None,
@@ -106,22 +197,11 @@ class x_axis_button(QDialog):
         #Set the title of the window
         self.setWindowTitle("Select the x-axis")
         
-        #Set the object name of the QDialog window
+        #Set the object name for the QDialog window
         self.setObjectName("x_axis_screen")
         
-        #Style the Dialog window for selecting the x-axis
-        self.setStyleSheet("""
-            QDialog#x_axis_screen{
-               background: qlineargradient(
-                    x1: 0, y1: 1, 
-                    x2: 0, y2: 0,
-                    stop: 0 rgba(25, 191, 188, 1),
-                    stop: 0.28 rgba(27, 154, 166, 1),
-                    stop: 0.65 rgba(78, 160, 242, 1),
-                    stop: 0.89 rgba(33, 218, 255, 1)
-                );
-            }
-        """)
+        #Set the property for the QDialog Window
+        self.setProperty("class","dialog_window")
 
         #Control the size of the dialog window
         self.setFixedWidth(600)
@@ -130,83 +210,32 @@ class x_axis_button(QDialog):
         #Create a section to store all the buttons and style it
         self.button_section = QWidget()
         self.button_section.setObjectName("button_section")
-        self.button_section.setStyleSheet("""
-            QWidget#button_section{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-
+        self.button_section.setProperty("class","dialog_section")
         self.create_button_section()
-        self.update_x_axis()
-
-        #Create a section to display the dataset and style it
-        self.data_section = QWidget()
-        self.data_section.setObjectName("data_section")
-        self.data_section.setStyleSheet("""
-            QWidget#data_section{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
 
         #Create a QTableView instance to display the dataset
-        self.dataset_table = QTableView()
-        self.dataset_table.setObjectName("dataset_table")
-        header = self.dataset_table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.dataset_table.setStyleSheet("""
-            QTableView#dataset_table {
-                border-radius: 16px;
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                font-family: "SF Pro Display";
-                font-size: 11pt;
-                color: black;
-                margin: 5px;
-                padding: 10px;           
-            }
-            QHeaderView::section {
-                background-color: white;
-                color: black;
-                font-size: 16pt;
-                font-family: "SF Pro Display";
-                font-weight: bold;
-                border-radius: 24px;
+        self.dataset_section = displayDataset()
+        self.dataset_section.setObjectName("dataset_table")
+        self.dataset_section.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+        # Stretch header if you want
+        self.dataset_section.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+
+        self.dataset_section.setStyleSheet("""
+            QTableView#dataset_table{
                 border: 2px solid black;
+                border-radius: 16px;
             }
         """)
 
-        #Place the dataset table on top of the dataset section
-        layout = QVBoxLayout(self.data_section)
-        layout.addWidget(self.dataset_table)
-        layout.setContentsMargins(0,0,0,0)
-        layout.setSpacing(0)
-
         #Allow the dataset to take up all the space
-        self.dataset_table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.dataset_section.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         #Place the buttons and the dataset next to each other side by side
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.button_section,stretch=1)
         self.layout.addSpacing(10)
-        self.layout.addWidget(self.data_section,stretch=1)
+        self.layout.addWidget(self.dataset_section,stretch=1)
 
         #Create a shortcut for the user to go to the previous column by press up
         up_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Up), self) 
@@ -349,6 +378,7 @@ class x_axis_button(QDialog):
             #If no, copy the default config and update the x-axis
             plot_parameters = plot_json[self.selected_graph].copy()
             plot_parameters["x"] = self.column_name
+        
         #Apply the updated config
         self.plot_manager.insert_x_axis_data(plot_parameters)
         #Display the new graph generated
@@ -364,11 +394,12 @@ class x_axis_button(QDialog):
             return
 
         #If there is usable columns display the column and store it in dataset table
-        self.model = PrepareDataset(self.dataset[[self.column_name]])
-        self.dataset_table.setModel(self.model)
-        self.dataset_table.verticalHeader().setVisible(False)
-        self.dataset_table.setShowGrid(True)
-        self.dataset_table.setSortingEnabled(False)
+        if self.column_name in self.dataset.columns:
+            self.model = PrepareDataset(self.dataset[[self.column_name]])
+            self.dataset_section.setModel(self.model)
+            self.dataset_section.verticalHeader().setVisible(False)
+            self.dataset_section.setShowGrid(True)
+            self.dataset_section.setSortingEnabled(False)
 
     def columns_go_down(self):
         #Add one from the column index 
@@ -419,6 +450,29 @@ class x_axis_button(QDialog):
     def showEvent(self, event):
         super().showEvent(event)
 
+        # Fade animation
+        self.fade_anim = QPropertyAnimation(self, b"windowOpacity")
+        self.fade_anim.setDuration(200)
+        self.fade_anim.setStartValue(0)
+        self.fade_anim.setEndValue(1)
+        self.fade_anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
+
+        # Slight scale effect (resize)
+        start_rect = self.geometry()
+        self.setGeometry(
+            start_rect.adjusted(20, 20, -20, -20)  # slightly smaller
+        )
+
+        self.scale_anim = QPropertyAnimation(self, b"geometry")  # noqa: F405
+        self.scale_anim.setDuration(200)
+        self.scale_anim.setStartValue(self.geometry())
+        self.scale_anim.setEndValue(start_rect)
+        self.scale_anim.setEasingCurve(QEasingCurve.Type.OutBack)
+
+        # Start animations
+        self.fade_anim.start()
+        self.scale_anim.start()
+
         #Get the new dataset in case there is a change
         self.get_dataset()
 
@@ -449,32 +503,21 @@ class y_axis_button(QDialog):
         self.plot_parameters = plot_parameters
         self.selected_graph = selected_graph
         self.graph_display = graph_display
-        
-        #Set the title of the window
-        self.setWindowTitle("Select the y-axis")
 
         #Keep track of the current column and index
         self.column_name = ''
         self.current_column_index = 0
         self.get_dataset()
         self.usable_columns = self.find_usable_columns()
+        
+        #Set the title of the window
+        self.setWindowTitle("Select the y-axis")
 
         #Set the object name of the QDialog window
         self.setObjectName("y_axis_screen")
         
-        #Style the Dialog window for selecting the x-axis
-        self.setStyleSheet("""
-            QDialog#y_axis_screen{
-               background: qlineargradient(
-                    x1: 0, y1: 1, 
-                    x2: 0, y2: 0,
-                    stop: 0 rgba(25, 191, 188, 1),
-                    stop: 0.28 rgba(27, 154, 166, 1),
-                    stop: 0.65 rgba(78, 160, 242, 1),
-                    stop: 0.89 rgba(33, 218, 255, 1)
-                );
-            }
-        """)
+        #Set the property for the QDialog Window
+        self.setProperty("class","dialog_window")
 
         #Control the size of the dialog window
         self.setFixedWidth(600)
@@ -483,85 +526,32 @@ class y_axis_button(QDialog):
         #Create a section to store all the buttons and style it
         self.button_section = QWidget()
         self.button_section.setObjectName("button_section")
-        self.button_section.setStyleSheet("""
-            QWidget#button_section{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
+        self.button_section.setProperty("class","dialog_section")
         self.create_button_section()
-        self.update_y_axis()
-
-        #Create a section to display the dataset and style it
-        self.data_section = QWidget()
-        self.data_section.setObjectName("data_section")
-        self.data_section.setStyleSheet("""
-            QWidget#data_section{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
 
         #Create a QTableView instance to display the dataset
-        self.dataset_table = QTableView()
-        self.dataset_table.setObjectName("dataset_table")
-        header = self.dataset_table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.dataset_table.setStyleSheet("""
-            QTableView#dataset_table {
-                border-radius: 16px;
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                font-family: "SF Pro Display";
-                font-size: 11pt;
-                color: black;
-                margin: 5px;
-                padding: 10px;           
-            }
-            QHeaderView::section {
-                background-color: white;
-                color: black;
-                font-size: 16pt;
-                font-family: "SF Pro Display";
-                font-weight: bold;
-                border-radius: 24px;
+        self.dataset_section = displayDataset()
+        self.dataset_section.setObjectName("dataset_table")
+        self.dataset_section.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+        # Stretch header if you want
+        self.dataset_section.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+
+        self.dataset_section.setStyleSheet("""
+            QTableView#dataset_table{
                 border: 2px solid black;
+                border-radius: 16px;
             }
         """)
 
-        #Display the first column in the usable columns
-        self.display_dataset()
-
-        #Place the dataset table on top of the dataset section
-        layout = QVBoxLayout(self.data_section)
-        layout.addWidget(self.dataset_table)
-        layout.setContentsMargins(0,0,0,0)
-        layout.setSpacing(0)
-
         #Allow the dataset to take up all the space
-        self.dataset_table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.dataset_section.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         #Place the buttons and the dataset next to each other side by side
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.button_section,stretch=1)
         self.layout.addSpacing(10)
-        self.layout.addWidget(self.data_section,stretch=1)
+        self.layout.addWidget(self.dataset_section,stretch=1)
 
         #Create a shortcut for the user to go to the previous column by press up
         up_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Up), self) 
@@ -715,10 +705,10 @@ class y_axis_button(QDialog):
 
         #Display the selected column on the dataset section
         self.model = PrepareDataset(self.dataset[[self.column_name]])
-        self.dataset_table.setModel(self.model)
-        self.dataset_table.verticalHeader().setVisible(False)
-        self.dataset_table.setShowGrid(True)
-        self.dataset_table.setSortingEnabled(False)
+        self.dataset_section.setModel(self.model)
+        self.dataset_section.verticalHeader().setVisible(False)
+        self.dataset_section.setShowGrid(True)
+        self.dataset_section.setSortingEnabled(False)
 
     def columns_go_down(self):
         #Increase the current index by 1 to simulate doing down
@@ -768,6 +758,29 @@ class y_axis_button(QDialog):
 
     def showEvent(self, event):
         super().showEvent(event)
+
+        # Fade animation
+        self.fade_anim = QPropertyAnimation(self, b"windowOpacity")
+        self.fade_anim.setDuration(200)
+        self.fade_anim.setStartValue(0)
+        self.fade_anim.setEndValue(1)
+        self.fade_anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
+
+        # Slight scale effect (resize)
+        start_rect = self.geometry()
+        self.setGeometry(
+            start_rect.adjusted(20, 20, -20, -20)  # slightly smaller
+        )
+
+        self.scale_anim = QPropertyAnimation(self, b"geometry")  # noqa: F405
+        self.scale_anim.setDuration(200)
+        self.scale_anim.setStartValue(self.geometry())
+        self.scale_anim.setEndValue(start_rect)
+        self.scale_anim.setEasingCurve(QEasingCurve.Type.OutBack)
+
+        # Start animations
+        self.fade_anim.start()
+        self.scale_anim.start()
 
         #Get the new dataset in case there is a change
         self.get_dataset()
@@ -1322,7 +1335,7 @@ class legend_visible_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.legend_visibility_button.setMinimumHeight(50)
+        self.legend_visibility_button.setMinimumHeight(60)
 
         #-----Connect the button to automatically change the visibility state-----
         self.legend_visibility_button.clicked.connect(self.change_legend_visibility)
@@ -1882,7 +1895,7 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
             }
         """)
         self.reset_bbox_anchor_button.clicked.connect(self.reset_bbox_anchor)
-        self.reset_bbox_anchor_button.setMinimumHeight(50)
+        self.reset_bbox_anchor_button.setMinimumHeight(60)
 
         #Add the label onto the button
         reset_bbox_anchor_button_layout = QVBoxLayout(self.reset_bbox_anchor_button)
@@ -2273,7 +2286,7 @@ class legend_ncol_adjustment_section(QWidget):
             }
         """)
         self.reset_ncol_button.clicked.connect(self.reset_ncol)
-        self.reset_ncol_button.setMinimumHeight(50)
+        self.reset_ncol_button.setMinimumHeight(60)
 
         #Add the label onto the button
         reset_ncol_button_layout = QVBoxLayout(self.reset_ncol_button)
@@ -2817,7 +2830,7 @@ class legend_fontsize_adjustment_section(QWidget):
             }
         """)
         self.reset_custom_fontsize_button.clicked.connect(self.reset_fontsize)
-        self.reset_custom_fontsize_button.setMinimumHeight(50)
+        self.reset_custom_fontsize_button.setMinimumHeight(60)
 
         #Add the label onto the button
         reset_custom_fontsize_button_layout = QVBoxLayout(self.reset_custom_fontsize_button)
@@ -2896,7 +2909,7 @@ class legend_fontsize_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_fontsize_button.setMinimumHeight(50)
+        self.reset_fontsize_button.setMinimumHeight(60)
 
         #Connect the button to automatically reset the face color when clicked on
         self.reset_fontsize_button.clicked.connect(self.reset_fontsize)
@@ -3566,7 +3579,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
             }
         """)
         self.reset_custom_title_fontsize_button.clicked.connect(self.reset_title_fontsize)
-        self.reset_custom_title_fontsize_button.setMinimumHeight(50)
+        self.reset_custom_title_fontsize_button.setMinimumHeight(60)
 
         #Add the label onto the button
         reset_custom_title_fontsize_button_layout = QVBoxLayout(self.reset_custom_title_fontsize_button)
@@ -3645,7 +3658,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_fontsize_button.setMinimumHeight(50)
+        self.reset_fontsize_button.setMinimumHeight(60)
 
         #Connect the button to automatically reset the face color when clicked on
         self.reset_fontsize_button.clicked.connect(self.reset_title_fontsize)
@@ -3855,7 +3868,7 @@ class legend_frameon_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.frameon_button.setMinimumHeight(50)
+        self.frameon_button.setMinimumHeight(60)
         
         #Put the label on top of the button we created for control frameon
         legend_frameon_button_layout = QVBoxLayout(self.frameon_button)
@@ -4637,7 +4650,7 @@ class legend_face_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_hex_code_value_button.setMinimumHeight(50)
+        self.reset_hex_code_value_button.setMinimumHeight(60)
         self.reset_hex_code_value_button.clicked.connect(self.reset_face_color)
 
         #Add the label onto the button
@@ -4784,7 +4797,7 @@ class legend_face_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_rgb_value_button.setMinimumHeight(50)
+        self.reset_rgb_value_button.setMinimumHeight(60)
         self.reset_rgb_value_button.clicked.connect(self.reset_face_color)
 
         #Add the label to the button
@@ -4891,7 +4904,7 @@ class legend_face_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_grayscale_value_button.setMinimumHeight(50)
+        self.reset_grayscale_value_button.setMinimumHeight(60)
         self.reset_grayscale_value_button.clicked.connect(self.reset_face_color)
 
         #Add the label to the button
@@ -5065,7 +5078,7 @@ class legend_face_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_face_color_button.setMinimumHeight(50)
+        self.reset_face_color_button.setMinimumHeight(60)
 
         #Connect the button to automatically reset the face color when clicked on
         self.reset_face_color_button.clicked.connect(self.reset_face_color)
@@ -6108,7 +6121,7 @@ class legend_edge_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_hex_code_value_button.setMinimumHeight(50)
+        self.reset_hex_code_value_button.setMinimumHeight(60)
         self.reset_hex_code_value_button.clicked.connect(self.reset_edge_color)
 
         #Add the label onto the button
@@ -6275,7 +6288,7 @@ class legend_edge_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_rgba_value_button.setMinimumHeight(50)
+        self.reset_rgba_value_button.setMinimumHeight(60)
         self.reset_rgba_value_button.clicked.connect(self.reset_edge_color)
     
         #Add the label to the button
@@ -6382,7 +6395,7 @@ class legend_edge_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_grayscale_value_button.setMinimumHeight(50)
+        self.reset_grayscale_value_button.setMinimumHeight(60)
         self.reset_grayscale_value_button.clicked.connect(self.reset_edge_color)
 
         #Add the label to the button
@@ -6556,7 +6569,7 @@ class legend_edge_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_edge_color_button.setMinimumHeight(50)
+        self.reset_edge_color_button.setMinimumHeight(60)
 
         #Connect the button to automatically reset the edge color when clicked on
         self.reset_edge_color_button.clicked.connect(self.reset_edge_color)
@@ -7096,7 +7109,7 @@ class legend_framealpha_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_framealpha_button.setMinimumHeight(50)
+        self.reset_framealpha_button.setMinimumHeight(60)
         self.reset_framealpha_button.clicked.connect(self.reset_framealpha)
 
         #Add the label onto the button
@@ -7270,7 +7283,7 @@ class legend_shadow_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.shadow_button.setMinimumHeight(50)
+        self.shadow_button.setMinimumHeight(60)
         
         #Put the label on top of the button we created for control frameon
         legend_shadow_button_layout = QVBoxLayout(self.shadow_button)
@@ -7415,7 +7428,7 @@ class legend_fancybox_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.fancybox_button.setMinimumHeight(50)
+        self.fancybox_button.setMinimumHeight(60)
         
         #Put the label on top of the button we created for control frameon
         fancybox_button_layout = QVBoxLayout(self.fancybox_button)
@@ -7668,7 +7681,7 @@ class legend_borderpad_adjustment_section(QWidget):
             }
         """)
         self.reset_borderpad_button.clicked.connect(self.reset_borderpad)
-        self.reset_borderpad_button.setMinimumHeight(50)
+        self.reset_borderpad_button.setMinimumHeight(60)
 
         #Add the label onto the button
         reset_borderpad_button_layout = QVBoxLayout(self.reset_borderpad_button)
@@ -8469,7 +8482,7 @@ class legend_label_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_hex_code_value_button.setMinimumHeight(50)
+        self.reset_hex_code_value_button.setMinimumHeight(60)
         self.reset_hex_code_value_button.clicked.connect(self.reset_label_color)
 
         #Add the label onto the button
@@ -8636,7 +8649,7 @@ class legend_label_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_rgba_value_button.setMinimumHeight(50)
+        self.reset_rgba_value_button.setMinimumHeight(60)
         self.reset_rgba_value_button.clicked.connect(self.reset_label_color)
     
         #Add the label to the button
@@ -8743,7 +8756,7 @@ class legend_label_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_grayscale_value_button.setMinimumHeight(50)
+        self.reset_grayscale_value_button.setMinimumHeight(60)
         self.reset_grayscale_value_button.clicked.connect(self.reset_label_color)
 
         #Add the label to the button
@@ -8917,7 +8930,7 @@ class legend_label_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_label_color_button.setMinimumHeight(50)
+        self.reset_label_color_button.setMinimumHeight(60)
 
         #Connect the button to automatically reset the edge color when clicked on
         self.reset_label_color_button.clicked.connect(self.reset_label_color)
@@ -9610,7 +9623,7 @@ class legend_columnspacing_adjustment_section(QWidget):
             }
         """)
         self.reset_columnspacing_button.clicked.connect(self.reset_columnsapcing)
-        self.reset_columnspacing_button.setMinimumHeight(50)
+        self.reset_columnspacing_button.setMinimumHeight(60)
 
         #Add the label onto the button
         reset_columnspacing_button_layout = QVBoxLayout(self.reset_columnspacing_button)
@@ -9888,7 +9901,7 @@ class legend_handletextpad_adjustment_section(QWidget):
             }
         """)
         self.reset_handletextpad_button.clicked.connect(self.reset_handletextpad)
-        self.reset_handletextpad_button.setMinimumHeight(50)
+        self.reset_handletextpad_button.setMinimumHeight(60)
 
         #Add the label onto the button
         reset_handletextpad_button_layout = QVBoxLayout(self.reset_handletextpad_button)
@@ -10167,7 +10180,7 @@ class legend_borderaxespad_adjustment_section(QWidget):
             }
         """)
         self.reset_borderaxespad_button.clicked.connect(self.reset_borderaxespad)
-        self.reset_borderaxespad_button.setMinimumHeight(50)
+        self.reset_borderaxespad_button.setMinimumHeight(60)
 
         #Add the label onto the button
         reset_borderaxespad_button_layout = QVBoxLayout(self.reset_borderaxespad_button)
@@ -10446,7 +10459,7 @@ class legend_handlelength_adjustment_section(QWidget):
             }
         """)
         self.reset_handlelength_button.clicked.connect(self.reset_handlelength)
-        self.reset_handlelength_button.setMinimumHeight(50)
+        self.reset_handlelength_button.setMinimumHeight(60)
 
         #Add the label onto the button
         reset_handlelength_button_layout = QVBoxLayout(self.reset_handlelength_button)
@@ -10725,7 +10738,7 @@ class legend_handleheight_adjustment_section(QWidget):
             }
         """)
         self.reset_handleheight_button.clicked.connect(self.reset_handleheight)
-        self.reset_handleheight_button.setMinimumHeight(50)
+        self.reset_handleheight_button.setMinimumHeight(60)
 
         #Add the label onto the button
         reset_handleheight_button_layout = QVBoxLayout(self.reset_handleheight_button)
@@ -10898,7 +10911,7 @@ class legend_markerfirst_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.legend_markerfirst_button.setMinimumHeight(50)
+        self.legend_markerfirst_button.setMinimumHeight(60)
         
         #-----Connect the button to automatically change the markerfirst state-----
         self.legend_markerfirst_button.clicked.connect(self.change_legend_markerfist)
@@ -11198,7 +11211,7 @@ class seaborn_legend_off_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.sns_legend_off_button.setMinimumHeight(50)
+        self.sns_legend_off_button.setMinimumHeight(60)
         
         #Put the label on top of the button we created for control frameon
         sns_legend_off_button_layout = QVBoxLayout(self.sns_legend_off_button)
@@ -11283,7 +11296,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
             self.style_value = pd.read_csv("./dataset/user_dataset.csv")[self.plot_style].unique()
             self.style_value_count = len(self.style_value)
 
-        #Initialize the state, list, dictionary for the markers
+        #Initialize the list, dictionary for the markers
         self.multiple_markers = deque(maxlen=self.style_value_count)
         self.markers_dictionary = dict()
         self.markers_dictionary_key = ""
@@ -11311,7 +11324,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
         self.markers_instruction_widget.setMaximumHeight(60)
         self.markers_instruction_widget.hide()
 
-        self.markers_instruction_label = QLabel("Invalid Hue or Style")
+        self.markers_instruction_label = QLabel("Invalid Style Value")
         self.markers_instruction_label.setObjectName("markers_instruction_label")
         self.markers_instruction_label.setWordWrap(True)
         self.markers_instruction_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -11566,12 +11579,12 @@ class seaborn_legend_markers_adjustment_section(QWidget):
         #Create the layout for the select single markers section
         select_single_markers_section_layout = QVBoxLayout(self.select_single_markers_section)
 
-        #Create the list view and model for the single select
+        #Create the list view and model for the single select markers
         self.select_single_markers_list_view = QListView()
         self.select_single_markers_model = QStringListModel(self.available_markers)
 
         #Add the model to the list view and disable editting for the list view 
-        self.select_single_markers_list_view.setModel(self.single_select_markers_model)
+        self.select_single_markers_list_view.setModel(self.select_single_markers_model)
         self.select_single_markers_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         #Customization for the list view
@@ -11648,6 +11661,8 @@ class seaborn_legend_markers_adjustment_section(QWidget):
 
         #Automatically update the markers based on the selected marker
         self.select_single_markers_list_view.clicked.connect(self.change_single_select_marker)
+        
+        #Add the list view to the layout we created earlier
         select_single_markers_section_layout.addWidget(self.select_single_markers_list_view)
 
         # Add margins and spacing to make it look good and push content to the top
@@ -12075,7 +12090,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
         self.dictionary_markers_key_list_view.setSpacing(3)
 
         #Automatically update the key based on the selected style key
-        self.dictionary_markers_key_list_view.clicked.connect(self.change_dictionary_style_key)
+        self.dictionary_markers_key_list_view.clicked.connect(self.change_dictionary_markers_key)
 
         #Add the list view to the dictionary markers key section layout
         dictionary_markers_key_section_layout.addWidget(self.dictionary_markers_key_list_view)
@@ -12109,7 +12124,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
         #Apply the customization to the list view
         self.dictionary_markers_value_list_view.setItemDelegate(CustomDelegate())
 
-        #Set the object name and style the list view's background, item, select and hover effects.
+        #Set the object name and style the list view's background, item, select and hover effects
         self.dictionary_markers_value_list_view.setObjectName("dictionary_markers_value_list_view")
         self.dictionary_markers_value_list_view.setStyleSheet("""
             QListView#dictionary_markers_value_list_view{
@@ -12240,7 +12255,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_markers_button.setMinimumHeight(50)
+        self.reset_markers_button.setMinimumHeight(60)
 
         #Connect the button to automatically reset the face color when clicked on
         self.reset_markers_button.clicked.connect(self.reset_markers)
@@ -12257,22 +12272,22 @@ class seaborn_legend_markers_adjustment_section(QWidget):
         reset_markers_section_layout.addStretch()
 
     def change_current_parameter_section(self,index):
-        #Get the associated screen name based on the item the user clicked on in the list view
+        #Get the associated section name based on the item the user clicked on in the list view
         section_name = self.sns_legend_markers_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
 
-        #If the screen name is Single Marker change to the single marker section
+        #If the section name is Single Marker change to the single marker section
         if (section_name == "Single Marker"):
             self.change_to_single_markers_section()
 
-        #If the screen name is Multiple Markers change to the multiple markers section
+        #If the section name is Multiple Markers change to the multiple markers section
         if (section_name == "Multiple Markers"):
             self.change_to_multiple_markers_section()
 
-        #If the screen name is Dictionary Marker change to the dictionary marker section
+        #If the section name is Dictionary Marker change to the dictionary marker section
         if (section_name == "Dictionary Marker"):
             self.change_to_dictonary_markers_section()
 
-        #If the screen name is Reset Face Color change to the reset face color section
+        #If the section name is Reset Face Color change to the reset face color section
         if (section_name == "Reset Markers"):
             self.change_to_reset_markers_section()
 
@@ -12358,7 +12373,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
             self.markers = [item.text() for item in self.multiple_markers]
             self.update_markers()
 
-    def change_dictionary_style_key(self,index):
+    def change_dictionary_markers_key(self,index):
         #Identify the markers key selected
         self.markers_dictionary_key = self.dictionary_style_key_model.data(index,Qt.ItemDataRole.DisplayRole)
         
@@ -12440,7 +12455,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
             self.plot_style = new_plot_style
 
             #Update the dictionary style key model
-            self.dictionary_style_key_model.setStringList(self.style_value)
+            self.dictionary_markers_key_model.setStringList(self.style_value)
 
             #Clear the selection for the select multiple markers section
             self.select_multiple_filled_markers_list_widget.clearSelection()
@@ -12448,24 +12463,42 @@ class seaborn_legend_markers_adjustment_section(QWidget):
 
             #Reset the markers
             self.reset_markers()
-            
+
         super().showEvent(event)
 
 class seaborn_legend_dashes_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
         super().__init__()
+
         self.selected_graph = selected_graph
         self.graph_display = graph_display
         self.plot_manager = PlotManager()
 
-        self.available_dashes = ["solid (-)","dashed (--)","dashdot (-.)","dotted (:)","None (—)"]
-        self.dashes = list(map(lambda x:x[x.index("(")+1:x.index(")")],self.available_dashes))
+        #Initialize the available dashes parameters
+        self.dashes_parameters = ["Dashes State", "Single Dash", "Multiple Dashes", "Dictionary Dashes", "Reset Dashes"]
 
-        self.dashes = ""
+        #Initialize the options for the dashes
+        self.dashes_option = ["Premade Dashes","Custom Dashes"]
+
+        #Initialize the premade dashes
+        self.premade_dashes = ["-", "--", "-.", ":"]
+
+        #Try to get the number of style elements from the dataset where [] is default
+        self.plot_style = self.plot_manager.get_db()["style"]
+        self.style_value = []
+        self.style_value_count = 0
+        if (self.plot_style is not None):
+            self.style_value = pd.read_csv("./dataset/user_dataset.csv")[self.plot_style].unique()
+            self.style_value_count = len(self.style_value)
+
+        #Initialize the state, list, dictionary for the dashes 
         self.dashes_dictionary = dict()
         self.dashes_dictionary_key = ""
         self.dashes_dictionary_value = ""
-        self.initial_dashes_argument = True
+        self.dashes_state = True
+
+        #Initialize the default dashes argument
+        self.dashes = True
 
         #-----Valid Single Custom Dashes Widget and Label-----
         self.valid_single_custom_dashes_widget = QWidget()
@@ -12542,8 +12575,8 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
         invalid_single_custom_dashes_widget_layout.setSpacing(0)
 
         #-----Set the Height of both widgets and hide them-----
-        self.valid_single_custom_dashes_widget.setMinimumHeight(50)
-        self.invalid_single_custom_dashes_widget.setMinimumHeight(50)
+        self.valid_single_custom_dashes_widget.setMinimumHeight(60)
+        self.invalid_single_custom_dashes_widget.setMinimumHeight(60)
         
         self.valid_single_custom_dashes_widget.hide()
         self.invalid_single_custom_dashes_widget.hide()
@@ -12623,8 +12656,8 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
         invalid_multiple_custom_dashes_widget_layout.setSpacing(0)
 
         #-----Set the Height of both widgets and hide them-----
-        self.valid_multiple_custom_dashes_widget.setMinimumHeight(50)
-        self.invalid_multiple_custom_dashes_widget.setMinimumHeight(50)
+        self.valid_multiple_custom_dashes_widget.setMinimumHeight(60)
+        self.invalid_multiple_custom_dashes_widget.setMinimumHeight(60)
         
         self.valid_multiple_custom_dashes_widget.hide()
         self.invalid_multiple_custom_dashes_widget.hide()
@@ -12704,17 +12737,57 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
         invalid_dictionary_custom_dashes_widget_layout.setSpacing(0)
 
         #-----Set the Height of both widgets and hide them-----
-        self.valid_dictionary_custom_dashes_widget.setMinimumHeight(50)
-        self.invalid_dictionary_custom_dashes_widget.setMinimumHeight(50)
+        self.valid_dictionary_custom_dashes_widget.setMinimumHeight(60)
+        self.invalid_dictionary_custom_dashes_widget.setMinimumHeight(60)
         
         self.valid_dictionary_custom_dashes_widget.hide()
         self.invalid_dictionary_custom_dashes_widget.hide()
 
-        #-----Seaborn Legend Dashes Screen-----
-        self.sns_legend_dashes_screen = QWidget()
-        self.sns_legend_dashes_screen.setObjectName("sns_legend_dashes_screen")
-        self.sns_legend_dashes_screen.setStyleSheet("""
-            QWidget#sns_legend_dashes_screen{
+        #-----Dashes Instruction Widget-----
+        self.dashes_instruction_widget = QWidget()
+        self.dashes_instruction_widget.setObjectName("dashes_instruction_widget")
+        self.dashes_instruction_widget.setStyleSheet("""
+            QWidget#dashes_instruction_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),   
+                    stop:0.3 rgba(63, 252, 180, 1), 
+                    stop:0.6 rgba(150, 220, 255, 1)
+                    stop:1 rgba(180, 200, 255, 1)  
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+        self.dashes_instruction_widget.setMaximumHeight(60)
+        self.dashes_instruction_widget.hide()
+
+        self.dashes_instruction_label = QLabel("Invalid Style Value")
+        self.dashes_instruction_label.setObjectName("dashes_instruction_label")
+        self.dashes_instruction_label.setWordWrap(True)
+        self.dashes_instruction_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.dashes_instruction_label.setStyleSheet("""
+            QLabel#dashes_instruction_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent; 
+            }
+        """)
+
+        dashes_instruction_widget_layout = QVBoxLayout(self.dashes_instruction_widget)
+        dashes_instruction_widget_layout.addWidget(self.dashes_instruction_label)
+        dashes_instruction_widget_layout.setContentsMargins(0,0,0,0)
+        dashes_instruction_widget_layout.setSpacing(0)
+
+        #-----Seaborn Legend Dashes Adjustment Section-----
+        self.sns_legend_dashes_adjustment_section = QWidget()
+        self.sns_legend_dashes_adjustment_section.setObjectName("sns_legend_dashes_adjustment_section")
+        self.sns_legend_dashes_adjustment_section.setStyleSheet("""
+            QWidget#sns_legend_dashes_adjustment_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -12725,279 +12798,31 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 border-radius: 16px;
             }       
         """)
-        self.sns_legend_dashes_screen.hide()
+        self.create_sns_legend_dashes_adjustment_section()
 
-        #----Turn Dashes on/off Button-----
-        self.turn_dashes_on_off_button = QPushButton()
-        self.turn_dashes_on_off_button.setObjectName("turn_dashes_on_off_button")
-        self.turn_dashes_on_off_button.setStyleSheet("""
-            QPushButton#turn_dashes_on_off_button{
+        #-----Seaborn Legend Dashes State Section-----
+        self.select_dashes_state_section = QWidget()
+        self.select_dashes_state_section.setObjectName("select_dashes_state_section")
+        self.select_dashes_state_section.setStyleSheet("""
+            QWidget#select_dashes_state_section{
                 background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
                 );
                 border: 2px solid black;
                 border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 16px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#turn_dashes_on_off_button:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
+            }       
         """)
+        self.create_select_dashes_state_section()
+        self.select_dashes_state_section.hide()
 
-        self.turn_dashes_on_off_label = QLabel("Turn Dashes Off")
-        self.turn_dashes_on_off_label.setObjectName("turn_dashes_on_off_label")
-        self.turn_dashes_on_off_label.setWordWrap(True)
-        self.turn_dashes_on_off_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.turn_dashes_on_off_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.turn_dashes_on_off_label.setStyleSheet("""
-            QLabel#turn_dashes_on_off_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        turn_dashes_on_off_layout = QVBoxLayout(self.turn_dashes_on_off_button)
-        turn_dashes_on_off_layout.addWidget(self.turn_dashes_on_off_label)
-        turn_dashes_on_off_layout.setContentsMargins(0,0,0,0)
-        turn_dashes_on_off_layout.setSpacing(0)
-
-        #-----Select Single Dashes Button-----
-        self.select_single_dashes_button = QPushButton()
-        self.select_single_dashes_button.setObjectName("select_single_dashes_button")
-        self.select_single_dashes_button.setStyleSheet("""
-            QPushButton#select_single_dashes_button{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 16px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#select_single_dashes_button:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.select_single_dashes_label = QLabel("Select Single Dashes")
-        self.select_single_dashes_label.setObjectName("select_single_dashes_label")
-        self.select_single_dashes_label.setWordWrap(True)
-        self.select_single_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.select_single_dashes_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.select_single_dashes_label.setStyleSheet("""
-            QLabel#select_single_dashes_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        select_single_dashes_button_layout = QVBoxLayout(self.select_single_dashes_button)
-        select_single_dashes_button_layout.addWidget(self.select_single_dashes_label)
-        select_single_dashes_button_layout.setContentsMargins(0,0,0,0)
-        select_single_dashes_button_layout.setSpacing(0)
-
-        #-----Select Multiple Dashes Button-----
-        self.select_multiple_dashes_button = QPushButton()
-        self.select_multiple_dashes_button.setObjectName("select_multiple_dashes_button")
-        self.select_multiple_dashes_button.setStyleSheet("""
-            QPushButton#select_multiple_dashes_button{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 16px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#select_multiple_dashes_button:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.select_multiple_dashes_label = QLabel("Select Multiple Dashes")
-        self.select_multiple_dashes_label.setObjectName("select_multiple_dashes_label")
-        self.select_multiple_dashes_label.setWordWrap(True)
-        self.select_multiple_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.select_multiple_dashes_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.select_multiple_dashes_label.setStyleSheet("""
-            QLabel#select_multiple_dashes_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        select_multiple_dashes_button_layout = QVBoxLayout(self.select_multiple_dashes_button)
-        select_multiple_dashes_button_layout.addWidget(self.select_multiple_dashes_label)
-        select_multiple_dashes_button_layout.setContentsMargins(0,0,0,0)
-        select_multiple_dashes_button_layout.setSpacing(0)
-
-        #-----Select Dictionary Dashes Button-----
-        self.select_dictionary_dashes_button = QPushButton()
-        self.select_dictionary_dashes_button.setObjectName("select_dictionary_dashes_button")
-        self.select_dictionary_dashes_button.setStyleSheet("""
-            QPushButton#select_dictionary_dashes_button{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 16px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#select_dictionary_dashes_button:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.select_dictionary_dashes_label = QLabel("Select Dictionay Dashes")
-        self.select_dictionary_dashes_label.setObjectName("select_dictionary_dashes_label")
-        self.select_dictionary_dashes_label.setWordWrap(True)
-        self.select_dictionary_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.select_dictionary_dashes_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.select_dictionary_dashes_label.setStyleSheet("""
-            QLabel#select_dictionary_dashes_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        select_dictionary_dashes_button_layout = QVBoxLayout(self.select_dictionary_dashes_button)
-        select_dictionary_dashes_button_layout.addWidget(self.select_dictionary_dashes_label)
-        select_dictionary_dashes_button_layout.setContentsMargins(0,0,0,0)
-        select_dictionary_dashes_button_layout.setSpacing(0)
-
-        #-----Set the size of each button-----
-        self.turn_dashes_on_off_button.setMinimumHeight(70)
-        self.select_single_dashes_button.setMinimumHeight(70)
-        self.select_multiple_dashes_button.setMinimumHeight(70)
-        self.select_dictionary_dashes_button.setMinimumHeight(70)
-
-        #-----Connect cach button to it's associated function-----
-        self.turn_dashes_on_off_button.clicked.connect(self.turn_dashes_on_and_off)
-        self.select_single_dashes_button.clicked.connect(self.change_to_single_dashes_screen)
-        self.select_multiple_dashes_button.clicked.connect(self.change_to_multiple_dashes_screen)
-        self.select_dictionary_dashes_button.clicked.connect(self.change_to_dictionary_dashes_screen)
-
-        #-----Seaborn Legend Dashes Screen Layout-----
-        sns_legend_dashes_screen_layout = QVBoxLayout(self.sns_legend_dashes_screen)
-        sns_legend_dashes_screen_layout.addWidget(self.turn_dashes_on_off_button)
-        sns_legend_dashes_screen_layout.addWidget(self.select_single_dashes_button)
-        sns_legend_dashes_screen_layout.addWidget(self.select_multiple_dashes_button)
-        sns_legend_dashes_screen_layout.addWidget(self.select_dictionary_dashes_button)
-        sns_legend_dashes_screen_layout.setContentsMargins(10,10,10,10)
-        sns_legend_dashes_screen_layout.setSpacing(5)
-        sns_legend_dashes_screen_layout.addStretch()
-
-        #-----Seaborn Legend Select Single Dashes Screen-----
-        self.select_single_dashes_screen = QWidget()
-        self.select_single_dashes_screen.setObjectName("select_single_dashes_screen")
-        self.select_single_dashes_screen.setStyleSheet("""
-            QWidget#select_single_dashes_screen{
+        #-----Seaborn Legend Select Single Dashes Section-----
+        self.select_single_dashes_section = QWidget()
+        self.select_single_dashes_section.setObjectName("select_single_dashes_section")
+        self.select_single_dashes_section.setStyleSheet("""
+            QWidget#select_single_dashes_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -13008,74 +12833,14 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-        self.select_single_dashes_screen.hide()
-
-        #-----Seaborn Legend Select Single Premade Dashes Button-----
-        self.select_single_premade_dashes_button = QPushButton()
-        self.select_single_premade_dashes_button.setObjectName("select_single_premade_dashes_button")
-        self.select_single_premade_dashes_button.setStyleSheet("""
-            QPushButton#select_single_premade_dashes_button{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 16px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#select_single_premade_dashes_button:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.select_single_premade_dashes_label = QLabel("Select Premade Dashes")
-        self.select_single_premade_dashes_label.setObjectName("select_single_premade_dashes_label")
-        self.select_single_premade_dashes_label.setWordWrap(True)
-        self.select_single_premade_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.select_single_premade_dashes_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.select_single_premade_dashes_label.setStyleSheet("""
-            QLabel#select_single_premade_dashes_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        select_single_premade_dashes_button_layout = QVBoxLayout(self.select_single_premade_dashes_button)
-        select_single_premade_dashes_button_layout.addWidget(self.select_single_premade_dashes_label)
-        select_single_premade_dashes_button_layout.setContentsMargins(0,0,0,0)
-        select_single_premade_dashes_button_layout.setSpacing(0)
-
-        #-----Seaborn Legend Select Single Premade Dashes Screen-----
-        self.select_single_premade_dashes_screen = QWidget()
-        self.select_single_premade_dashes_screen.setObjectName("select_single_premade_dashes_screen")
-        self.select_single_premade_dashes_screen.setStyleSheet(""" 
-            QWidget#select_single_premade_dashes_screen{
+        self.create_select_single_dashes_section()
+        self.select_single_dashes_section.hide()
+        
+        #-----Seaborn Legend Select Single Premade Dashes Section-----
+        self.select_single_premade_dashes_section = QWidget()
+        self.select_single_premade_dashes_section.setObjectName("select_single_premade_dashes_section")
+        self.select_single_premade_dashes_section.setStyleSheet(""" 
+            QWidget#select_single_premade_dashes_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -13086,75 +12851,14 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 border-radius: 16px;
             }     
         """)
-        self.create_select_single_premade_dashes_screen()
-        self.select_single_premade_dashes_screen.hide()
+        self.create_select_single_premade_dashes_section()
+        self.select_single_premade_dashes_section.hide()
 
-        #-----Seaborn Legend Select Custom Dashes Button-----
-        self.select_single_custom_dashes_button = QPushButton()
-        self.select_single_custom_dashes_button.setObjectName("select_single_custom_dashes_button")
-        self.select_single_custom_dashes_button.setStyleSheet("""
-            QPushButton#select_single_custom_dashes_button{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 16px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#select_single_custom_dashes_button:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.select_single_custom_dashes_label = QLabel("Enter Custom Dashes")
-        self.select_single_custom_dashes_label.setObjectName("select_single_custom_dashes_label")
-        self.select_single_custom_dashes_label.setWordWrap(True)
-        self.select_single_custom_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.select_single_custom_dashes_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.select_single_custom_dashes_label.setStyleSheet("""
-            QLabel#select_single_custom_dashes_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        select_single_custom_dashes_button_layout = QVBoxLayout(self.select_single_custom_dashes_button)
-        select_single_custom_dashes_button_layout.addWidget(self.select_single_custom_dashes_label)
-        select_single_custom_dashes_button_layout.setContentsMargins(0,0,0,0)
-        select_single_custom_dashes_button_layout.setSpacing(0)
-
-        #-----Seaborn Legend Select Custom Dashes Screen-----
-        self.select_single_custom_dashes_screen = QWidget()
-        self.select_single_custom_dashes_screen.setObjectName("select_single_custom_dashes_screen")
-        self.select_single_custom_dashes_screen.setStyleSheet(""" 
-            QWidget#select_single_custom_dashes_screen{
+        #-----Seaborn Legend Select Custom Dashes Section-----
+        self.select_single_custom_dashes_section = QWidget()
+        self.select_single_custom_dashes_section.setObjectName("select_single_custom_dashes_seection")
+        self.select_single_custom_dashes_section.setStyleSheet(""" 
+            QWidget#select_single_custom_dashes_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -13165,30 +12869,14 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 border-radius: 16px;
             }     
         """)
-        self.create_select_single_custom_dashes_screen()
-        self.select_single_custom_dashes_screen.hide()
+        self.create_select_single_custom_dashes_section()
+        self.select_single_custom_dashes_section.hide()
 
-        #-----Connect the two buttons to its function-----
-        self.select_single_premade_dashes_button.clicked.connect(self.change_to_select_single_premade_dashes_screen)
-        self.select_single_custom_dashes_button.clicked.connect(self.change_to_select_single_custom_dashes_screen)
-
-        #-----Control the size of the buttons -----
-        self.select_single_premade_dashes_button.setMinimumHeight(60)
-        self.select_single_custom_dashes_button.setMinimumHeight(60)
-
-        #-----Seaborn Legend Select Single Dashes Layout-----
-        single_dashes_screen_layout = QVBoxLayout(self.select_single_dashes_screen)
-        single_dashes_screen_layout.addWidget(self.select_single_premade_dashes_button)
-        single_dashes_screen_layout.addWidget(self.select_single_custom_dashes_button)
-        single_dashes_screen_layout.setContentsMargins(10,10,10,10)
-        single_dashes_screen_layout.setSpacing(5)
-        single_dashes_screen_layout.addStretch()
-
-        #-----Seaborn Legend Multiple Dashes Screen-----
-        self.select_multiple_dashes_screen = QWidget()
-        self.select_multiple_dashes_screen.setObjectName("select_multiple_dashes_screen")
-        self.select_multiple_dashes_screen.setStyleSheet("""
-            QWidget#select_multiple_dashes_screen{
+        #-----Seaborn Legend Multiple Dashes Section-----
+        self.select_multiple_dashes_section = QWidget()
+        self.select_multiple_dashes_section.setObjectName("select_multiple_dashes_section")
+        self.select_multiple_dashes_section.setStyleSheet("""
+            QWidget#select_multiple_dashes_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -13199,74 +12887,14 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 border-radius: 16px;
             }  
         """)
-        self.select_multiple_dashes_screen.hide()
+        self.create_select_multiple_dashes_section()
+        self.select_multiple_dashes_section.hide()
 
-        #-----Seaborn Legend Multiple Premade Dashes Button-----
-        self.select_multiple_premade_dashes_button = QPushButton()
-        self.select_multiple_premade_dashes_button.setObjectName("select_multiple_premade_dashes_button")
-        self.select_multiple_premade_dashes_button.setStyleSheet("""
-            QPushButton#select_multiple_premade_dashes_button{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 16px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#select_multiple_premade_dashes_button:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.select_multiple_premade_dashes_label = QLabel("Select Multiple Premade Dashes")
-        self.select_multiple_premade_dashes_label.setObjectName("select_multiple_premade_dashes_label")
-        self.select_multiple_premade_dashes_label.setWordWrap(True)
-        self.select_multiple_premade_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.select_multiple_premade_dashes_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.select_multiple_premade_dashes_label.setStyleSheet("""
-            QLabel#select_multiple_premade_dashes_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        select_multiple_premade_dashes_button_layout = QVBoxLayout(self.select_multiple_premade_dashes_button)
-        select_multiple_premade_dashes_button_layout.addWidget(self.select_multiple_premade_dashes_label)
-        select_multiple_premade_dashes_button_layout.setContentsMargins(0,0,0,0)
-        select_multiple_premade_dashes_button_layout.setSpacing(0)
-
-        #-----Seaborn Legend Multiple Premade Dashes Screen-----
-        self.select_multiple_premade_dashes_screen = QWidget()
-        self.select_multiple_premade_dashes_screen.setObjectName("select_multiple_premade_dashes_screen")
-        self.select_multiple_premade_dashes_screen.setStyleSheet("""
-            QWidget#select_multiple_premade_dashes_screen{
+        #-----Seaborn Legend Multiple Premade Dashes Section-----
+        self.select_multiple_premade_dashes_section = QWidget()
+        self.select_multiple_premade_dashes_section.setObjectName("select_multiple_premade_dashes_section")
+        self.select_multiple_premade_dashes_section.setStyleSheet("""
+            QWidget#select_multiple_premade_dashes_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -13277,75 +12905,14 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 border-radius: 16px;
             }  
         """)
-        self.create_select_multiple_premade_dashes_screen()
-        self.select_multiple_premade_dashes_screen.hide()
+        self.create_select_multiple_premade_dashes_section()
+        self.select_multiple_premade_dashes_section.hide()
 
-        #-----Seaborn Legend Multiple Custom Dashes Button-----
-        self.select_multiple_custom_dashes_button = QPushButton()
-        self.select_multiple_custom_dashes_button.setObjectName("select_multiple_custom_dashes_button")
-        self.select_multiple_custom_dashes_button.setStyleSheet("""
-            QPushButton#select_multiple_custom_dashes_button{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 16px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#select_multiple_custom_dashes_button:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.select_multiple_custom_dashes_label = QLabel("Enter Multiple Custom Dashes")
-        self.select_multiple_custom_dashes_label.setObjectName("select_multiple_custom_dashes_label")
-        self.select_multiple_custom_dashes_label.setWordWrap(True)
-        self.select_multiple_custom_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.select_multiple_custom_dashes_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.select_multiple_custom_dashes_label.setStyleSheet("""
-            QLabel#select_multiple_custom_dashes_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        select_multiple_custom_dashes_button_layout = QVBoxLayout(self.select_multiple_custom_dashes_button)
-        select_multiple_custom_dashes_button_layout.addWidget(self.select_multiple_custom_dashes_label)
-        select_multiple_custom_dashes_button_layout.setContentsMargins(0,0,0,0)
-        select_multiple_custom_dashes_button_layout.setSpacing(0)
-
-        #-----Seaborn Legend Multiple Custom Dashes Screen-----
-        self.select_multiple_custom_dashes_screen = QWidget()
-        self.select_multiple_custom_dashes_screen.setObjectName("select_multiple_custom_dashes_screen")
-        self.select_multiple_custom_dashes_screen.setStyleSheet("""
-            QWidget#select_multiple_custom_dashes_screen{
+        #-----Seaborn Legend Multiple Custom Dashes Section-----
+        self.select_multiple_custom_dashes_section = QWidget()
+        self.select_multiple_custom_dashes_section.setObjectName("select_multiple_custom_dashes_section")
+        self.select_multiple_custom_dashes_section.setStyleSheet("""
+            QWidget#select_multiple_custom_dashes_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -13356,30 +12923,14 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 border-radius: 16px;
             }  
         """)
-        self.create_select_multiple_custom_dashes_screen()
-        self.select_multiple_custom_dashes_screen.hide()
+        self.create_select_multiple_custom_dashes_section()
+        self.select_multiple_custom_dashes_section.hide()
 
-        #-----Connect the two buttons to its function-----
-        self.select_multiple_premade_dashes_button.clicked.connect(self.change_to_select_multiple_premade_dashes_screen)
-        self.select_multiple_custom_dashes_button.clicked.connect(self.change_to_select_multiple_custom_dashes_screen)
-
-        #-----Control the size of the buttons -----
-        self.select_multiple_premade_dashes_button.setMinimumHeight(70)
-        self.select_multiple_custom_dashes_button.setMinimumHeight(70)
-
-        #-----Seaborn Legend Select Multiple Dashes Layout-----
-        multiple_dashes_screen_layout = QVBoxLayout(self.select_multiple_dashes_screen)
-        multiple_dashes_screen_layout.addWidget(self.select_multiple_premade_dashes_button)
-        multiple_dashes_screen_layout.addWidget(self.select_multiple_custom_dashes_button)
-        multiple_dashes_screen_layout.setContentsMargins(10,10,10,10)
-        multiple_dashes_screen_layout.setSpacing(5)
-        multiple_dashes_screen_layout.addStretch()
-
-        #-----Seaborn Legend Dictionary Dashes Screen----
-        self.select_dictionary_dashes_screen = QWidget()
-        self.select_dictionary_dashes_screen.setObjectName("select_dictionary_dashes_screen")
-        self.select_dictionary_dashes_screen.setStyleSheet("""
-            QWidget#select_dictionary_dashes_screen{
+        #-----Seaborn Legend Dictionary Dashes Section----
+        self.select_dictionary_dashes_section = QWidget()
+        self.select_dictionary_dashes_section.setObjectName("select_dictionary_dashes_section")
+        self.select_dictionary_dashes_section.setStyleSheet("""
+            QWidget#select_dictionary_dashes_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -13390,74 +12941,14 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 border-radius: 16px;
             }  
         """)
-        self.select_dictionary_dashes_screen.hide()
+        self.create_select_dictionary_dashes_section()
+        self.select_dictionary_dashes_section.hide()
 
-        #-----Seaborn Legend Dictionary Premade Dashes Button-----
-        self.select_dictionary_premade_dashes_button = QPushButton()
-        self.select_dictionary_premade_dashes_button.setObjectName("select_dictionary_premade_dashes_button")
-        self.select_dictionary_premade_dashes_button.setStyleSheet("""
-            QPushButton#select_dictionary_premade_dashes_button{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 16px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#select_dictionary_premade_dashes_button:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.select_dictionary_premade_dashes_label = QLabel("Enter Dictionary Premade Dashes")
-        self.select_dictionary_premade_dashes_label.setObjectName("select_dictionary_premade_dashes_label")
-        self.select_dictionary_premade_dashes_label.setWordWrap(True)
-        self.select_dictionary_premade_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.select_dictionary_premade_dashes_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.select_dictionary_premade_dashes_label.setStyleSheet("""
-            QLabel#select_dictionary_premade_dashes_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        select_dictionary_premade_dashes_button_layout = QVBoxLayout(self.select_dictionary_premade_dashes_button)
-        select_dictionary_premade_dashes_button_layout.addWidget(self.select_dictionary_premade_dashes_label)
-        select_dictionary_premade_dashes_button_layout.setContentsMargins(0,0,0,0)
-        select_dictionary_premade_dashes_button_layout.setSpacing(0)
-
-        #-----Seaborn Legend Dictionary Premade Dashes Screen----
-        self.select_dictionary_premade_dashes_screen = QWidget()
-        self.select_dictionary_premade_dashes_screen.setObjectName("select_dictionary_premade_dashes_screen")
-        self.select_dictionary_premade_dashes_screen.setStyleSheet("""
-            QWidget#select_dictionary_premade_dashes_screen{
+        #-----Seaborn Legend Dictionary Premade Dashes Section----
+        self.select_dictionary_premade_dashes_section = QWidget()
+        self.select_dictionary_premade_dashes_section.setObjectName("select_dictionary_premade_dashes_section")
+        self.select_dictionary_premade_dashes_section.setStyleSheet("""
+            QWidget#select_dictionary_premade_dashes_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -13468,75 +12959,14 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 border-radius: 16px;
             }  
         """)
-        self.create_select_dictionary_premade_dashes_screen()
-        self.select_dictionary_premade_dashes_screen.hide()
-
-        #-----Seaborn Legend Dictionary Custom Dashes Button-----
-        self.select_dictionary_custom_dashes_button = QPushButton()
-        self.select_dictionary_custom_dashes_button.setObjectName("select_dictionary_custom_dashes_button")
-        self.select_dictionary_custom_dashes_button.setStyleSheet("""
-            QPushButton#select_dictionary_custom_dashes_button{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 16px;
-                padding: 6px;
-                color: black;
-            }
-            QPushButton#select_dictionary_custom_dashes_button:hover{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.5 rgba(171, 156, 255, 1),
-                    stop:1 rgba(255, 203, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        self.select_dictionary_custom_dashes_label = QLabel("Enter Dictionary Custom Dashes")
-        self.select_dictionary_custom_dashes_label.setObjectName("select_dictionary_custom_dashes_label")
-        self.select_dictionary_custom_dashes_label.setWordWrap(True)
-        self.select_dictionary_custom_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.select_dictionary_custom_dashes_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.select_dictionary_custom_dashes_label.setStyleSheet("""
-            QLabel#select_dictionary_custom_dashes_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        select_dictionary_custom_dashes_button_layout = QVBoxLayout(self.select_dictionary_custom_dashes_button)
-        select_dictionary_custom_dashes_button_layout.addWidget(self.select_dictionary_custom_dashes_label)
-        select_dictionary_custom_dashes_button_layout.setContentsMargins(0,0,0,0)
-        select_dictionary_custom_dashes_button_layout.setSpacing(0)
+        self.create_select_dictionary_premade_dashes_section()
+        self.select_dictionary_premade_dashes_section.hide()
 
         #-----Seaborn Legend Dictionary Custom Dashes Screen----
-        self.select_dictionary_custom_dashes_screen = QWidget()
-        self.select_dictionary_custom_dashes_screen.setObjectName("select_dictionary_custom_dashes_screen")
-        self.select_dictionary_custom_dashes_screen.setStyleSheet("""
-            QWidget#select_dictionary_custom_dashes_screen{
+        self.select_dictionary_custom_dashes_section = QWidget()
+        self.select_dictionary_custom_dashes_section.setObjectName("select_dictionary_custom_dashes_section")
+        self.select_dictionary_custom_dashes_section.setStyleSheet("""
+            QWidget#select_dictionary_custom_dashes_section{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -13547,62 +12977,67 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 border-radius: 16px;
             }  
         """)
-        self.create_select_dictionary_custom_dashes_screen()
-        self.select_dictionary_custom_dashes_screen.hide()
+        self.create_select_dictionary_custom_dashes_section()
+        self.select_dictionary_custom_dashes_section.hide()
 
-        #-----Connect the two buttons to its function-----
-        self.select_dictionary_premade_dashes_button.clicked.connect(self.change_to_select_dictionary_premade_dashes_screen)
-        self.select_dictionary_custom_dashes_button.clicked.connect(self.change_to_select_dictionary_custom_dashes_screen)
+        #-----Seaborn Legend Reset Dashes Section-----
+        self.reset_dashes_section = QWidget()
+        self.reset_dashes_section.setObjectName("reset_dashes_section")
+        self.reset_dashes_section.setStyleSheet("""
+            QWidget#reset_dashes_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.create_reset_dashes_section()
+        self.reset_dashes_section.hide()
 
-        #-----Control the size of the buttons -----
-        self.select_dictionary_premade_dashes_button.setMinimumHeight(70)
-        self.select_dictionary_custom_dashes_button.setMinimumHeight(70)
-
-        #-----Seaborn Legend Select Multiple Dashes Layout-----
-        dictionary_dashes_screen_layout = QVBoxLayout(self.select_dictionary_dashes_screen)
-        dictionary_dashes_screen_layout.addWidget(self.select_dictionary_premade_dashes_button)
-        dictionary_dashes_screen_layout.addWidget(self.select_dictionary_custom_dashes_button)
-        dictionary_dashes_screen_layout.setContentsMargins(10,10,10,10)
-        dictionary_dashes_screen_layout.setSpacing(5)
-        dictionary_dashes_screen_layout.addStretch()
-
-        #-----All Available Screens-----
+        #-----All Available Sections-----
         self.current_section_idx = 0
-        self.available_sections = [self.sns_legend_dashes_screen,self.select_single_dashes_screen,
-                                self.select_single_premade_dashes_screen,self.select_single_custom_dashes_screen,
-                                self.select_multiple_dashes_screen,self.select_multiple_premade_dashes_screen,
-                                self.select_multiple_custom_dashes_screen,self.select_dictionary_dashes_screen,
-                                self.select_dictionary_premade_dashes_screen,self.select_dictionary_custom_dashes_screen]
+        self.available_sections = [self.sns_legend_dashes_adjustment_section,self.select_dashes_state_section,
+                                self.select_single_dashes_section,self.select_single_premade_dashes_section,
+                                self.select_single_custom_dashes_section,self.select_multiple_dashes_section,
+                                self.select_multiple_premade_dashes_section,self.select_multiple_custom_dashes_section,
+                                self.select_dictionary_dashes_section,self.select_dictionary_premade_dashes_section,
+                                self.select_dictionary_custom_dashes_section,self.reset_dashes_section]
         self.available_sections[self.current_section_idx].show()
 
-        #-----Add All the Screens to the Main Widget-----
+        #-----Add All the Sections to the Main Widget-----
         main_layout = QVBoxLayout(self)
-        for screen in self.available_sections:
-            main_layout.addWidget(screen)
+        for section in self.available_sections:
+            main_layout.addWidget(section)
 
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0,0,0,0)
 
         #-----Keyboard Shortcuts-----
-        previous_screen_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left),self)
-        previous_screen_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
-        previous_screen_shortcut.activated.connect(self.change_to_previous_screen)
+        previous_section_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left),self)
+        previous_section_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
+        previous_section_shortcut.activated.connect(self.change_to_previous_section)
 
         enter_custom_dashes_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Return),self)
         enter_custom_dashes_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         enter_custom_dashes_shortcut.activated.connect(self.add_new_custom_dashes)
 
-    def create_select_single_premade_dashes_screen(self):
-        select_single_premade_dashes_screen_layout = QVBoxLayout(self.select_single_premade_dashes_screen)
+    def create_sns_legend_dashes_adjustment_section(self):
+        #Create the layout for the sns legend dashes adjustment section
+        sns_legend_dashes_adjustment_section_layout = QVBoxLayout(self.sns_legend_dashes_adjustment_section)
 
-        self.single_select_premade_dashes_list_view = QListView()
-        self.single_select_premade_dashes_model = QStringListModel(self.available_dashes)
+        #Create the list view and model for the legend dashes adjustment section
+        self.sns_legend_dashes_parameter_list_view = QListView()
+        self.sns_legend_dashes_parameter_model = QStringListModel(self.dashes_parameters)
+        
+        #Add the model to the list view and disable edtting for the list view
+        self.sns_legend_dashes_parameter_list_view.setModel(self.sns_legend_dashes_parameter_model)
+        self.sns_legend_dashes_parameter_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
-        self.single_select_premade_dashes_list_view.setModel(self.single_select_premade_dashes_model)
-        self.single_select_premade_dashes_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.single_select_premade_dashes_list_view.setObjectName("single_select_premade_dashes_list_view")
-        self.single_select_premade_dashes_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-
+        #Customization for the list view
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -13610,11 +13045,14 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 font.setWeight(600)
                 option.font = font
                 super().paint(painter, option, index)
-        
-        self.single_select_premade_dashes_list_view.setItemDelegate(CustomDelegate())
 
-        self.single_select_premade_dashes_list_view.setStyleSheet("""
-            QListView#single_select_premade_dashes_list_view{
+        #Apply the customization to the list view
+        self.sns_legend_dashes_parameter_list_view.setItemDelegate(CustomDelegate())
+
+        #Set the object name and style the list view's background, item, select and hover effects.
+        self.sns_legend_dashes_parameter_list_view.setObjectName("sns_legend_dashes_parameter_list_view")
+        self.sns_legend_dashes_parameter_list_view.setStyleSheet("""
+            QListView#sns_legend_dashes_parameter_list_view{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -13624,7 +13062,7 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 border: transparent;
                 border-radius: 16px;
             }
-            QListView#single_select_premade_dashes_list_view::item {
+            QListView#sns_legend_dashes_parameter_list_view::item {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -13638,7 +13076,7 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#single_select_premade_dashes_list_view::item:selected {
+            QListView#sns_legend_dashes_parameter_list_view::item:selected {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -13651,7 +13089,7 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#single_select_premade_dashes_list_view::item:hover {
+            QListView#sns_legend_dashes_parameter_list_view::item:hover {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -13666,67 +13104,297 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
             }
         """)
 
-        self.single_select_premade_dashes_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.single_select_premade_dashes_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.single_select_premade_dashes_list_view.setSpacing(3)
+        #Hide the scroll bar for the list view and control the spacing for each item
+        self.sns_legend_dashes_parameter_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.sns_legend_dashes_parameter_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.sns_legend_dashes_parameter_list_view.setSpacing(3)
 
-        self.single_select_premade_dashes_list_view.clicked.connect(self.change_single_select_premade_dashes)
-        select_single_premade_dashes_screen_layout.addWidget(self.single_select_premade_dashes_list_view)
+        #Automatically update the section based on the selected parameter
+        self.sns_legend_dashes_parameter_list_view.clicked.connect(self.change_current_parameter_section)
+
+        #Add the instructions widget for the markers to the layout
+        sns_legend_dashes_adjustment_section_layout.addWidget(self.dashes_instruction_widget)
+
+        #Add the list view to the sns legend markers adjustment section layout
+        sns_legend_dashes_adjustment_section_layout.addWidget(self.sns_legend_dashes_parameter_list_view)
+
+        #Add margins and spacing to make it look good and push content to the top
+        sns_legend_dashes_adjustment_section_layout.setContentsMargins(10, 10, 10, 10)
+        sns_legend_dashes_adjustment_section_layout.setSpacing(0)
+        sns_legend_dashes_adjustment_section_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+    def create_select_dashes_state_section(self):
+        #Create a layout for the reset dashes section
+        select_dashes_state_section_layout = QVBoxLayout(self.select_dashes_state_section)
+
+        #Create the reset seaborn legend dashes label for the button
+        self.select_dashes_state_label = QLabel("Dashes On")
+        self.select_dashes_state_label.setWordWrap(True)
+        self.select_dashes_state_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.select_dashes_state_label.setObjectName("select_dashes_state_label")
+        self.select_dashes_state_label.setStyleSheet("""
+            QLabel#select_dashes_state_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.select_dashes_state_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+        #Create the reset seaborn legend dashes button
+        self.select_dashes_state_button = QPushButton()
+        self.select_dashes_state_button.setObjectName("select_dashes_state_button")
+        self.select_dashes_state_button.setStyleSheet("""
+            QPushButton#select_dashes_state_button{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 16px;
+                padding: 6px;
+                color: black;
+            }
+            QPushButton#select_dashes_state_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+            }
+        """)
+        self.select_dashes_state_button.setMinimumHeight(60)
+
+        #Connect the button to automatically reset the face color when clicked on
+        self.select_dashes_state_button.clicked.connect(self.change_dashes_state)
+
+        #Add the label onto the button
+        select_dashes_state_section_layout = QVBoxLayout(self.select_dashes_state_button)
+        select_dashes_state_section_layout.addWidget(self.select_dashes_state_label)
+        select_dashes_state_section_layout.setContentsMargins(0,0,0,0)
+        select_dashes_state_section_layout.setSpacing(0)
+
+        #Add the button created to the reset face color section
+        select_dashes_state_section_layout.addWidget(self.select_dashes_state_button)
+        select_dashes_state_section_layout.setContentsMargins(10,10,10,10)
+        select_dashes_state_section_layout.addStretch()
+
+    def create_select_single_dashes_section(self):
+        #Create the layout for the select single dashes section
+        select_single_dashes_section_layout = QVBoxLayout(self.select_single_dashes_section)
+
+        #Create the list view and model for the single select dashes
+        self.select_single_dashes_list_view = QListView()
+        self.select_single_dashes_model = QStringListModel(self.dashes_option)
+
+        #Add the model to the list view and disable editting for the list view 
+        self.select_single_dashes_list_view.setModel(self.select_single_dashes_model)
+        self.select_single_dashes_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        #Customization for the list view
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        #Apply the customization to the list view
+        self.select_single_dashes_list_view.setItemDelegate(CustomDelegate())
+
+        #Set the object name and style the list view's background, item, select and hover effects.
+        self.select_single_dashes_list_view.setObjectName("select_single_dashes_list_view")
+        self.select_single_dashes_list_view.setStyleSheet("""
+            QListView#select_single_dashes_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#select_single_dashes_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#select_single_dashes_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#select_single_dashes_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        #Hide the scroll bar for the list view and control the spacing for each item
+        self.select_single_dashes_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.select_single_dashes_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.select_single_dashes_list_view.setSpacing(3)
+
+        #Automatically update the dashes section based on the selected item
+        self.select_single_dashes_list_view.clicked.connect(self.change_single_dashes_section)
+        
+        #Add the list view to the layout we created earlier
+        select_single_dashes_section_layout.addWidget(self.select_single_dashes_list_view)
+
+        #Add margins and spacing to make it look good
+        select_single_dashes_section_layout.setContentsMargins(10,10,10,10)
+
+    def create_select_single_premade_dashes_section(self):
+        #Create the layout for the select single premade dashes section
+        select_single_premade_dashes_section_layout = QVBoxLayout(self.select_single_premade_dashes_section)
+
+        #Create the list view and model for the single select premade dashes
+        self.select_single_premade_dashes_list_view = QListView()
+        self.select_single_premade_dashes_model = QStringListModel(self.premade_dashes)
+
+        #Add the model to the list view and disable editting for the list view
+        self.select_single_premade_dashes_list_view.setModel(self.select_single_premade_dashes_model)
+        self.select_single_premade_dashes_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        #Customization for the list view
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        #Apply the customization to the list view
+        self.select_single_premade_dashes_list_view.setItemDelegate(CustomDelegate())
+
+        #Set the object name and style the list view's background, item, select and hover effects.
+        self.select_single_premade_dashes_list_view.setObjectName("select_single_premade_dashes_list_view")
+        self.select_single_premade_dashes_list_view.setStyleSheet("""
+            QListView#select_single_premade_dashes_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#select_single_premade_dashes_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#select_single_premade_dashes_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#select_single_premade_dashes_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        #Hide the scroll bar for the list view and control the spacing for each item
+        self.select_single_premade_dashes_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.select_single_premade_dashes_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.select_single_premade_dashes_list_view.setSpacing(3)
+
+        #Automicatically update the dashes based on the selected dashes
+        self.select_single_premade_dashes_list_view.clicked.connect(self.change_single_select_premade_dashes)
+        
+        #Add the list view to the layout we created earlier
+        select_single_premade_dashes_section_layout.addWidget(self.select_single_premade_dashes_list_view)
 
         # Add margins and spacing to make it look good and push content to the top
-        select_single_premade_dashes_screen_layout.setContentsMargins(10, 10, 10, 10)
+        select_single_premade_dashes_section_layout.setContentsMargins(10, 10, 10, 10)
 
-    def create_select_single_custom_dashes_screen(self):
-        select_single_custom_dashes_screen_layout = QVBoxLayout(self.select_single_custom_dashes_screen)
+    def create_select_single_custom_dashes_section(self):
+        #Create the layout for the select single custom dashes s
+        select_single_custom_dashes_section_layout = QVBoxLayout(self.select_single_custom_dashes_section)
 
-        single_custom_dashes_instructions_widget = QWidget()
-        single_custom_dashes_instructions_widget.setObjectName("single_custom_dashes_instructions_widget")
-        single_custom_dashes_instructions_widget.setStyleSheet("""
-            QWidget#single_custom_dashes_instructions_widget{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 16px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        single_custom_dashes_instructions_label = QLabel("Enter the numbers seperated by space")
-        single_custom_dashes_instructions_label.setObjectName("single_custom_dashes_instructions_label")
-        single_custom_dashes_instructions_label.setWordWrap(True)
-        single_custom_dashes_instructions_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        single_custom_dashes_instructions_label.setStyleSheet("""
-            QLabel#single_custom_dashes_instructions_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        single_custom_dashes_instructions_layout = QVBoxLayout(single_custom_dashes_instructions_widget)
-        single_custom_dashes_instructions_layout.addWidget(single_custom_dashes_instructions_label)
-        single_custom_dashes_instructions_layout.setContentsMargins(0,0,0,0)
-        single_custom_dashes_instructions_layout.setSpacing(0)
-
-        self.select_single_custom_dashes_input = QLineEdit()
-        self.select_single_custom_dashes_input.setObjectName("select_single_custom_dashes_input")
-        self.select_single_custom_dashes_input.setPlaceholderText("Custom Dashes:")
-        self.select_single_custom_dashes_input.setStyleSheet("""
-            QLineEdit#select_single_custom_dashes_input{
+        #Initialize the draw1 line edit widget
+        self.single_custom_dashes_draw1_input = QLineEdit()
+        self.single_custom_dashes_draw1_input.setObjectName("single_custom_dashes_draw1_input")
+        self.single_custom_dashes_draw1_input.setPlaceholderText("Draw1")
+        self.single_custom_dashes_draw1_input.setStyleSheet("""
+            QLineEdit#single_custom_dashes_draw1_input{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -13739,29 +13407,98 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-        self.select_single_custom_dashes_input.textChanged.connect(self.change_single_select_custom_dashes)
-        self.select_single_custom_dashes_input.setMinimumHeight(60)
 
-        select_single_custom_dashes_screen_layout.addWidget(single_custom_dashes_instructions_widget)
-        select_single_custom_dashes_screen_layout.addWidget(self.select_single_custom_dashes_input)
-        select_single_custom_dashes_screen_layout.addWidget(self.valid_single_custom_dashes_widget)
-        select_single_custom_dashes_screen_layout.addWidget(self.invalid_single_custom_dashes_widget)
-        select_single_custom_dashes_screen_layout.setContentsMargins(10,10,10,10)
-        select_single_custom_dashes_screen_layout.setSpacing(10)
-        select_single_custom_dashes_screen_layout.addStretch()
+        #Initialize the gap1 line edit widget
+        self.single_custom_dashes_gap1_input = QLineEdit()
+        self.single_custom_dashes_gap1_input.setObjectName("single_single_custom_dashes_gap1_input")
+        self.single_custom_dashes_gap1_input.setPlaceholderText("Gap1:")
+        self.single_custom_dashes_gap1_input.setStyleSheet("""
+            QLineEdit#single_custom_dashes_gap1_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
 
-    def create_select_multiple_premade_dashes_screen(self):
-        select_multiple_premade_dashes_screen_layout = QVBoxLayout(self.select_multiple_premade_dashes_screen)
+        #Initialize the draw2 line edit widget
+        self.single_custom_dashes_draw2_input = QLineEdit()
+        self.single_custom_dashes_draw2_input.setObjectName("single_single_custom_dashes_draw2_input")
+        self.single_custom_dashes_draw2_input.setPlaceholderText("Draw2:")
+        self.single_custom_dashes_draw2_input.setStyleSheet("""
+            QLineEdit#single_custom_dashes_draw2_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
 
-        self.multiple_select_premade_dashes_list_view = QListView()
-        self.multiple_select_premade_dashes_list_view.setSelectionMode(QListView.SelectionMode.MultiSelection)
-        self.multiple_select_premade_dashes_model = QStringListModel(self.available_dashes)
+        #Initialize the gap2 line edit widget
+        self.single_custom_dashes_gap2_input = QLineEdit()
+        self.single_custom_dashes_gap2_input.setObjectName("single_custom_dashes_gap2_input")
+        self.single_custom_dashes_gap2_input.setPlaceholderText("Gap2:")
+        self.single_custom_dashes_gap2_input.setStyleSheet("""
+            QLineEdit#single_custom_dashes_gap2_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
 
-        self.multiple_select_premade_dashes_list_view.setModel(self.multiple_select_premade_dashes_model)
-        self.multiple_select_premade_dashes_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.multiple_select_premade_dashes_list_view.setObjectName("multiple_select_premade_dashes_list_view")
-        self.multiple_select_premade_dashes_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        #Group the custom_dashes inputs together
+        self.single_custom_dashes = [self.single_custom_dashes_draw1_input,
+                                    self.single_custom_dashes_gap1_input,
+                                    self.single_custom_dashes_draw2_input,
+                                    self.single_custom_dashes_gap2_input]
 
+        #Initialize the size and function for the line edit widget and add them to the layout
+        for single_custom_dashes_input in self.single_custom_dashes:
+            single_custom_dashes_input.setMinimumHeight(60)
+            single_custom_dashes_input.textChanged.connect(self.change_single_select_custom_dashes)
+            select_single_custom_dashes_section_layout.addWidget(single_custom_dashes_input)
+        
+        #Add the validity check widgets to the layout
+        select_single_custom_dashes_section_layout.addWidget(self.valid_single_custom_dashes_widget)
+        select_single_custom_dashes_section_layout.addWidget(self.invalid_single_custom_dashes_widget)
+
+        #Add the margins, spacing, and stretch to the layout to make it look good
+        select_single_custom_dashes_section_layout.setContentsMargins(10,10,10,10)
+        select_single_custom_dashes_section_layout.setSpacing(10)
+        select_single_custom_dashes_section_layout.addStretch()
+
+    def create_select_multiple_dashes_section(self):
+        #Create the layout for the select multiple dashes section
+        select_multiple_dashes_section_layout = QVBoxLayout(self.select_multiple_dashes_section)
+
+        #Create the list view and model for the single select dashes
+        self.select_multiple_dashes_list_view = QListView()
+        self.select_multiple_dashes_model = QStringListModel(self.dashes_option)
+
+        #Add the model to the list view and disable editting for the list view 
+        self.select_multiple_dashes_list_view.setModel(self.select_multiple_dashes_model)
+        self.select_multiple_dashes_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        #Customization for the list view
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -13770,10 +13507,13 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 option.font = font
                 super().paint(painter, option, index)
         
-        self.multiple_select_premade_dashes_list_view.setItemDelegate(CustomDelegate())
+        #Apply the customization to the list view
+        self.select_multiple_dashes_list_view.setItemDelegate(CustomDelegate())
 
-        self.multiple_select_premade_dashes_list_view.setStyleSheet("""
-            QListView#multiple_select_premade_dashes_list_view{
+        #Set the object name and style the list view's background, item, select and hover effects.
+        self.select_multiple_dashes_list_view.setObjectName("select_multiple_dashes_list_view")
+        self.select_multiple_dashes_list_view.setStyleSheet("""
+            QListView#select_multiple_dashes_list_view{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -13783,7 +13523,7 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 border: transparent;
                 border-radius: 16px;
             }
-            QListView#multiple_select_premade_dashes_list_view::item {
+            QListView#select_multiple_dashes_list_view::item {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -13797,7 +13537,7 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#multiple_select_premade_dashes_list_view::item:selected {
+            QListView#select_multiple_dashes_list_view::item:selected {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -13810,7 +13550,7 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#multiple_select_premade_dashes_list_view::item:hover {
+            QListView#select_multiple_dashes_list_view::item:hover {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -13825,67 +13565,128 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
             }
         """)
 
-        self.multiple_select_premade_dashes_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.multiple_select_premade_dashes_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.multiple_select_premade_dashes_list_view.setSpacing(3)
+        #Hide the scroll bar for the list view and control the spacing for each item
+        self.select_multiple_dashes_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.select_multiple_dashes_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.select_multiple_dashes_list_view.setSpacing(3)
 
-        self.multiple_select_premade_dashes_list_view.selectionModel().selectionChanged.connect(self.change_multiple_select_premade_dashes)
-        select_multiple_premade_dashes_screen_layout.addWidget(self.multiple_select_premade_dashes_list_view)
+        #Automatically update the dashes section based on the selected item
+        self.select_multiple_dashes_list_view.clicked.connect(self.change_multiple_dashes_section)
+        
+        #Add the list view to the layout we created earlier
+        select_multiple_dashes_section_layout.addWidget(self.select_multiple_dashes_list_view)
+
+        #Add margins and spacing to make it look good
+        select_multiple_dashes_section_layout.setContentsMargins(10,10,10,10)
+
+    def create_select_multiple_premade_dashes_section(self):
+        #Create the layout for the select multiple premade dashes section
+        select_multiple_premade_dashes_section_layout = QVBoxLayout(self.select_multiple_premade_dashes_section)
+
+        #Create the list widget for the select multiple premade dashes section
+        self.select_multiple_premade_dashes_list_widget = QListWidget()
+
+        #Control the selection mode and ban the user from editting the items
+        self.select_multiple_premade_dashes_list_widget.setSelectionMode(QListView.SelectionMode.MultiSelection)
+        self.select_multiple_premade_dashes_list_widget.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        #Provide a name for the select multiple premade list widget
+        self.select_multiple_premade_dashes_list_widget.setObjectName("select_multiple_premade_dashes_list_widget")
+
+        #Add the dashes to the select multiple premade list widget
+        for dashes in self.premade_dashes:
+            self.select_multiple_premade_dashes_list_widget.addItem(QListWidgetItem(dashes))
+
+        #Customization for the list view
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+
+        #Apply the customization to the list widget
+        self.select_multiple_premade_dashes_list_widget.setItemDelegate(CustomDelegate())
+
+        #Style the list view's background, item, select and hover effects.
+        self.select_multiple_premade_dashes_list_widget.setStyleSheet("""
+            QListView#select_multiple_premade_dashes_list_widget{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#select_multiple_premade_dashes_list_widget::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#select_multiple_premade_dashes_list_widget::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#select_multiple_premade_dashes_list_widget::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        #Hide the scroll bar for the list view and control the spacing for each item
+        self.select_multiple_premade_dashes_list_widget.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.select_multiple_premade_dashes_list_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.select_multiple_premade_dashes_list_widget.setSpacing(3)
+
+        #Automatically update the markers selected based on the selected item
+        self.select_multiple_premade_dashes_list_widget.itemClicked.connect(self.change_multiple_select_premade_dashes)
+        
+        #Add the list widget to the select multiple filled markers section layout
+        select_multiple_premade_dashes_section_layout.addWidget(self.select_multiple_premade_dashes_list_widget)
 
         # Add margins and spacing to make it look good and push content to the top
-        select_multiple_premade_dashes_screen_layout.setContentsMargins(10, 10, 10, 10)
+        select_multiple_premade_dashes_section_layout.setContentsMargins(10, 10, 10, 10)
 
-    def create_select_multiple_custom_dashes_screen(self):
-        select_multiple_custom_dashes_screen_layout = QVBoxLayout(self.select_multiple_custom_dashes_screen)
+    def create_select_multiple_custom_dashes_section(self):
+        #Create the layout for the select multiple custom dashes section
+        select_multiple_custom_dashes_section_layout = QVBoxLayout(self.select_multiple_custom_dashes_section)
 
-        multiple_custom_dashes_instructions_widget = QWidget()
-        multiple_custom_dashes_instructions_widget.setObjectName("multiple_custom_dashes_instructions_widget")
-        multiple_custom_dashes_instructions_widget.setStyleSheet("""
-            QWidget#multiple_custom_dashes_instructions_widget{
-                background: qlineargradient(
-                    x1:0, y1:0,
-                    x2:1, y2:0,
-                    stop:0 rgba(94, 255, 234, 1),
-                    stop:0.29 rgba(63, 252, 180, 1),
-                    stop:0.61 rgba(2, 247, 207, 1),
-                    stop:0.89 rgba(0, 212, 255, 1)
-                );
-                border: 2px solid black;
-                border-radius: 16px;
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 16px;
-                padding: 6px;
-                color: black;
-            }
-        """)
-
-        multiple_custom_dashes_instructions_label = QLabel("Press Enter to Input More Values")
-        multiple_custom_dashes_instructions_label.setObjectName("multiple_custom_dashes_instructions_label")
-        multiple_custom_dashes_instructions_label.setWordWrap(True)
-        multiple_custom_dashes_instructions_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        multiple_custom_dashes_instructions_label.setStyleSheet("""
-            QLabel#multiple_custom_dashes_instructions_label{
-                font-family: "SF Pro Display";
-                font-weight: 600;
-                font-size: 24px;
-                padding: 6px;
-                color: black;
-                border: none;
-                background: transparent;
-            }
-        """)
-
-        multiple_custom_dashes_instructions_layout = QVBoxLayout(multiple_custom_dashes_instructions_widget)
-        multiple_custom_dashes_instructions_layout.addWidget(multiple_custom_dashes_instructions_label)
-        multiple_custom_dashes_instructions_layout.setContentsMargins(0,0,0,0)
-        multiple_custom_dashes_instructions_layout.setSpacing(0)
-
-        self.select_multiple_custom_dashes_input = QLineEdit()
-        self.select_multiple_custom_dashes_input.setObjectName("select_multiple_custom_dashes_input")
-        self.select_multiple_custom_dashes_input.setPlaceholderText("Custom Dashes:")
-        self.select_multiple_custom_dashes_input.setStyleSheet("""
-            QLineEdit#select_multiple_custom_dashes_input{
+        #Initialize the draw1 line edit widget
+        self.multiple_custom_dashes_draw1_input = QLineEdit()
+        self.multiple_custom_dashes_draw1_input.setObjectName("multiple_custom_dashes_draw1_input")
+        self.multiple_custom_dashes_draw1_input.setPlaceholderText("Draw1")
+        self.multiple_custom_dashes_draw1_input.setStyleSheet("""
+            QLineEdit#multiple_custom_dashes_draw1_input{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -13898,25 +13699,13 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-        self.select_multiple_custom_dashes_input.textChanged.connect(self.check_multiple_select_custom_dashes)
-        self.select_multiple_custom_dashes_input.setMinimumHeight(60)
 
-        select_multiple_custom_dashes_screen_layout.addWidget(multiple_custom_dashes_instructions_widget)
-        select_multiple_custom_dashes_screen_layout.addWidget(self.select_multiple_custom_dashes_input)
-        select_multiple_custom_dashes_screen_layout.addWidget(self.valid_multiple_custom_dashes_widget)
-        select_multiple_custom_dashes_screen_layout.addWidget(self.invalid_multiple_custom_dashes_widget)
-        select_multiple_custom_dashes_screen_layout.setContentsMargins(10,10,10,10)
-        select_multiple_custom_dashes_screen_layout.setSpacing(10)
-        select_multiple_custom_dashes_screen_layout.addStretch()
-
-    def create_select_dictionary_premade_dashes_screen(self):
-        select_dictionary_premade_dashes_screen_layout = QVBoxLayout(self.select_dictionary_premade_dashes_screen) 
-
-        self.select_dictionary_premade_dashes_key_input = QLineEdit()
-        self.select_dictionary_premade_dashes_key_input.setObjectName("select_dictionary_premade_dashes_key_input")
-        self.select_dictionary_premade_dashes_key_input.setPlaceholderText("Key:")
-        self.select_dictionary_premade_dashes_key_input.setStyleSheet("""
-            QLineEdit#select_dictionary_premade_dashes_key_input{
+        #Initialize the gap1 line edit widget
+        self.multiple_custom_dashes_gap1_input = QLineEdit()
+        self.multiple_custom_dashes_gap1_input.setObjectName("multiple_multiple_custom_dashes_gap1_input")
+        self.multiple_custom_dashes_gap1_input.setPlaceholderText("Gap1:")
+        self.multiple_custom_dashes_gap1_input.setStyleSheet("""
+            QLineEdit#multiple_custom_dashes_gap1_input{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -13929,17 +13718,79 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-        self.select_dictionary_premade_dashes_key_input.textChanged.connect(self.change_dictionary_key_dashes)
-        self.select_dictionary_premade_dashes_key_input.setMinimumHeight(50)
+
+        #Initialize the draw2 line edit widget
+        self.multiple_custom_dashes_draw2_input = QLineEdit()
+        self.multiple_custom_dashes_draw2_input.setObjectName("multiple_multiple_custom_dashes_draw2_input")
+        self.multiple_custom_dashes_draw2_input.setPlaceholderText("Draw2:")
+        self.multiple_custom_dashes_draw2_input.setStyleSheet("""
+            QLineEdit#multiple_custom_dashes_draw2_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        #Initialize the gap2 line edit widget
+        self.multiple_custom_dashes_gap2_input = QLineEdit()
+        self.multiple_custom_dashes_gap2_input.setObjectName("multiple_custom_dashes_gap2_input")
+        self.multiple_custom_dashes_gap2_input.setPlaceholderText("Gap2:")
+        self.multiple_custom_dashes_gap2_input.setStyleSheet("""
+            QLineEdit#multiple_custom_dashes_gap2_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        #Group the custom dashes inputs together
+        self.multiple_custom_dashes = [self.multiple_custom_dashes_draw1_input,
+                                    self.multiple_custom_dashes_gap1_input,
+                                    self.multiple_custom_dashes_draw2_input,
+                                    self.multiple_custom_dashes_gap2_input]
+
+        #Initialize the size and function for the line edit widget and add them to the layout
+        for multiple_custom_dashes_input in self.multiple_custom_dashes:
+            multiple_custom_dashes_input.setMinimumHeight(60)
+            multiple_custom_dashes_input.textChanged.connect(self.check_multiple_select_custom_dashes)
+            select_multiple_custom_dashes_section_layout.addWidget(multiple_custom_dashes_input)
         
-        self.select_dictionary_premade_dashes_list_view = QListView()
-        self.select_dictionary_premade_dashes_model = QStringListModel(self.available_dashes)
+        #Add the validity check widgets to the layout
+        select_multiple_custom_dashes_section_layout.addWidget(self.valid_multiple_custom_dashes_widget)
+        select_multiple_custom_dashes_section_layout.addWidget(self.invalid_multiple_custom_dashes_widget)
 
-        self.select_dictionary_premade_dashes_list_view.setModel(self.select_dictionary_premade_dashes_model)
-        self.select_dictionary_premade_dashes_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.select_dictionary_premade_dashes_list_view.setObjectName("select_dictionary_premade_dashes_list_view")
-        self.select_dictionary_premade_dashes_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        #Add the margins, spacing, and stretch to the layout to make it look good
+        select_multiple_custom_dashes_section_layout.setContentsMargins(10,10,10,10)
+        select_multiple_custom_dashes_section_layout.setSpacing(10)
+        select_multiple_custom_dashes_section_layout.addStretch()
 
+    def create_select_dictionary_dashes_section(self):
+        #Create the layout for the select dictionary dashes section
+        select_dictionary_dashes_section_layout = QVBoxLayout(self.select_dictionary_dashes_section)
+
+        #Create the list view and model for the dictionary select dashes
+        self.select_dictionary_dashes_list_view = QListView()
+        self.select_dictionary_dashes_model = QStringListModel(self.dashes_option)
+
+        #Add the model to the list view and disable editting for the list view 
+        self.select_dictionary_dashes_list_view.setModel(self.select_dictionary_dashes_model)
+        self.select_dictionary_dashes_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        #Customization for the list view
         class CustomDelegate(QStyledItemDelegate):
             def paint(self, painter, option, index):
                 option.displayAlignment = Qt.AlignmentFlag.AlignCenter
@@ -13948,10 +13799,13 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 option.font = font
                 super().paint(painter, option, index)
         
-        self.select_dictionary_premade_dashes_list_view.setItemDelegate(CustomDelegate())
+        #Apply the customization to the list view
+        self.select_dictionary_dashes_list_view.setItemDelegate(CustomDelegate())
 
-        self.select_dictionary_premade_dashes_list_view.setStyleSheet("""
-            QListView#select_dictionary_premade_dashes_list_view{
+        #Set the object name and style the list view's background, item, select and hover effects.
+        self.select_dictionary_dashes_list_view.setObjectName("select_dictionary_dashes_list_view")
+        self.select_dictionary_dashes_list_view.setStyleSheet("""
+            QListView#select_dictionary_dashes_list_view{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
                     stop:0 #f5f5ff,
@@ -13961,7 +13815,7 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 border: transparent;
                 border-radius: 16px;
             }
-            QListView#select_dictionary_premade_dashes_list_view::item {
+            QListView#select_dictionary_dashes_list_view::item {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -13975,7 +13829,7 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#select_dictionary_premade_dashes_list_view::item:selected {
+            QListView#select_dictionary_dashes_list_view::item:selected {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -13988,7 +13842,7 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 color: black;
                 min-height: 41px;
             }
-            QListView#select_dictionary_premade_dashes_list_view::item:hover {
+            QListView#select_dictionary_dashes_list_view::item:hover {
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -14003,24 +13857,365 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
             }
         """)
 
-        self.select_dictionary_premade_dashes_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.select_dictionary_premade_dashes_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.select_dictionary_premade_dashes_list_view.setSpacing(3)
+        #Hide the scroll bar for the list view and control the spacing for each item
+        self.select_dictionary_dashes_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.select_dictionary_dashes_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.select_dictionary_dashes_list_view.setSpacing(3)
 
-        self.select_dictionary_premade_dashes_list_view.clicked.connect(self.change_dictionary_value_premade_dashes)
+        #Automatically update the dashes section based on the selected item
+        self.select_dictionary_dashes_list_view.clicked.connect(self.change_dictionary_dashes_seciton)
+        
+        #Add the list view to the layout we created earlier
+        select_dictionary_dashes_section_layout.addWidget(self.select_dictionary_dashes_list_view)
 
-        select_dictionary_premade_dashes_screen_layout.addWidget(self.select_dictionary_premade_dashes_key_input)
-        select_dictionary_premade_dashes_screen_layout.addWidget(self.select_dictionary_premade_dashes_list_view)
-        select_dictionary_premade_dashes_screen_layout.setContentsMargins(10,10,10,10)
-        select_dictionary_premade_dashes_screen_layout.setSpacing(10)
+        #Add margins and spacing to make it look good
+        select_dictionary_dashes_section_layout.setContentsMargins(10,10,10,10)
 
-    def create_select_dictionary_custom_dashes_screen(self):
-        select_dictionary_custom_dashes_screen_layout = QVBoxLayout(self.select_dictionary_custom_dashes_screen) 
+    def create_dictionary_dashes_key_section(self,section_widget):
+        #Create the layout for the dictionary dashes key section
+        dictionary_dashes_key_section_layout = QVBoxLayout(section_widget)
 
-        dictionary_custom_dashes_instructions_widget = QWidget()
-        dictionary_custom_dashes_instructions_widget.setObjectName("dictionary_custom_dashes_instructions_widget")
-        dictionary_custom_dashes_instructions_widget.setStyleSheet("""
-            QWidget#dictionary_custom_dashes_instructions_widget{
+        #Create the list view and model for the dictionary dashes key section
+        self.dictionary_dashes_key_list_view = QListView()
+        self.dictionary_dashes_key_model = QStringListModel(self.style_value)
+
+        #Add the model to the list view and disable editting for the list view
+        self.dictionary_dashes_key_list_view.setModel(self.dictionary_dashes_key_model)
+        self.dictionary_dashes_key_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        #Customization for the list view
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+
+        #Apply the customization to the list view
+        self.dictionary_dashes_key_list_view.setItemDelegate(CustomDelegate())
+
+        #Set the object name and style the list view's background, item, select and hover effects.
+        self.dictionary_dashes_key_list_view.setObjectName("dictionary_dashes_key_list_view")
+        self.dictionary_dashes_key_list_view.setStyleSheet("""
+            QListView#dictionary_dashes_key_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#dictionary_dashes_key_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#dictionary_dashes_key_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#dictionary_dashes_key_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        #Hide the scroll bar for the list view and control the spacing for each item
+        self.dictionary_dashes_key_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.dictionary_dashes_key_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.dictionary_dashes_key_list_view.setSpacing(3)
+
+        #Automatically update the key based on the selected style key
+        self.dictionary_dashes_key_list_view.clicked.connect(self.change_dictionary_dashes_key)
+
+        #Add the list view to the dictionary dashes key section layout
+        dictionary_dashes_key_section_layout.addWidget(self.dictionary_dashes_key_list_view)
+        
+        #Add margins and spacing to make it look good and push content to the top
+        dictionary_dashes_key_section_layout.setContentsMargins(10,10,10,10)
+        dictionary_dashes_key_section_layout.setSpacing(10)
+        dictionary_dashes_key_section_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+    def create_dictionary_premade_dashes_value_section(self):
+        #Create the layout for the dictionary premade dashes value section
+        dictionary_premade_dashes_value_section_layout = QVBoxLayout(self.dictionary_premade_dashes_value_section)
+
+        #Create the list view and model for the dictionary markers value section
+        self.dictionary_premade_dashes_list_view = QListView()
+        self.dictionary_premade_dashes_model = QStringListModel(self.premade_dashes)
+
+        #Add the model to the list view and disable editting for the list view 
+        self.dictionary_premade_dashes_list_view.setModel(self.dictionary_premade_dashes_model)
+        self.dictionary_premade_dashes_list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        #Customization for the list view
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+        
+        #Apply the customization to the list view 
+        self.dictionary_premade_dashes_list_view.setItemDelegate(CustomDelegate())
+
+        #Set the object name and style the list view's background, item, select and hover effects
+        self.dictionary_premade_dashes_list_view.setObjectName("dictionary_premade_dashes_list_view")
+        self.dictionary_premade_dashes_list_view.setStyleSheet("""
+            QListView#dictionary_premade_dashes_list_view{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: transparent;
+                border-radius: 16px;
+            }
+            QListView#dictionary_premade_dashes_list_view::item {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.29 rgba(63, 252, 180, 1),
+                    stop:0.61 rgba(2, 247, 207, 1),
+                    stop:0.89 rgba(0, 212, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#dictionary_premade_dashes_list_view::item:selected {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+            QListView#dictionary_premade_dashes_list_view::item:hover {
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+                color: black;
+                min-height: 41px;
+            }
+        """)
+
+        #Hide the scroll bar for the list view and control the spacing for each item
+        self.dictionary_premade_dashes_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.dictionary_premade_dashes_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.dictionary_premade_dashes_list_view.setSpacing(3)
+
+        #Automatically update the dictionary premade dashes value based on the selected markers
+        self.dictionary_premade_dashes_list_view.clicked.connect(self.change_dictionary_premade_dashes_value)
+
+        #Add the list view to the dictionary premade dashes value section
+        dictionary_premade_dashes_value_section_layout.addWidget(self.dictionary_premade_dashes_list_view)
+        
+        #Add the margins and spacing to make it look and push it to the top
+        dictionary_premade_dashes_value_section_layout.setContentsMargins(10,10,10,10)
+        dictionary_premade_dashes_value_section_layout.setSpacing(10)
+        dictionary_premade_dashes_value_section_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+    def create_dictionary_custom_dashes_value_section(self):
+        #Create the layout for the dictionary custom dashes value section
+        dictionary_custom_dashes_screen_layout = QVBoxLayout(self.dictionary_custom_dashes_value_section) 
+
+        #Create the line edit widget for the dictionary custom dashes value
+        self.dictionary_custom_dashes_value_input = QLineEdit()
+        self.dictionary_custom_dashes_value_input.setObjectName("dictionary_custom_dashes_value_input")
+        self.dictionary_custom_dashes_value_input.setPlaceholderText("Dashes:")
+        self.dictionary_custom_dashes_value_input.setStyleSheet("""
+            QLineEdit#dictionary_custom_dashes_value_input{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                color: black;
+                font-size: 24pt;
+                border: 2px solid black;
+                border-radius: 16px;
+            }
+        """)
+
+        #Control the height of the line edit widget and connect it to an updating function
+        self.dictionary_custom_dashes_value_input.textChanged.connect(self.change_dictionary_custom_dashes_value)
+        self.dictionary_custom_dashes_value_input.setMinimumHeight(60)
+
+        dictionary_custom_dashes_screen_layout.addWidget(self.dictionary_custom_dashes_value_input)
+        dictionary_custom_dashes_screen_layout.addWidget(self.valid_dictionary_custom_dashes_widget)
+        dictionary_custom_dashes_screen_layout.addWidget(self.invalid_dictionary_custom_dashes_widget)
+
+        #Add the margins and spacing to make it look good and push everything to the top
+        dictionary_custom_dashes_screen_layout.setContentsMargins(10,10,10,10)
+        dictionary_custom_dashes_screen_layout.setSpacing(10)
+        dictionary_custom_dashes_screen_layout.addStretch()
+
+    def create_select_dictionary_premade_dashes_section(self):
+        #Create a layout for the select dictionary premade dashes section
+        select_dictionary_premade_dashes_section_layout = QVBoxLayout(self.select_dictionary_premade_dashes_section)  
+
+        #Create the dictionary premade dashes key section
+        self.dictionary_premade_dashes_key_section = QWidget()
+        self.dictionary_premade_dashes_key_section.setObjectName("dictionary_premade_dashes_key_section")
+        self.dictionary_premade_dashes_key_section.setStyleSheet("""
+            QWidget#dictionary_dashes_key_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.create_dictionary_dashes_key_section(self.dictionary_premade_dashes_key_section)
+        
+        #Create the dictionary premade dashes value section
+        self.dictionary_premade_dashes_value_section = QWidget()
+        self.dictionary_premade_dashes_value_section.setObjectName("dictionary_premade_dashes_value_section")
+        self.dictionary_premade_dashes_value_section.setStyleSheet("""
+            QWidget#dictionary_premade_dashes_value_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.create_dictionary_premade_dashes_value_section()
+
+        #Add the widgets to the layout of the select dictionary markers section layout
+        select_dictionary_premade_dashes_section_layout.addWidget(self.dictionary_premade_dashes_key_section,stretch=1)
+        select_dictionary_premade_dashes_section_layout.addWidget(self.dictionary_premade_dashes_value_section,stretch=1)
+
+        # Add margins and spacing to make it look good and push content to the top
+        select_dictionary_premade_dashes_section_layout.setSpacing(10)
+        select_dictionary_premade_dashes_section_layout.setContentsMargins(0,0,0,0)
+
+    def create_select_dictionary_custom_dashes_section(self):
+        #Create the layout for the select dictionary custom dashes section
+        select_dictionary_custom_dashes_section_layout = QVBoxLayout(self.select_dictionary_custom_dashes_section) 
+
+        #Create the dictionary custom dashes key section
+        self.dictionary_custom_dashes_key_section = QWidget()
+        self.dictionary_custom_dashes_key_section.setObjectName("dictionary_custom_dashes_key_section")
+        self.dictionary_custom_dashes_key_section.setStyleSheet("""
+            QWidget#dictionary_custom_dashes_key_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.create_dictionary_dashes_key_section(self.dictionary_custom_dashes_key_section)
+        
+        #Create the dictionary custom dashes value section
+        self.dictionary_custom_dashes_value_section = QWidget()
+        self.dictionary_custom_dashes_value_section.setObjectName("dictionary_custom_dashes_value_section")
+        self.dictionary_custom_dashes_value_section.setStyleSheet("""
+            QWidget#dictionary_custom_dashes_value_section{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+                border: 2px solid black;
+                border-radius: 16px;
+            }  
+        """)
+        self.create_dictionary_custom_dashes_value_section()
+
+        #Add the widgets to the layout of the select dictionary markers section layout
+        select_dictionary_custom_dashes_section_layout.addWidget(self.dictionary_custom_dashes_key_section,stretch=1)
+        select_dictionary_custom_dashes_section_layout.addWidget(self.dictionary_custom_dashes_value_section,stretch=1)
+
+        # Add margins and spacing to make it look good and push content to the top
+        select_dictionary_custom_dashes_section_layout.setSpacing(10)
+        select_dictionary_custom_dashes_section_layout.setContentsMargins(0,0,0,0)
+
+    def create_reset_dashes_section(self):
+        #Create a layout for the reset dashes section
+        reset_dashes_section_layout = QVBoxLayout(self.reset_dashes_section)
+
+        #Create the reset seaborn legend dashes label for the button
+        self.reset_dashes_label = QLabel("Reset Dashes")
+        self.reset_dashes_label.setWordWrap(True)
+        self.reset_dashes_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.reset_dashes_label.setObjectName("reset_dashes_label")
+        self.reset_dashes_label.setStyleSheet("""
+            QLabel#reset_dashes_label{
+                font-family: "SF Pro Display";
+                font-weight: 600;
+                font-size: 24px;
+                padding: 6px;
+                color: black;
+                border: none;
+                background: transparent;
+            }
+        """)
+        self.reset_dashes_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+        #Create the reset seaborn legend dashes button
+        self.reset_dashes_button = QPushButton()
+        self.reset_dashes_button.setObjectName("reset_dashes_button")
+        self.reset_dashes_button.setStyleSheet("""
+            QPushButton#reset_dashes_button{
                 background: qlineargradient(
                     x1:0, y1:0,
                     x2:1, y2:0,
@@ -14037,84 +14232,100 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 padding: 6px;
                 color: black;
             }
-        """)
-
-        dictionary_custom_dashes_instructions_label = QLabel("Press Enter to Input More Values")
-        dictionary_custom_dashes_instructions_label.setObjectName("dictionary_custom_dashes_instructions_label")
-        dictionary_custom_dashes_instructions_label.setWordWrap(True)
-        dictionary_custom_dashes_instructions_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        dictionary_custom_dashes_instructions_label.setStyleSheet("""
-            QLabel#dictionary_custom_dashes_instructions_label{
+            QPushButton#reset_markers_button:hover{
+                background: qlineargradient(
+                    x1:0, y1:0,
+                    x2:1, y2:0,
+                    stop:0 rgba(94, 255, 234, 1),
+                    stop:0.5 rgba(171, 156, 255, 1),
+                    stop:1 rgba(255, 203, 255, 1)
+                );
+                border: 2px solid black;
+                border-radius: 16px;
                 font-family: "SF Pro Display";
                 font-weight: 600;
                 font-size: 24px;
                 padding: 6px;
                 color: black;
-                border: none;
-                background: transparent;
             }
         """)
+        self.reset_dashes_button.setMinimumHeight(60)
 
-        dictionary_custom_dashes_instructions_layout = QVBoxLayout(dictionary_custom_dashes_instructions_widget)
-        dictionary_custom_dashes_instructions_layout.addWidget(dictionary_custom_dashes_instructions_label)
-        dictionary_custom_dashes_instructions_layout.setContentsMargins(0,0,0,0)
-        dictionary_custom_dashes_instructions_layout.setSpacing(0)
+        #Connect the button to automatically reset the face color when clicked on
+        self.reset_dashes_button.clicked.connect(self.reset_dashes)
 
-        self.select_dictionary_custom_dashes_key_input = QLineEdit()
-        self.select_dictionary_custom_dashes_key_input.setObjectName("select_dictionary_custom_dashes_key_input")
-        self.select_dictionary_custom_dashes_key_input.setPlaceholderText("Key:")
-        self.select_dictionary_custom_dashes_key_input.setStyleSheet("""
-            QLineEdit#select_dictionary_custom_dashes_key_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                color: black;
-                font-size: 24pt;
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-        self.select_dictionary_custom_dashes_key_input.textChanged.connect(self.change_dictionary_key_dashes)
-        self.select_dictionary_custom_dashes_key_input.setMinimumHeight(50)
+        #Add the label onto the button
+        reset_dashes_section_layout = QVBoxLayout(self.reset_dashes_button)
+        reset_dashes_section_layout.addWidget(self.reset_dashes_label)
+        reset_dashes_section_layout.setContentsMargins(0,0,0,0)
+        reset_dashes_section_layout.setSpacing(0)
 
-        self.select_dictionary_custom_dashes_value_input = QLineEdit()
-        self.select_dictionary_custom_dashes_value_input.setObjectName("select_dictionary_custom_dashes_value_input")
-        self.select_dictionary_custom_dashes_value_input.setPlaceholderText("Value:")
-        self.select_dictionary_custom_dashes_value_input.setStyleSheet("""
-            QLineEdit#select_dictionary_custom_dashes_value_input{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
-                color: black;
-                font-size: 24pt;
-                border: 2px solid black;
-                border-radius: 16px;
-            }
-        """)
-        self.select_dictionary_custom_dashes_value_input.textChanged.connect(self.change_dictionary_value_custom_dashes)
-        self.select_dictionary_custom_dashes_value_input.setMinimumHeight(50)
+        #Add the button created to the reset face color section
+        reset_dashes_section_layout.addWidget(self.reset_dashes_button)
+        reset_dashes_section_layout.setContentsMargins(10,10,10,10)
+        reset_dashes_section_layout.addStretch()
 
-        select_dictionary_custom_dashes_screen_layout.addWidget(dictionary_custom_dashes_instructions_widget)
-        select_dictionary_custom_dashes_screen_layout.addWidget(self.select_dictionary_custom_dashes_key_input)
-        select_dictionary_custom_dashes_screen_layout.addWidget(self.select_dictionary_custom_dashes_value_input)
-        select_dictionary_custom_dashes_screen_layout.addWidget(self.valid_dictionary_custom_dashes_widget)
-        select_dictionary_custom_dashes_screen_layout.addWidget(self.invalid_dictionary_custom_dashes_widget)
-        select_dictionary_custom_dashes_screen_layout.setContentsMargins(10,10,10,10)
-        select_dictionary_custom_dashes_screen_layout.setSpacing(10)
-        select_dictionary_custom_dashes_screen_layout.addStretch()
+    def change_current_parameter_section(self,index):
+        #Get the associated section name based on the item the user clicked on in the list view
+        section_name = self.sns_legend_dashes_parameter_model.data(index,Qt.ItemDataRole.DisplayRole)
 
-    def change_to_original_section(self):
-        self.available_sections[self.current_section_idx].hide()
-        self.current_section_idx = 0
-        self.available_sections[self.current_section_idx].show()
+        #If the section name is Dashes State change to the dashes state section
+        if (section_name == "Dashes State"):
+            self.change_to_select_dashes_state_section()
 
-    def change_to_previous_screen(self):
+        #If the section name is Single Marker change to the single marker section
+        if (section_name == "Single Dash"):
+            self.change_to_single_dashes_section()
+
+        #If the section name is Multiple Markers change to the multiple markers section
+        if (section_name == "Multiple Dashes"):
+            self.change_to_multiple_dashes_section()
+
+        #If the section name is Dictionary Marker change to the dictionary marker section
+        if (section_name == "Dictionary Dashes"):
+            self.change_to_dictionary_dashes_section()
+
+        #If the section name is Reset Face Color change to the reset face color section
+        if (section_name == "Reset Dashes"):
+            self.change_to_reset_dashes_section()
+
+    def change_single_dashes_section(self,index):
+        #Get the associated section name based on the item the user clicked on in the list view
+        section_name = self.select_single_dashes_list_view.data(index,Qt.ItemDataRole.DisplayRole)
+
+        #If the section name is Dashes State change to the dashes state section
+        if (section_name == "Premade Dashes"):
+            self.change_to_select_single_premade_dashes_section()
+
+        #If the section name is Single Marker change to the single marker section
+        if (section_name == "Custom Dashes"):
+            self.change_to_select_single_custom_dashes_section()
+
+    def change_multiple_dashes_section(self,index):
+        #Get the associated section name based on the item the user clicked on in the list view
+        section_name = self.select_multiple_dashes_list_view.data(index,Qt.ItemDataRole.DisplayRole)
+
+        #If the section name is Dashes State change to the dashes state section
+        if (section_name == "Premade Dashes"):
+            self.change_to_select_multiple_premade_dashes_section()
+
+        #If the section name is Single Marker change to the single marker section
+        if (section_name == "Custom Dashes"):
+            self.change_to_select_multiple_custom_dashes_section()
+
+    def change_dictionary_dashes_seciton(self,index):
+        #Get the associated section name based on the item the user clicked on in the list view
+        section_name = self.select_dictionary_dashes_list_view.data(index,Qt.ItemDataRole.DisplayRole)
+
+        #If the section name is Dashes State change to the dashes state section
+        if (section_name == "Premade Dashes"):
+            self.change_to_select_dictionary_premade_dashes_section()
+
+        #If the section name is Single Marker change to the single marker section
+        if (section_name == "Custom Dashes"):
+            self.change_to_select_dictionary_custom_dashes_section()
+
+    def change_to_previous_section(self):
         self.hide_validity_widgets()
         if (self.current_section_idx == 0):
             return
@@ -14137,147 +14348,171 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
 
         self.available_sections[self.current_section_idx].show()
 
-    def change_to_single_dashes_screen(self):
+    def change_to_original_section(self):
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 0
+        self.available_sections[self.current_section_idx].show()
+
+    def change_to_select_dashes_state_section(self):
+        #Hide the current section, change the section idx, display the new section
         self.available_sections[self.current_section_idx].hide()
         self.current_section_idx = 1
         self.available_sections[self.current_section_idx].show()
 
-    def change_to_select_single_premade_dashes_screen(self):
+    def change_to_single_dashes_section(self):
+        #Hide the current section, change the section idx, display the new section
         self.available_sections[self.current_section_idx].hide()
         self.current_section_idx = 2
         self.available_sections[self.current_section_idx].show()
 
-    def change_to_select_single_custom_dashes_screen(self):
+    def change_to_select_single_premade_dashes_section(self):
+        #Hide the current section, change the section idx, display the new section
         self.available_sections[self.current_section_idx].hide()
         self.current_section_idx = 3
         self.available_sections[self.current_section_idx].show()
 
-    def change_to_multiple_dashes_screen(self):
+    def change_to_select_single_custom_dashes_section(self):
+        #Hide the current section, change the section idx, display the new section
         self.available_sections[self.current_section_idx].hide()
         self.current_section_idx = 4
         self.available_sections[self.current_section_idx].show()
 
-    def change_to_select_multiple_premade_dashes_screen(self):
+    def change_to_multiple_dashes_section(self):
+        #Hide the current section, change the section idx, display the new section
         self.available_sections[self.current_section_idx].hide()
         self.current_section_idx = 5
         self.available_sections[self.current_section_idx].show()
 
-    def change_to_select_multiple_custom_dashes_screen(self):
+    def change_to_select_multiple_premade_dashes_section(self):
+        #Hide the current section, change the section idx, display the new section
         self.available_sections[self.current_section_idx].hide()
         self.current_section_idx = 6
         self.available_sections[self.current_section_idx].show()
 
-    def change_to_dictionary_dashes_screen(self):
+    def change_to_select_multiple_custom_dashes_section(self):
+        #Hide the current section, change the section idx, display the new section
         self.available_sections[self.current_section_idx].hide()
         self.current_section_idx = 7
         self.available_sections[self.current_section_idx].show()
 
-    def change_to_select_dictionary_premade_dashes_screen(self):
+    def change_to_dictionary_dashes_section(self):
+        #Hide the current section, change the section idx, display the new section
         self.available_sections[self.current_section_idx].hide()
         self.current_section_idx = 8
         self.available_sections[self.current_section_idx].show()
 
-    def change_to_select_dictionary_custom_dashes_screen(self):
+    def change_to_select_dictionary_premade_dashes_section(self):
+        #Hide the current section, change the section idx, display the new section
         self.available_sections[self.current_section_idx].hide()
         self.current_section_idx = 9
         self.available_sections[self.current_section_idx].show()
 
-    def turn_dashes_on_and_off(self):
-        self.initial_dashes_argument = not self.initial_dashes_argument
-        if (self.initial_dashes_argument):
-            self.turn_dashes_on_off_label.setText("Turn Dashes Off")
+    def change_to_select_dictionary_custom_dashes_section(self):
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 10
+        self.available_sections[self.current_section_idx].show()
+
+    def change_to_reset_dashes_section(self):
+        #Hide the current section, change the section idx, display the new section
+        self.available_sections[self.current_section_idx].hide()
+        self.current_section_idx = 11
+        self.available_sections[self.current_section_idx].show()
+
+    def change_dashes_state(self):
+        self.dashes_state = not self.dashes_state
+        if (self.dashes_state):
+            self.select_dashes_state_label.setText("Dashes Off")
         else:
-            self.turn_dashes_on_off_label.setText("Turn Dashes On")
-        self.dashes = self.initial_dashes_argument
+            self.select_dashes_state_label.setText("Dashes On")
+        self.dashes = self.dashes_state
         self.update_dashes()
 
     def change_single_select_premade_dashes(self,index):
+        self.dashes_state = True
         self.dashes = self.single_select_premade_dashes_model.data(index, Qt.ItemDataRole.DisplayRole)
-        if ("None" in self.dashes):
-            self.dashes = ""
-        else:
-            self.dashes = self.dashes[self.dashes.index("(")+1:self.dashes.index(")")]
         self.update_dashes()
     
     def change_single_select_custom_dashes(self):
-        custom_dashes = self.select_single_custom_dashes_input.text().strip()
+        single_custom_dashes = []
 
-        if (custom_dashes == ""):
+        for dash_input in self.single_custom_dashes:
+            dash_value = dash_input.text().strip()
+            if (dash_value != ""):
+                single_custom_dashes.append(dash_value)
+    
+        if (len(single_custom_dashes) == 2):
+            single_custom_dashes *= 2
+
+        if (len(single_custom_dashes) == 0):
             self.valid_single_custom_dashes_widget.hide()
             self.invalid_single_custom_dashes_widget.hide()
-            self.dashes = ""
-            self.update_dashes()
             return
         
-        # Split by comma or space
-        if "," in custom_dashes:
-            custom_dashes = custom_dashes.split(",")
-        elif " " in custom_dashes:
-            custom_dashes = custom_dashes.split()
-        else:
-            custom_dashes = [custom_dashes]
-        
         try:
-            custom_dashes = list(map(float, custom_dashes))
+            custom_dashes = list(map(float, single_custom_dashes))
+            if (len(custom_dashes) < 4):
+                raise ValueError
+            
+            self.dashes_state = True
             self.dashes = tuple(custom_dashes)
 
-            if (len(custom_dashes) < 4 or len(custom_dashes) % 2 == 1):
-                raise Exception
-            
             self.valid_single_custom_dashes_widget.show()
             self.invalid_single_custom_dashes_widget.hide()
-        except:
-            self.valid_single_custom_dashes_widget.setVisible(False)
-            self.invalid_single_custom_dashes_widget.setVisible(True)
+        except ValueError:
+            self.valid_single_custom_dashes_widget.hide()
+            self.invalid_single_custom_dashes_widget.show()
         
         self.update_dashes()
 
-    def change_multiple_select_premade_dashes(self):
-        selected_indexes = self.multiple_select_premade_dashes_list_view.selectedIndexes()
-        self.dashes = [index.data() for index in selected_indexes]
-        self.dashes = list(map(lambda x:x[x.index("(")+1:x.index(")")],self.dashes))
-        self.dashes = [dash if (dash != "\u2014") else "" for dash in self.dashes]
+    def change_multiple_select_premade_dashes(self,item):
+        self.dashes_state = True
+        if (isinstance(self.markers,list)):
+            self.markers.append(item.text())
+        else:
+            self.markers = [item.text()]
         self.update_dashes()
 
     def check_multiple_select_custom_dashes(self):
-        custom_dashes = self.select_multiple_custom_dashes_input.text().strip()
+        multiple_custom_dashes = []
 
-        if (custom_dashes == ""):
+        for dash_input in self.multiple_custom_dashes:
+            dash_value = dash_input.text().strip()
+            if (dash_value != ""):
+                multiple_custom_dashes.append(dash_value)
+
+        if (len(multiple_custom_dashes) == 2):
+            multiple_custom_dashes *= 2
+
+        if (len(multiple_custom_dashes) == 0):
             self.valid_multiple_custom_dashes_widget.hide()
             self.invalid_multiple_custom_dashes_widget.hide()
-            return False
-        
-        # Split by comma or space
-        if "," in custom_dashes:
-            custom_dashes = custom_dashes.split(",")
-        elif " " in custom_dashes:
-            custom_dashes = custom_dashes.split()
-        else:
-            custom_dashes = [custom_dashes]
+            return False,[]
         
         try:
-            custom_dashes = list(map(float, custom_dashes))
+            custom_dashes = list(map(float, multiple_custom_dashes))
 
-            if (len(custom_dashes) < 4 or len(custom_dashes) % 2 == 1):
-                raise Exception
+            if (len(custom_dashes) < 4):
+                raise ValueError
 
             self.valid_multiple_custom_dashes_widget.show()
             self.invalid_multiple_custom_dashes_widget.hide()
 
-            return True
+            return True,custom_dashes
             
-        except:
+        except ValueError:
             self.valid_multiple_custom_dashes_widget.hide()
             self.invalid_multiple_custom_dashes_widget.show()
-            return False
+            return False,[]
 
-    def change_dictionary_key_dashes(self):
+    def change_dictionary_dashes_key(self):
         if (self.select_dictionary_premade_dashes_key_input.text().strip() != ""):
             self.dashes_dictionary_key = self.select_dictionary_premade_dashes_key_input.text().strip()
         else:
             self.dashes_dictionary_key = self.select_dictionary_custom_dashes_key_input.text().strip()
 
-    def change_dictionary_value_premade_dashes(self,index):
+    def change_dictionary_premade_dashes_value(self,index):
         self.dashes_dictionary_value = self.select_dictionary_premade_dashes_model.data(index,Qt.ItemDataRole.DisplayRole)
         if ("None" in self.dashes_dictionary_value):
             self.dashes_dictionary_value = ""
@@ -14286,7 +14521,7 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
         self.change_dictionary_select_dashes()
         self.select_dictionary_premade_dashes_key_input.clear()
 
-    def change_dictionary_value_custom_dashes(self):
+    def change_dictionary_custom_dashes_value(self):
         custom_dashes = self.select_dictionary_custom_dashes_value_input.text().strip()
 
         if (custom_dashes == ""):
@@ -14320,7 +14555,7 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
             self.invalid_dictionary_custom_dashes_widget.show()
             return False
 
-    def change_dictionary_select_dashes(self):
+    def change_dictionary_dashes(self):
         if (self.dashes_dictionary_key != "" and self.dashes_dictionary_value != ""):
             dictionary_keys = list(self.dashes_dictionary.keys())
             dictionary_values = list(self.dashes_dictionary.values())
@@ -14328,6 +14563,18 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 self.dashes_dictionary[self.dashes_dictionary_key] = self.dashes_dictionary_value
                 self.dashes = self.dashes_dictionary
                 self.update_dashes()
+
+    def reset_dashes(self):
+        self.reset_dashes_selection()
+        self.hide_validity_widgets()
+
+        for dash_input in (self.single_custom_dashes + self.multiple_custom_dashes):
+            dash_input.clear()
+        self.dictionary_custom_dashes_value_input.clear()
+
+        self.select_dashes_state_label.setText("Dashes Off")
+
+        self.update_dashes()
 
     def update_dashes(self):
         db = self.plot_manager.get_db()
@@ -14340,27 +14587,23 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
         self.graph_display.show_graph()
 
     def add_new_custom_dashes(self):
-        if (not self.available_sections[6].isHidden()):
-            if (self.check_multiple_select_custom_dashes()):
-                custom_dashes = self.select_multiple_custom_dashes_input.text().strip()
-                if "," in custom_dashes:
-                    custom_dashes = custom_dashes.split(",")
-                elif " " in custom_dashes:
-                    custom_dashes = custom_dashes.split()
-                else:
-                    custom_dashes = [custom_dashes]
-                custom_dashes = list(map(float, custom_dashes))
-                
-                if (isinstance(self.dashes,list)):
-                    self.dashes.append(custom_dashes)
-                else:
-                    self.dashes = [custom_dashes]
+        if (self.current_section_idx == 7):
+            valid_custom_dashes,custom_dashes = self.check_multiple_select_custom_dashes()
 
-                self.select_multiple_custom_dashes_input.clear()
+            if (not valid_custom_dashes):
+                return
 
-                self.update_dashes()
+            if (isinstance(self.dashes,list)):
+                self.dashes.append(custom_dashes)
+            else:
+                self.dashes = [custom_dashes]
 
-        if (not self.available_sections[9].isHidden()):
+            for dashes_input in self.multiple_custom_dashes:
+                dashes_input.clear()
+
+            self.update_dashes()
+
+        if (self.current_section_idx == 10):
             if (self.change_dictionary_value_custom_dashes()):
                 self.change_dictionary_select_dashes()
 
@@ -14372,28 +14615,56 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
         self.dashes_dictionary = dict()
         self.dashes_dictionary_key = ""
         self.dashes_dictionary_value = ""
+        self.dashes_state = True
 
     def hide_validity_widgets(self):
         self.valid_single_custom_dashes_widget.hide()
         self.invalid_single_custom_dashes_widget.hide()
+        
+        self.valid_multiple_custom_dashes_widget.hide()
+        self.invalid_multiple_custom_dashes_widget.hide()
+
+        self.valid_dictionary_custom_dashes_widget.hide()
+        self.invalid_dictionary_custom_dashes_widget.hide()
 
     def mousePressEvent(self, event):
+        #Clear the focus of the input widget if the cursor clicks somewhere else
         if (not self.select_single_custom_dashes_input.geometry().contains(event.position().toPoint())):
             self.select_single_custom_dashes_input.clearFocus()
         if (not self.select_multiple_custom_dashes_input.geometry().contains(event.position().toPoint())):
             self.select_multiple_custom_dashes_input.clearFocus()
-        if (not self.select_dictionary_premade_dashes_key_input.geometry().contains(event.position().toPoint())):
-            self.select_dictionary_premade_dashes_key_input.clearFocus()
-        if (not self.select_dictionary_custom_dashes_key_input.geometry().contains(event.position().toPoint())):
-            self.select_dictionary_custom_dashes_key_input.clearFocus()
         if (not self.select_dictionary_custom_dashes_value_input.geometry().contains(event.position().toPoint())):
             self.select_dictionary_custom_dashes_value_input.clearFocus()
         super().mousePressEvent(event)
 
     def showEvent(self,event):
+        #Get the new style from the plot config 
+        new_plot_style = self.plot_manager.get_db()["style"]
+
+        #If there isn't any style then show the instructions widget
+        if (new_plot_style is None):
+            self.sns_legend_dashes_parameter_list_view.hide()
+            self.dashes_instruction_widget.show()
+        #If the style is different then show the list view 
+        elif (self.plot_style != new_plot_style):
+            self.sns_legend_dashes_parameter_list_view.show()
+            self.dashes_instruction_widget.hide()
+
+            #Reinitialize the list, count, and plot style
+            self.style_value = pd.read_csv("./dataset/user_dataset.csv")[self.plot_style].unique()
+            self.style_value_count = len(self.style_value)
+            self.plot_style = new_plot_style
+
+            #Update the dictionary style key model
+            self.dictionary_dashes_key_model.setStringList(self.style_value)
+
+            #Clear the selection for the select multiple markers section
+            self.select_single_dashes_list_view.clearSelection()
+
+            #Reset the markers
+            self.reset_markers()
+
         super().showEvent(event)
-        self.reset_dashes_selection()
-        self.change_to_original_section()
 
 class seaborn_legend_size_order_adjustment_section(QWidget):
     def __init__(self,selected_graph,graph_display):
@@ -15190,7 +15461,7 @@ class grid_visible_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.grid_visibility_button.setMinimumHeight(50)
+        self.grid_visibility_button.setMinimumHeight(60)
         
         #Put the label on top of the button we created for control grid visibility
         grid_visibility_button_layout = QVBoxLayout(self.grid_visibility_button)
@@ -16833,11 +17104,11 @@ class grid_linestyle_adjustment_section(QWidget):
         invalid_on_off_sequence_widget_layout.setSpacing(0)
 
         #-----Control the Widget Size and hide them-----
-        self.valid_offset_widget.setMinimumHeight(50)
-        self.invalid_offset_widget.setMinimumHeight(50)
+        self.valid_offset_widget.setMinimumHeight(60)
+        self.invalid_offset_widget.setMinimumHeight(60)
         
-        self.valid_on_off_sequence_widget.setMinimumHeight(50)
-        self.invalid_on_off_sequence_widget.setMinimumHeight(50)
+        self.valid_on_off_sequence_widget.setMinimumHeight(60)
+        self.invalid_on_off_sequence_widget.setMinimumHeight(60)
 
         self.valid_offset_widget.hide()
         self.invalid_offset_widget.hide()
@@ -17432,8 +17703,8 @@ class grid_linewidth_adjustment_section(QWidget):
         self.invalid_linewidth_widget.hide()
 
         #-----Set the size for both Validitiy Check Widgets-----
-        self.valid_linewidth_widget.setMinimumHeight(50)
-        self.invalid_linewidth_widget.setMinimumHeight(50)
+        self.valid_linewidth_widget.setMinimumHeight(60)
+        self.invalid_linewidth_widget.setMinimumHeight(60)
 
         #-----Grid Linewidth Adjustment Screen-----
         self.grid_linewidth_adjustment_screen = QWidget()
@@ -17616,8 +17887,8 @@ class grid_alpha_adjustment_section(QWidget):
         self.invalid_alpha_widget.hide()
 
         #-----Set the size for both Validitiy Check Widgets-----
-        self.valid_alpha_widget.setMinimumHeight(50)
-        self.invalid_alpha_widget.setMinimumHeight(50)
+        self.valid_alpha_widget.setMinimumHeight(60)
+        self.invalid_alpha_widget.setMinimumHeight(60)
 
         #-----Grid Linewidth Adjustment Screen-----
         self.grid_alpha_adjustment_screen = QWidget()
@@ -17798,8 +18069,8 @@ class grid_zorder_adjustment_section(QWidget):
         self.invalid_zorder_widget.hide()
 
         #-----Set the size for both Validitiy Check Widgets-----
-        self.valid_zorder_widget.setMinimumHeight(50)
-        self.invalid_zorder_widget.setMinimumHeight(50)
+        self.valid_zorder_widget.setMinimumHeight(60)
+        self.invalid_zorder_widget.setMinimumHeight(60)
 
         #-----Grid Zorder Adjustment Screen-----
         self.grid_zorder_adjustment_screen = QWidget()
@@ -20330,7 +20601,7 @@ class hue_button(QDialog):
                 color: black;
             }
         """)
-        self.instructions_widget.setMinimumHeight(50)
+        self.instructions_widget.setMinimumHeight(60)
 
         self.instructions_label = QLabel("Seperate values by space")
         self.instructions_label.setWordWrap(True)
@@ -20541,7 +20812,7 @@ class hue_button(QDialog):
                 color: black;
             }
         """)
-        self.none_hue_button.setMinimumHeight(50)
+        self.none_hue_button.setMinimumHeight(60)
 
         self.none_hue_button.clicked.connect(self.change_hue_to_none)
         
@@ -21505,7 +21776,7 @@ class style_button(QDialog):
                 color: black;
             }
         """)
-        self.none_style_button.setMinimumHeight(50)
+        self.none_style_button.setMinimumHeight(60)
 
         self.none_style_button.clicked.connect(self.change_style_to_none)
         
@@ -21823,11 +22094,11 @@ class size_button(QDialog):
         self.invalid_interval_size_widget.hide()
 
         #-----Set the size for Validitiy Check Widgets-----
-        self.valid_list_size_widget.setMinimumHeight(50)
-        self.invalid_list_size_widget.setMinimumHeight(50)
+        self.valid_list_size_widget.setMinimumHeight(60)
+        self.invalid_list_size_widget.setMinimumHeight(60)
 
-        self.valid_interval_size_widget.setMinimumHeight(50)
-        self.invalid_interval_size_widget.setMinimumHeight(50)
+        self.valid_interval_size_widget.setMinimumHeight(60)
+        self.invalid_interval_size_widget.setMinimumHeight(60)
 
         #-----Create the Size Home Screen-----
         self.size_parameter_section = QWidget()
@@ -22342,7 +22613,7 @@ class size_button(QDialog):
                 color: black;
             }
         """)
-        self.none_size_button.setMinimumHeight(50)
+        self.none_size_button.setMinimumHeight(60)
 
         self.none_size_button.clicked.connect(self.change_size_to_none)
         
@@ -22893,14 +23164,14 @@ class palette_button(QDialog):
         self.invalid_grayscale_value_widget.hide()
 
         #-----Set the size for All Validitiy Check Widgets-----
-        self.valid_hex_code_widget.setMinimumHeight(50)
-        self.invalid_hex_code_widget.setMinimumHeight(50)
+        self.valid_hex_code_widget.setMinimumHeight(60)
+        self.invalid_hex_code_widget.setMinimumHeight(60)
 
-        self.valid_rgba_value_widget.setMinimumHeight(50)
-        self.invalid_rgba_value_widget.setMinimumHeight(50)
+        self.valid_rgba_value_widget.setMinimumHeight(60)
+        self.invalid_rgba_value_widget.setMinimumHeight(60)
 
-        self.valid_grayscale_value_widget.setMinimumHeight(50)
-        self.invalid_grayscale_value_widget.setMinimumHeight(50)
+        self.valid_grayscale_value_widget.setMinimumHeight(60)
+        self.invalid_grayscale_value_widget.setMinimumHeight(60)
 
         #-----Create the Palette Home Screen-----
         self.palette_parameter_screen = QWidget()
@@ -24258,7 +24529,7 @@ class palette_button(QDialog):
                 color: black;
             }
         """)
-        self.none_palette_button.setMinimumHeight(50)
+        self.none_palette_button.setMinimumHeight(60)
 
         self.none_palette_button.clicked.connect(self.change_palette_state)
 
@@ -24754,8 +25025,8 @@ class alpha_button(QDialog):
         invalid_float_alpha_widget_layout.setContentsMargins(0,0,0,0)
         invalid_float_alpha_widget_layout.setSpacing(0)
 
-        self.valid_float_alpha_widget.setMinimumHeight(50)
-        self.invalid_float_alpha_widget.setMinimumHeight(50)
+        self.valid_float_alpha_widget.setMinimumHeight(60)
+        self.invalid_float_alpha_widget.setMinimumHeight(60)
         
         self.valid_float_alpha_widget.hide()
         self.invalid_float_alpha_widget.hide()
@@ -25442,7 +25713,7 @@ class marker_button(QDialog):
                 color: black;
             }
         """)
-        self.none_marker_button.setMinimumHeight(50)
+        self.none_marker_button.setMinimumHeight(60)
 
         self.none_marker_button.clicked.connect(self.change_none_marker_value)
 
@@ -25675,11 +25946,11 @@ class s_button(QDialog):
         invalid_list_s_value_widget_layout.setContentsMargins(0,0,0,0)
         invalid_list_s_value_widget_layout.setSpacing(0)
 
-        self.valid_single_s_value_widget.setMinimumHeight(50)
-        self.invalid_single_s_value_widget.setMinimumHeight(50)
+        self.valid_single_s_value_widget.setMinimumHeight(60)
+        self.invalid_single_s_value_widget.setMinimumHeight(60)
 
-        self.valid_list_s_value_widget.setMinimumHeight(50)
-        self.invalid_list_s_value_widget.setMinimumHeight(50)
+        self.valid_list_s_value_widget.setMinimumHeight(60)
+        self.invalid_list_s_value_widget.setMinimumHeight(60)
         
         self.valid_single_s_value_widget.hide()
         self.invalid_single_s_value_widget.hide()
@@ -26028,7 +26299,7 @@ class s_button(QDialog):
                 color: black;
             }
         """)
-        self.none_s_button.setMinimumHeight(50)
+        self.none_s_button.setMinimumHeight(60)
 
         self.none_s_button.clicked.connect(self.change_none_s_value)
 
@@ -26351,11 +26622,11 @@ class edgecolor_button(QDialog):
         self.invalid_rgba_value_widget.hide()
 
         #-----Set the size for All Validitiy Check Widgets-----
-        self.valid_hex_code_widget.setMinimumHeight(50)
-        self.invalid_hex_code_widget.setMinimumHeight(50)
+        self.valid_hex_code_widget.setMinimumHeight(60)
+        self.invalid_hex_code_widget.setMinimumHeight(60)
 
-        self.valid_rgba_value_widget.setMinimumHeight(50)
-        self.invalid_rgba_value_widget.setMinimumHeight(50)
+        self.valid_rgba_value_widget.setMinimumHeight(60)
+        self.invalid_rgba_value_widget.setMinimumHeight(60)
 
         #-----Create the Parameter Home Screen-----
         self.edgecolor_parameter_section = QWidget()
@@ -27002,7 +27273,7 @@ class edgecolor_button(QDialog):
                 color: black;
             }
         """)
-        self.face_edgecolor_button.setMinimumHeight(50)
+        self.face_edgecolor_button.setMinimumHeight(60)
 
         self.face_edgecolor_button.clicked.connect(self.change_face_edgecolor)
 
@@ -27073,7 +27344,7 @@ class edgecolor_button(QDialog):
                 color: black;
             }
         """)
-        self.none_edgecolor_button.setMinimumHeight(50)
+        self.none_edgecolor_button.setMinimumHeight(60)
 
         self.none_edgecolor_button.clicked.connect(self.change_none_edgecolor)
 
@@ -27144,7 +27415,7 @@ class edgecolor_button(QDialog):
                 color: black;
             }
         """)
-        self.reset_edgecolor_button.setMinimumHeight(50)
+        self.reset_edgecolor_button.setMinimumHeight(60)
 
         self.reset_edgecolor_button.clicked.connect(self.reset_edgecolor)
 
