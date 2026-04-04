@@ -18,7 +18,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("SmartGraph Builder")
-        self.setFixedSize(1400, 800)
+        self.setFixedSize(1400, 830)
 
         self.dataset_section = Dataset_Section()
         self.graph_section = Graph_Section()
