@@ -1,5 +1,5 @@
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QWidget
+from PyQt6.QtWidgets import QPushButton, QVBoxLayout, QWidget
 from pygments import highlight
 from pygments.lexers import PythonLexer
 from pygments.formatters import TerminalFormatter
@@ -70,13 +70,17 @@ class Code_Generator:
             new_data = data[self.graph_type]
         return new_data
 
-    def clean_plot_config(self,current_plot_config, default_plot_config,special_parameter=""):
+    def clean_plot_config(
+        self, current_plot_config, default_plot_config, special_parameter=""
+    ):
         for parameter, argument in current_plot_config.items():
             if parameter in self.parameters_to_skip:
                 self.parameters_to_skip.remove(parameter)
                 self.new_plot_config[parameter] = dict()
                 self.clean_plot_config(
-                    current_plot_config[parameter], default_plot_config[parameter], parameter
+                    current_plot_config[parameter],
+                    default_plot_config[parameter],
+                    parameter,
                 )
             elif special_parameter == "" and argument != default_plot_config[parameter]:
                 self.new_plot_config[parameter] = argument
@@ -90,7 +94,7 @@ class Code_Generator:
             k: v
             for k, v in {
                 "x-axis-title": self.new_plot_config.pop("x-axis-title", {}),
-                "y-axis-title": self.new_plot_config.pop("y-axis-title", {}), 
+                "y-axis-title": self.new_plot_config.pop("y-axis-title", {}),
                 "legend": self.new_plot_config.pop("legend", {}),
                 "title": self.new_plot_config.pop("title", {}),
                 "grid": self.new_plot_config.pop("grid", {}),
@@ -105,7 +109,14 @@ class Code_Generator:
         graph_data = {**graph_data, **seaborn_legends}
         plot_config["graph_data"] = graph_data
 
-        order = ["graph_data", "title", "x-axis-title", "y-axis-title", "legend", "grid"]
+        order = [
+            "graph_data",
+            "title",
+            "x-axis-title",
+            "y-axis-title",
+            "legend",
+            "grid",
+        ]
 
         plot_config = {
             k: plot_config.pop(k, {}) for k in order if plot_config.get(k, {})
@@ -152,7 +163,12 @@ class Code_Generator:
             plot_adjustment_line = plot_adjustment_line[:-2] + ")"
             plot_adjustment += plot_adjustment_line + "\n"
 
-        full_code = self.starter_code + plot_code_statement + plot_adjustment + self.show_graph_statement
+        full_code = (
+            self.starter_code
+            + plot_code_statement
+            + plot_adjustment
+            + self.show_graph_statement
+        )
 
         print(highlight(full_code, PythonLexer(), TerminalFormatter()))
 
@@ -163,20 +179,30 @@ class Code_Section(QWidget):
 
         # Create a small section to display the code and ensure it's drawn on the window
         self.setFixedWidth(620)
-        self.setMinimumHeight(100)
-        self.setStyleSheet("""
-            QWidget{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #f5f5ff,
-                    stop:0.5 #f7f5fc,
-                    stop:1 #f0f0ff
-                );
+        self.setMinimumHeight(150)
+
+        self.setProperty("class", "adjustment_section")
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+        self.create_code_section()
+
+    def create_code_section(self):
+        copy_button = QPushButton("Copy Code")
+        copy_button.setStyleSheet("""
+            QPushButton{
                 border: 2px solid #d0d0ff;
-                border-radius: 24px;
+                border-radius: 8px 
             }
         """)
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        copy_button.setFixedWidth(70)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(
+            copy_button,
+            alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight,
+        )
+        layout.setContentsMargins(0, 10, 10, 0)
 
 
 if __name__ == "__main__":
