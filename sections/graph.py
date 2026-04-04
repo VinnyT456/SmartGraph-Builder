@@ -259,11 +259,11 @@ class graph_generator(QWidget):
         if self.title_parameter != "":
             graph.set_title(self.graph_title)
         if self.grid_parameter != "":
-            if self.graph_grid_parameter["visible"]:
+            if self.grid_parameter.get("visible",False):
                 graph.grid(
                     **{
                         k: v
-                        for k, v in self.graph_grid_parameter.items()
+                        for k, v in self.grid_parameter.items()
                         if v is not None and v != [None, None]
                     }
                 )
@@ -326,11 +326,13 @@ class graph_generator(QWidget):
 
         image_layout = QVBoxLayout(widget)
         image_layout.addWidget(label)
-        image_layout.setContentsMargins(0, 0, 0, 0)
+        image_layout.setContentsMargins(5, 5, 5, 5)
         image_layout.setSpacing(0)
 
         return widget
 
+    def get_graph_config(self):
+        return self.graph_type, self.graph_parameters
 
 class new_graph_button(QPushButton):
     def __init__(self):
@@ -683,7 +685,7 @@ class Graph_TopBar(QWidget):
 
 
 class Graph_Display(QWidget):
-    def __init__(self):
+    def __init__(self, code_section):
         super().__init__()
         self.setObjectName("graph_display_main_screen")
         self.setStyleSheet("""
@@ -698,6 +700,8 @@ class Graph_Display(QWidget):
                 border-radius: 24px;
             }
         """)
+
+        self.code_section = code_section
 
         self.setFixedWidth(620)
 
@@ -723,20 +727,25 @@ class Graph_Display(QWidget):
     def show_graph(self):
         try:
             graph_widget = self.graph_generator.create_graph()
+            graph_type, graph_config = self.graph_generator.get_graph_config()
+            graph_config.pop("data")
+
             if graph_widget is not None:
                 self.graph_display_layout.addWidget(graph_widget)
                 self.graph_display_layout.setCurrentWidget(graph_widget)
+
+                self.code_section.generate_python_code(graph_type, graph_config)
         except Exception as error:
             print(error)
 
 
 class Graph_Section(QWidget):
-    def __init__(self):
+    def __init__(self, code_section):
         super().__init__()
         self.setFixedWidth(620)
 
         self.graph_topbar = Graph_TopBar()
-        self.display_graph = Graph_Display()
+        self.display_graph = Graph_Display(code_section)
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.graph_topbar)
