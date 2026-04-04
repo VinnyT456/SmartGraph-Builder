@@ -84,23 +84,25 @@ class graph_generator(QWidget):
         self.dataset = pd.read_csv(self.current_graph_parameters.get("data"))
         self.available_graphs = {"Scatter Plot": [sns.scatterplot, maxes.Axes.scatter]}
 
-        self.x_axis_title_parameter = self.new_plot_config.get("x-axis-title","")
-        self.y_axis_title_parameter = self.new_plot_config.get("y-axis-title","")
-        self.title_parameter = self.new_plot_config.get("title","")
+        self.x_axis_title_parameters = self.new_plot_config.pop("x-axis-title", {})
+        self.y_axis_title_parameters = self.new_plot_config.pop("y-axis-title", {})
+        self.title_parameters = self.new_plot_config.pop("title", {})
 
-        self.grid_parameter = self.new_plot_config.get("grid","")
-        self.grid_dashes = (self.grid_parameter if isinstance(self.grid_parameter, dict) else {}).get("dashes", "")
+        self.grid_parameters = self.new_plot_config.pop("grid", {})
+        self.grid_dashes = (
+            self.grid_parameters if self.grid_parameters == dict() else {}
+        ).get("dashes", "")
 
         if self.grid_dashes != "" and None not in self.grid_dashes:
             grid_offset = self.grid_dashes[0]
             grid_sequence = self.grid_dashes[1]
-            self.grid_parameter["dashes"] = (grid_offset, *grid_sequence)
+            self.grid_parameters["dashes"] = (grid_offset, *grid_sequence)
 
-        self.legend_parameters = self.new_plot_config.get("legend","")
-        self.seaborn_legend_parameters = self.new_plot_config.get("seaborn_legends","")
-        
-        self.hue = self.new_plot_config.get("hue",None)
-        self.hue_mapping = self.hue[1] if self.hue is not None else None 
+        self.legend_parameters = self.new_plot_config.pop("legend", {})
+        self.seaborn_legends_parameters = self.new_plot_config.pop("seaborn_legends", {})
+
+        self.hue = self.new_plot_config.get("hue", None)
+        self.hue_mapping = self.hue[1] if self.hue is not None else None
 
         if self.hue_mapping is not None:
             true_mapping = self.hue_mapping["true"]
@@ -110,17 +112,14 @@ class graph_generator(QWidget):
                 False: false_mapping,
             }
 
-        if (self.hue is not None):
+        if self.hue is not None:
             self.new_plot_config["hue"] = self.new_plot_config["hue"][0]
 
-        for key in ["legend", "grid", "x-axis-title", "y-axis-title", "title", "seaborn_legends"]:
-            self.new_plot_config.pop(key, None)
-
-        self.graph_parameters = self.new_plot_config.copy()
+        self.graph_parameters = copy.deepcopy(self.new_plot_config)
         self.graph_parameters["data"] = self.dataset
 
-        self.x_axis = self.new_plot_config.get("x")
-        self.y_axis = self.new_plot_config.get("y")
+        self.x_axis = self.graph_parameters.get("x")
+        self.y_axis = self.graph_parameters.get("y")
 
     def apply_gradient_background(self, fig, ax):
         colors = ["#f5f5ff", "#f7f5fc", "#f0f0ff"]
@@ -163,7 +162,9 @@ class graph_generator(QWidget):
         valid_params = set(seaborn_parameters + matplotlib_parameters)
 
         graph_parameters_copy = self.graph_parameters.copy()
-        graph_parameters_copy.update(self.current_graph_parameters.get("seaborn_legends"))
+        graph_parameters_copy.update(
+            self.current_graph_parameters.get("seaborn_legends")
+        )
 
         graph_parameters = {
             k: v for k, v in graph_parameters_copy.items() if k in valid_params
@@ -172,8 +173,12 @@ class graph_generator(QWidget):
         return graph_parameters
 
     def convert_hue(self):
-        hue_argument = self.graph_parameters.get("hue",None)
-        if hue_argument is not None and isinstance(hue_argument, str) and "self.dataset" in hue_argument:
+        hue_argument = self.graph_parameters.get("hue", None)
+        if (
+            hue_argument is not None
+            and isinstance(hue_argument, str)
+            and "self.dataset" in hue_argument
+        ):
             hue_argument = hue_argument.replace("self.dataset['", "").replace("']", "")
             hue_argument = hue_argument.replace('self.dataset["', "").replace('"]', "")
             hue_argument = self.dataset.eval(hue_argument)
@@ -237,7 +242,7 @@ class graph_generator(QWidget):
 
         self.convert_hue()
 
-        #usable_graph_parameters = self.get_usable_graph_params()
+        # usable_graph_parameters = self.get_usable_graph_params()
 
         widget = QWidget()
         widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -252,31 +257,31 @@ class graph_generator(QWidget):
             graph.set_xlim(0, 10)
             graph.set_ylim(0, 10)
 
-        if self.x_axis_title_parameter != "":
+        if self.x_axis_title_parameters != dict():
             graph.set_xlabel(self.x_axis_title)
-        if self.y_axis_title_parameter != "":
+        if self.y_axis_title_parameters != dict():
             graph.set_ylabel(self.y_axis_title)
-        if self.title_parameter != "":
+        if self.title_parameters != dict():
             graph.set_title(self.graph_title)
-        if self.grid_parameter != "":
-            if self.grid_parameter.get("visible",False):
+        if self.grid_parameters != dict():
+            if self.grid_parameters.get("visible", False):
                 graph.grid(
                     **{
                         k: v
-                        for k, v in self.grid_parameter.items()
+                        for k, v in self.grid_parameters.items()
                         if v is not None and v != [None, None]
                     }
                 )
             else:
                 graph.grid(False)
 
-        if (self.legend_parameters != ""):
+        if self.legend_parameters != dict():
             graph_label = self.legend_parameters["label"]
             legend_visibility = self.legend_parameters["visible"]
             if (
-                self.new_plot_config.get("hue",None) is None
-                and self.new_plot_config.get("style",None) is None
-                and self.new_plot_config.get("size",None) is None
+                self.graph_parameters.get("hue", None) is None
+                and self.graph_parameters.get("style", None) is None
+                and self.graph_parameters.get("size", None) is None
             ):
                 if not legend_visibility and graph_label != "__nolegend__":
                     self.set_legend(graph)
@@ -332,7 +337,23 @@ class graph_generator(QWidget):
         return widget
 
     def get_graph_config(self):
-        return self.graph_type, self.graph_parameters
+        graph_config = copy.deepcopy(self.graph_parameters)
+
+        self.parameters_to_skip = [
+            "x-axis-title",
+            "y-axis-title",
+            "title",
+            "legend",
+            "seaborn_legends",
+            "grid",
+        ]
+
+        for parameter in self.parameters_to_skip:
+            new_parameter = parameter.replace("-", "_") + "_parameters"
+            graph_config[parameter] = getattr(self, new_parameter)
+
+        return self.graph_type, graph_config
+
 
 class new_graph_button(QPushButton):
     def __init__(self):
