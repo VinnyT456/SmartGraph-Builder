@@ -374,6 +374,45 @@ QPushButton[class="dot_button"]:checked{
     border-radius: 6px;
 }
 
+/* Code Section */ 
+QPushButton[class="code_section"]{
+    border: 2px solid #d0d0ff;
+    border-radius: 12px;
+    padding: 3px;
+    color: #8c82ff;
+    font-weight: bold;
+}
+
+QPushButton[class="code_section"]:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #d0f5ff,
+        stop:0.5 #a0e0ff,
+        stop:1 #80d0ff
+    );
+    font-weight: bold;
+}
+
+QPushButton[class="code_section"]:pressed {
+    background: qlineargradient( 
+        x1:0, y1:0, x2:1, y2:0, 
+        stop:0 #80d0ff, 
+        stop:0.5 #50b8ff, 
+        stop:1 #30a0ff 
+    );
+    font-weight: bold; 
+}
+
+QTextBrowser#code_browser {
+    background: transparent;
+    border: 2px solid #d0d0ff;
+    border-radius: 12px;
+    font-family: "SF Pro Display";
+    font-size: 12pt;
+    selection-background-color: #4f46e5;
+    color: #1a1a2e;
+}
+
 /* Adjustment Parameter Window */ 
 QWidget[class="dialog_section"]{
     background: qlineargradient(
