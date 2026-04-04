@@ -24,6 +24,7 @@ class Code_Section(QWidget):
 
         self.code_section_top_bar = QWidget()
         self.create_code_section()
+        self.code_section_top_bar.hide()
 
         self.code_preview_section = QTextBrowser()
         self.code_preview_section.setObjectName("code_browser")
@@ -35,6 +36,7 @@ class Code_Section(QWidget):
         )
         self.code_preview_section.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.code_preview_section.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.code_preview_section.hide()
 
         self.formatter = HtmlFormatter(style="abap", noclasses=True, nobackground=True)
 
@@ -142,6 +144,7 @@ class Code_Section(QWidget):
 
     def generate_python_code(self, graph_type, current_plot_config):
         self.code_section_top_bar.show()
+        self.code_preview_section.show()
 
         self.new_plot_config = dict()
         self.plot_config = self.create_plot_config(current_plot_config)
