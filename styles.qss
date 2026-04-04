@@ -60,11 +60,16 @@ QPushButton#submit_button{
     color: black;
 }
 
-QTableView#displayDataset {
-    background: #ffffff;
+QTableView {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #f5f5ff,
+        stop:0.5 #f7f5fc,
+        stop:1 #f0f0ff
+    );
 
-    border: 1px solid #e5e7eb;
-    border-radius: 18px;
+    border: 2px solid #d0d0ff;
+    border-radius: 24px;
 
     gridline-color: transparent;
 
@@ -80,19 +85,33 @@ QTableView#displayDataset {
     outline: 0;
 }
 
-/* Alternating rows (soft contrast) */
-QTableView#displayDataset::item:alternate {
-    background: #fafbfc;
+QTableView::corner {
+    background: transparent;
+    border: none;
+}
+
+QWidget[class="tableCorner"]{
+    background: transparent;
+    border: none;
+}
+
+/* Alternating rows */
+QTableView::item:alternate {
+    background: rgba(180, 190, 255, 0.12);
+    border-bottom: 1px solid rgba(120, 140, 255, 0.18);
+    color: #1a1a2e;
 }
 
 /* Default cells */
-QTableView#displayDataset::item {
+QTableView::item {
+    background: rgba(255, 255, 255, 0.65);
     padding: 10px;
-    border-bottom: 1px solid #f1f3f6;
+    border-bottom: 1px solid rgba(120, 140, 255, 0.25);
+    color: #1a1a2e;
 }
 
 /* Hover state (super subtle glow) */
-QTableView#displayDataset::item:hover {
+QTableView::item:hover {
     background: #eef2ff;
 }
 
@@ -125,46 +144,59 @@ QTableCornerButton::section {
     border: none;
 }
 
-/* Scrollbars (this is HUGE for polish) */
+/* ===== Scrollbar base (no gaps) ===== */
+QScrollBar:vertical, QScrollBar:horizontal {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    margin: 0px;  /* 🔥 remove floating effect */
+    border-radius: 8px;
+}
+
+/* ===== Vertical ===== */
 QScrollBar:vertical {
-    background: transparent;
-    width: 10px;
-    margin: 6px;
+    width: 14px;  /* thicker */
 }
 
-QScrollBar::handle:vertical {
-    background: #d1d5db;
-    border-radius: 5px;
-}
-
-QScrollBar::handle:vertical:hover {
-    background: #9ca3af;
-}
-
-QScrollBar::add-line:vertical,
-QScrollBar::sub-line:vertical {
-    height: 0px;
-}
-
-/* Horizontal scrollbar */
+/* ===== Horizontal ===== */
 QScrollBar:horizontal {
-    background: transparent;
-    height: 10px;
-    margin: 6px;
+    height: 14px;
 }
 
+/* ===== Handle (pill shape) ===== */
+QScrollBar::handle:vertical, 
 QScrollBar::handle:horizontal {
-    background: #d1d5db;
-    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.55);  /* glassy white */
+    border: 1px solid rgba(120, 140, 255, 0.2);  /* subtle tint */
+    border-radius: 7px;
+    min-height: 30px;
+    min-width: 30px;
 }
 
+/* ===== Hover (soft highlight) ===== */
+QScrollBar::handle:vertical:hover, 
 QScrollBar::handle:horizontal:hover {
-    background: #9ca3af;
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(120, 140, 255, 0.35);
 }
 
-QScrollBar::add-line:horizontal,
-QScrollBar::sub-line:horizontal {
-    width: 0px;
+/* ===== Pressed ===== */
+QScrollBar::handle:vertical:pressed, 
+QScrollBar::handle:horizontal:pressed {
+    background: rgba(240, 245, 255, 0.9);
+    border: 1px solid rgba(120, 140, 255, 0.5);
+}
+
+/* ===== Remove arrows ===== */
+QScrollBar::add-line, 
+QScrollBar::sub-line {
+    background: none;
+    border: none;
+}
+
+/* ===== Fill track areas ===== */
+QScrollBar::add-page, 
+QScrollBar::sub-page {
+    background: transparent;
 }
 
 /* Topbar */
@@ -273,8 +305,8 @@ QWidget#ParamTable QPushButton:pressed{
     color: black;
 }
 
-/* Select Graph Window */
-QDialog#select_graph_window{
+/* Dialog Windows */
+QDialog[class="dialog_window"]{
     background: qlineargradient(
         x1: 0, y1: 1, 
         x2: 0, y2: 0,
@@ -286,6 +318,7 @@ QDialog#select_graph_window{
     color: black;
 }
 
+/* Select Graph Window */
 QWidget[class="graph_window_widget"]{
     background: #ffffff;
     border: 2px solid black;
@@ -339,4 +372,16 @@ QPushButton[class="dot_button"]:checked{
     background-color: black;
     border: 1.5px solid black;
     border-radius: 6px;
+}
+
+/* Adjustment Parameter Window */ 
+QWidget[class="dialog_section"]{
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #f5f5ff,
+        stop:0.5 #f7f5fc,
+        stop:1 #f0f0ff
+    );
+    border: 2px solid black;
+    border-radius: 16px;
 }

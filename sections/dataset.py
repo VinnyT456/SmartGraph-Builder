@@ -1,7 +1,7 @@
 import re
-from PyQt6.QtCore import QAbstractTableModel, Qt, QPropertyAnimation, QEasingCurve
+from PyQt6.QtCore import QAbstractTableModel, QEvent, QObject, Qt, QPropertyAnimation, QEasingCurve
 from PyQt6.QtWidgets import (
-    QDialog, QFileDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QPushButton, QSizePolicy, QTableView, QWidget, QVBoxLayout
+    QApplication, QDialog, QFileDialog, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QPushButton, QSizePolicy, QTableView, QWidget, QVBoxLayout
 )
 import pandas as pd
 import os
@@ -240,6 +240,18 @@ class PrepareDataset(QAbstractTableModel):
             return True
         return False
         
+class ClickOutsideFilter(QObject):
+    def __init__(self, table):
+        super().__init__()
+        self.table = table
+
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.Type.MouseButtonPress:
+            # Convert global click position to table coordinates
+            if not self.table.geometry().contains(self.table.mapFromGlobal(event.globalPosition().toPoint())):
+                self.table.clearSelection()
+        return super().eventFilter(obj, event)
+
 class displayDataset(QTableView):
     def __init__(self):
         super().__init__()
@@ -252,10 +264,16 @@ class displayDataset(QTableView):
         self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
         self.horizontalHeader().setHighlightSections(False)
 
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+
         self.setAlternatingRowColors(True)
         self.setShowGrid(False)
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+        self._outside_filter = ClickOutsideFilter(self)
+        QApplication.instance().installEventFilter(self._outside_filter)
 
     def import_file(self,file_path):
         self.model = PrepareDataset(pd.read_csv(file_path))
@@ -276,9 +294,12 @@ class import_replace_dataset_button(QPushButton):
     def __init__(self,dataset_table):
         super().__init__()
         self.dataset_table = dataset_table
+        
+        self.setProperty("class","topbar_button")
         self.setObjectName("import_dataset")
 
         self.label = QLabel("Import Dataset")
+        self.label.setProperty("class","topbar_button_label")
         self.label.setObjectName("import_dataset_label")
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -318,10 +339,14 @@ class import_replace_dataset_button(QPushButton):
 class enter_datapoints_button(QPushButton):
     def __init__(self,dataset_table):
         super().__init__()
+
         self.setObjectName("enter_data_points_button")
+        self.setProperty("class","topbar_button")
+
         self.dataset_table = dataset_table
 
         self.label = QLabel("Enter Datapoints")
+        self.label.setProperty("class","topbar_button_label")
         self.label.setObjectName("enter_data_points_label")
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -343,10 +368,14 @@ class enter_datapoints_button(QPushButton):
 class column_management_button(QPushButton):
     def __init__(self,dataset_table):
         super().__init__()
+        
         self.setObjectName("column_management_button")
+        self.setProperty("class","topbar_button")
+
         self.dataset_table = dataset_table
 
         self.label = QLabel("Column Management")
+        self.label.setProperty("class","topbar_button_label")
         self.label.setObjectName("column_management_label")
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -369,6 +398,8 @@ class Dataset_TopBar(QWidget):
         super().__init__()
 
         self.setObjectName("dataset_topbar")
+        self.setProperty("class","topbar")
+
         self.dataset_table = table
 
         self.setFixedHeight(50)
@@ -386,16 +417,16 @@ class Dataset_TopBar(QWidget):
 class Dataset_Table(QWidget):
     def __init__(self,table):
         super().__init__()
-        self.setObjectName("dataset_table")
+        self.setObjectName("dataset_table") 
+        self.setProperty("class","adjustment_section")
 
         self.dataset_table = table
 
         layout = QVBoxLayout()
         layout.addWidget(self.dataset_table)
-        layout.setContentsMargins(0,0,0,0) 
+        layout.setContentsMargins(0,0,0,0)
         layout.setSpacing(5)
-
-        self.setFixedWidth(350)
+        
         self.setLayout(layout)
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
@@ -414,5 +445,7 @@ class Dataset_Section(QWidget):
         layout.addSpacing(5)
         layout.addWidget(self.dataset_table)
         layout.setContentsMargins(0,0,0,0) 
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
