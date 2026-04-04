@@ -1,32 +1,51 @@
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QPushButton, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import (
+    QHBoxLayout,
+    QPushButton,
+    QSizePolicy,
+    QTextBrowser,
+    QVBoxLayout,
+    QWidget,
+)
 from pygments import highlight
 from pygments.lexers import PythonLexer
-from pygments.formatters import TerminalFormatter
+from pygments.formatters import HtmlFormatter
 import textwrap
-import json
 
-
-class Code_Generator:
+class Code_Section(QWidget):
     def __init__(self):
-        self.current_plot_config = self.read_plot_config()
-        self.dataset_path = "./dataset/user_dataset.csv"
-        self.graph_type = self.current_plot_config.pop("type")
-        self.default_plot_config = self.read_default_plot_config()
+        super().__init__()
 
-        self.parameters_to_skip = [
-            "x-axis-title",
-            "y-axis-title",
-            "title",
-            "legend",
-            "seaborn_legends",
-            "grid",
-        ]
+        # Create a small section to display the code and ensure it's drawn on the window
+        self.setFixedWidth(620)
+        self.setMinimumHeight(150)
 
-        self.new_plot_config = dict()
-        self.clean_plot_config(self.current_plot_config, self.default_plot_config)
+        self.setProperty("class", "adjustment_section")
 
-        self.plot_config = self.create_plot_config()
+        self.code_section_top_bar = QWidget()
+        self.create_code_section()
+
+        self.code_preview_section = QTextBrowser()
+        self.code_preview_section.setObjectName("code_browser")
+        self.code_preview_section.setReadOnly(True)
+        self.code_preview_section.setOpenExternalLinks(False)
+        self.code_preview_section.setMinimumHeight(100)
+        self.code_preview_section.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
+        self.code_preview_section.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.code_preview_section.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+
+        self.formatter = HtmlFormatter(style="abap", noclasses=True, nobackground=True)
+
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(self.code_section_top_bar)
+        main_layout.addWidget(self.code_preview_section)
+        main_layout.addStretch()
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setSpacing(5)
+
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         self.starter_code = textwrap.dedent("""
             import pandas as pd
@@ -50,56 +69,53 @@ class Code_Generator:
 
         self.show_graph_statement = "plt.show()"
 
-    def read_plot_config(self):
-        with open("./plot_config.json") as file:
-            try:
-                data = json.load(file)
-                data = data["_default"]
+    def create_code_section(self):
+        code_preview_button = QPushButton("Code Preview")
+        code_preview_button.setProperty("class", "code_section")
+        code_preview_button.setFixedWidth(100)
+        code_preview_button.setEnabled(False)
 
-                first_key = sorted(data.keys())[-1]
-                plot_config = data[first_key].copy()
-                plot_config.pop("version")
-            except json.JSONDecodeError:
-                return dict()
+        copy_button = QPushButton("Copy Code")
+        copy_button.setProperty("class", "code_section")
+        copy_button.setFixedWidth(80)
 
-        return plot_config
+        full_screen_button = QPushButton("Full Screen")
+        full_screen_button.setProperty("class", "code_section")
+        full_screen_button.setFixedWidth(80)
 
-    def read_default_plot_config(self):
-        with open("./default_plot_config.json") as file:
-            data = json.load(file)
-            new_data = data[self.graph_type]
-        return new_data
+        theme_button = QPushButton("Theme")
+        theme_button.setProperty("class","code_section")
+        theme_button.setFixedWidth(55)
 
-    def clean_plot_config(
-        self, current_plot_config, default_plot_config, special_parameter=""
-    ):
-        for parameter, argument in current_plot_config.items():
-            if parameter in self.parameters_to_skip:
-                self.parameters_to_skip.remove(parameter)
-                self.new_plot_config[parameter] = dict()
-                self.clean_plot_config(
-                    current_plot_config[parameter],
-                    default_plot_config[parameter],
-                    parameter,
-                )
-            elif special_parameter == "" and argument != default_plot_config[parameter]:
-                self.new_plot_config[parameter] = argument
-            elif special_parameter != "" and argument != default_plot_config[parameter]:
-                self.new_plot_config[special_parameter][parameter] = argument
+        settings_button = QPushButton("Settings")
+        settings_button.setProperty("class", "code_section")
+        settings_button.setFixedWidth(65)
 
-    def create_plot_config(self):
+        code_section_top_bar_layout = QHBoxLayout(self.code_section_top_bar)
+        code_section_top_bar_layout.addWidget(
+            code_preview_button, alignment=Qt.AlignmentFlag.AlignLeft
+        )
+        code_section_top_bar_layout.addStretch()
+        code_section_top_bar_layout.addWidget(copy_button)
+        code_section_top_bar_layout.addWidget(full_screen_button)
+        code_section_top_bar_layout.addWidget(theme_button)
+        code_section_top_bar_layout.addWidget(settings_button)
+        code_section_top_bar_layout.setContentsMargins(0, 0, 0, 0)
+        code_section_top_bar_layout.setSpacing(3)
+
+    def create_plot_config(self, current_plot_config):
         plot_config = dict()
 
         plot_config = {
             k: v
             for k, v in {
-                "x-axis-title": self.new_plot_config.pop("x-axis-title", {}),
-                "y-axis-title": self.new_plot_config.pop("y-axis-title", {}),
-                "legend": self.new_plot_config.pop("legend", {}),
-                "title": self.new_plot_config.pop("title", {}),
-                "grid": self.new_plot_config.pop("grid", {}),
-                "graph_data": self.new_plot_config.pop("seaborn_legend", {})
-                | self.new_plot_config,
+                "x-axis-title": current_plot_config.pop("x-axis-title", {}),
+                "y-axis-title": current_plot_config.pop("y-axis-title", {}),
+                "legend": current_plot_config.pop("legend", {}),
+                "title": current_plot_config.pop("title", {}),
+                "grid": current_plot_config.pop("grid", {}),
+                "graph_data": current_plot_config.pop("seaborn_legend", {})
+                | current_plot_config,
             }.items()
             if v
         }
@@ -124,11 +140,16 @@ class Code_Generator:
 
         return plot_config
 
-    def generate_python_code(self):
+    def generate_python_code(self, graph_type, current_plot_config):
+        self.code_section_top_bar.show()
+
+        self.new_plot_config = dict()
+        self.plot_config = self.create_plot_config(current_plot_config)
+
         indent = " " * 4
 
         plot_code_statement = (
-            self.seaborn_plot_code_statements[self.graph_type] + f"\n{indent}data=df,"
+            self.seaborn_plot_code_statements[graph_type] + f"\n{indent}data=df,"
         )
 
         def format_value(value):
@@ -170,40 +191,21 @@ class Code_Generator:
             + self.show_graph_statement
         )
 
-        print(highlight(full_code, PythonLexer(), TerminalFormatter()))
+        scroll_pos = self.code_preview_section.verticalScrollBar().value()
 
+        highlighted_code = highlight(full_code, PythonLexer(), self.formatter)
+        self.code_preview_section.setHtml(highlighted_code)
 
-class Code_Section(QWidget):
-    def __init__(self):
-        super().__init__()
+        self.code_preview_section.verticalScrollBar().setValue(scroll_pos)
 
-        # Create a small section to display the code and ensure it's drawn on the window
-        self.setFixedWidth(620)
-        self.setMinimumHeight(150)
+    def copy_python_code(self):
+        pass
+    
+    def switch_to_full_screen(self):
+        pass
 
-        self.setProperty("class", "adjustment_section")
+    def switch_theme(self):
+        pass
 
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-
-        self.create_code_section()
-
-    def create_code_section(self):
-        copy_button = QPushButton("Copy Code")
-        copy_button.setStyleSheet("""
-            QPushButton{
-                border: 2px solid #d0d0ff;
-                border-radius: 8px 
-            }
-        """)
-        copy_button.setFixedWidth(70)
-
-        layout = QVBoxLayout(self)
-        layout.addWidget(
-            copy_button,
-            alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight,
-        )
-        layout.setContentsMargins(0, 10, 10, 0)
-
-
-if __name__ == "__main__":
-    Code_Generator().generate_python_code()
+    def open_setting(self):
+        pass
