@@ -1,5 +1,6 @@
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QTimer, Qt
 from PyQt6.QtWidgets import (
+    QApplication,
     QHBoxLayout,
     QPushButton,
     QSizePolicy,
@@ -72,36 +73,37 @@ class Code_Section(QWidget):
         self.show_graph_statement = "plt.show()"
 
     def create_code_section(self):
-        code_preview_button = QPushButton("Code Preview")
-        code_preview_button.setProperty("class", "code_section")
-        code_preview_button.setFixedWidth(100)
-        code_preview_button.setEnabled(False)
+        self.code_preview_button = QPushButton("Code Preview")
+        self.code_preview_button.setProperty("class", "code_section")
+        self.code_preview_button.setFixedWidth(100)
+        self.code_preview_button.setEnabled(False)
 
-        copy_button = QPushButton("Copy Code")
-        copy_button.setProperty("class", "code_section")
-        copy_button.setFixedWidth(80)
+        self.copy_button = QPushButton("Copy Code")
+        self.copy_button.setProperty("class", "code_section")
+        self.copy_button.setFixedWidth(80)
+        self.copy_button.clicked.connect(self.copy_python_code)
 
-        full_screen_button = QPushButton("Full Screen")
-        full_screen_button.setProperty("class", "code_section")
-        full_screen_button.setFixedWidth(80)
+        self.full_screen_button = QPushButton("Full Screen")
+        self.full_screen_button.setProperty("class", "code_section")
+        self.full_screen_button.setFixedWidth(80)
 
-        theme_button = QPushButton("Theme")
-        theme_button.setProperty("class","code_section")
-        theme_button.setFixedWidth(55)
+        self.theme_button = QPushButton("Theme")
+        self.theme_button.setProperty("class","code_section")
+        self.theme_button.setFixedWidth(55)
 
-        settings_button = QPushButton("Settings")
-        settings_button.setProperty("class", "code_section")
-        settings_button.setFixedWidth(65)
+        self.settings_button = QPushButton("Settings")
+        self.settings_button.setProperty("class", "code_section")
+        self.settings_button.setFixedWidth(65)
 
         code_section_top_bar_layout = QHBoxLayout(self.code_section_top_bar)
         code_section_top_bar_layout.addWidget(
-            code_preview_button, alignment=Qt.AlignmentFlag.AlignLeft
+            self.code_preview_button, alignment=Qt.AlignmentFlag.AlignLeft
         )
         code_section_top_bar_layout.addStretch()
-        code_section_top_bar_layout.addWidget(copy_button)
-        code_section_top_bar_layout.addWidget(full_screen_button)
-        code_section_top_bar_layout.addWidget(theme_button)
-        code_section_top_bar_layout.addWidget(settings_button)
+        code_section_top_bar_layout.addWidget(self.copy_button)
+        code_section_top_bar_layout.addWidget(self.full_screen_button)
+        code_section_top_bar_layout.addWidget(self.theme_button)
+        code_section_top_bar_layout.addWidget(self.settings_button)
         code_section_top_bar_layout.setContentsMargins(0, 0, 0, 0)
         code_section_top_bar_layout.setSpacing(3)
 
@@ -187,7 +189,7 @@ class Code_Section(QWidget):
             plot_adjustment_line = plot_adjustment_line[:-2] + ")"
             plot_adjustment += plot_adjustment_line + "\n"
 
-        full_code = (
+        self.full_code = (
             self.starter_code
             + plot_code_statement
             + plot_adjustment
@@ -196,14 +198,18 @@ class Code_Section(QWidget):
 
         scroll_pos = self.code_preview_section.verticalScrollBar().value()
 
-        highlighted_code = highlight(full_code, PythonLexer(), self.formatter)
+        highlighted_code = highlight(self.full_code, PythonLexer(), self.formatter)
         self.code_preview_section.setHtml(highlighted_code)
 
         self.code_preview_section.verticalScrollBar().setValue(scroll_pos)
 
     def copy_python_code(self):
-        pass
-    
+        clipboard = QApplication.clipboard()
+        clipboard.setText(self.full_code) 
+
+        self.copy_button.setText("Copied") 
+        QTimer.singleShot(500, lambda: self.copy_button.setText("Copy Code"))  
+
     def switch_to_full_screen(self):
         pass
 
