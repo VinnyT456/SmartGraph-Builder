@@ -146,7 +146,7 @@ QTableCornerButton::section {
 
 /* ===== Scrollbar base (no gaps) ===== */
 QScrollBar:vertical, QScrollBar:horizontal {
-    background: rgba(255, 255, 255, 0.2);
+    background: transparent;
     border: none;
     margin: 0px;  /* 🔥 remove floating effect */
     border-radius: 8px;
@@ -158,7 +158,7 @@ QScrollBar:vertical {
 }
 
 /* ===== Horizontal ===== */
-QScrollBar:horizontal {
+QScrollBar:horizontal { 
     height: 14px;
 }
 
@@ -403,12 +403,12 @@ QPushButton[class="code_section"]:pressed {
     font-weight: bold; 
 }
 
-QTextBrowser#code_browser {
+QTextEdit#code_browser {
     background: transparent;
     border: 2px solid #d0d0ff;
     border-radius: 12px;
     font-family: "SF Pro Display";
-    font-size: 12pt;
+    font-size: 14pt;
     selection-background-color: #4f46e5;
     color: #1a1a2e;
 }
@@ -423,4 +423,60 @@ QWidget[class="dialog_section"]{
     );
     border: 2px solid black;
     border-radius: 16px;
+}
+
+
+/* List View Style */
+QListView[class="list_view"]{
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #f5f5ff,
+        stop:0.5 #f7f5fc,
+        stop:1 #f0f0ff
+    );
+    border: transparent;
+    border-radius: 16px;
+}
+
+QListView[class="list_view"]::item {
+    background: qlineargradient(
+        x1:0, y1:0,
+        x2:1, y2:0,
+        stop:0 rgba(94, 255, 234, 1),
+        stop:0.29 rgba(63, 252, 180, 1),
+        stop:0.61 rgba(2, 247, 207, 1),
+        stop:0.89 rgba(0, 212, 255, 1)
+    );
+    border: 2px solid black;
+    border-radius: 16px;
+    color: black;
+    min-height: 41px;
+}
+
+QListView[class="list_view"]::item:selected {
+    background: qlineargradient(
+        x1:0, y1:0,
+        x2:1, y2:0,
+        stop:0 rgba(94, 255, 234, 1),
+        stop:0.5 rgba(171, 156, 255, 1),
+        stop:1 rgba(255, 203, 255, 1)
+    );
+    border: 2px solid black;
+    border-radius: 16px;
+    color: black;
+    min-height: 41px;
+}
+
+QListView[class="list_view"]::item:hover {
+    background: qlineargradient(
+        x1:0, y1:0,
+        x2:1, y2:0,
+        stop:0 rgba(94, 255, 234, 1),
+        stop:0.5 rgba(171, 156, 255, 1),
+        stop:1 rgba(255, 203, 255, 1)
+    );
+    border: 2px solid black;
+    border-radius: 16px;
+    color: black;
+    min-height: 41px;
 }
