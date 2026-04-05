@@ -1,9 +1,22 @@
-from PyQt6.QtCore import QTimer, Qt
+from PyQt6.QtCore import (
+    QEasingCurve,
+    QKeyCombination,
+    QPropertyAnimation,
+    QStringListModel,
+    QTimer,
+    Qt,
+)
+from PyQt6.QtGui import QFont, QKeySequence, QShortcut, QShowEvent
 from PyQt6.QtWidgets import (
+    QAbstractItemView,
     QApplication,
+    QDialog,
     QHBoxLayout,
+    QListView,
+    QMenu,
     QPushButton,
     QSizePolicy,
+    QStyledItemDelegate,
     QTextBrowser,
     QVBoxLayout,
     QWidget,
@@ -11,7 +24,250 @@ from PyQt6.QtWidgets import (
 from pygments import highlight
 from pygments.lexers import PythonLexer
 from pygments.formatters import HtmlFormatter
+from pygments.styles import get_all_styles
 import textwrap
+
+
+class code_theme_preview(QDialog):
+    def __init__(self, code_section, graph_code=""):
+        super().__init__()
+
+        self.setFixedSize(800, 500)
+        self.setProperty("class", "dialog_window")
+        self.setObjectName("code_theme_preview")
+
+        self.setWindowTitle("Code Theme Preview")
+
+        self.styles = list(get_all_styles())
+
+        self.theme = self.styles[0]
+        self.graph_code = graph_code
+
+        self.idx = 0
+
+        self.theme_selection_section = QWidget()
+        self.theme_selection_section.setProperty("class", "dialog_section")
+        self.theme_selection_section.setObjectName("theme_selection_section")
+        self.create_theme_selection_section()
+
+        self.code_preview_section_top_bar = QWidget()
+        self.create_code_preview_section_top_bar()
+
+        self.code_preview_section = QWidget()
+        self.code_preview_section.setProperty("class", "dialog_section")
+        self.code_preview_section.setObjectName("code_preview_section")
+        self.create_code_preview_section()
+
+        main_layout = QHBoxLayout(self)
+        main_layout.addWidget(self.theme_selection_section, stretch=3)
+        main_layout.addWidget(self.code_preview_section, stretch=7)
+        main_layout.setSpacing(10)
+
+        # Create a shortcut for the user to go to the previous theme by press up
+        up_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Up), self)
+        up_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
+        up_shortcut.activated.connect(lambda: self.change_current_theme_keyboard(-1))
+
+        # Create a shortcut for the user to go to the next theme by press down
+        down_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Down), self)
+        down_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
+        down_shortcut.activated.connect(lambda: self.change_current_theme_keyboard(1))
+
+        # Create shortcuts for the user to exit
+        esc_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape), self)
+        esc_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
+        esc_shortcut.activated.connect(lambda: self.close())
+
+    def create_theme_selection_section(self):
+        # Create the button layout for the themes
+        theme_selection_section_layout = QVBoxLayout(self.theme_selection_section)
+
+        # Create the list view and model that displays the themes available
+        self.theme_selection_list_view = QListView()
+        self.theme_selection_model = QStringListModel(self.styles)
+
+        # Set the columns that will be displayed and block editting the column names
+        self.theme_selection_list_view.setModel(self.theme_selection_model)
+        self.theme_selection_list_view.setProperty("class", "list_view")
+        self.theme_selection_list_view.setEditTriggers(
+            QAbstractItemView.EditTrigger.NoEditTriggers
+        )
+
+        # Get the first column in list view and display it
+        theme_index = self.theme_selection_model.index(0)
+        self.theme_selection_list_view.setCurrentIndex(theme_index)
+
+        # Modification to make the list view look better
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 24)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+
+        # Apply the modifications to the list view
+        self.theme_selection_list_view.setItemDelegate(CustomDelegate())
+
+        # Control what the scroll bar looks like and spacing between items
+        self.theme_selection_list_view.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.theme_selection_list_view.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.theme_selection_list_view.setSpacing(3)
+
+        # Connect the list view to automatically update the displayed column when clicked on
+        self.theme_selection_list_view.clicked.connect(self.change_current_theme)
+
+        # Add the customized list view to the column button screen
+        theme_selection_section_layout.addWidget(self.theme_selection_list_view)
+
+        # Add margins and spacing to make it look good and push content to the top
+        theme_selection_section_layout.setContentsMargins(10, 10, 10, 10)
+        theme_selection_section_layout.setSpacing(10)
+
+    def create_code_preview_section_top_bar(self):
+        self.code_preview_button = QPushButton("Code Preview")
+        self.code_preview_button.setObjectName("code_preview_button")
+        self.code_preview_button.setProperty("class", "code_section")
+        self.code_preview_button.setFixedWidth(100)
+        self.code_preview_button.setEnabled(False)
+
+        self.copy_button = QPushButton("Copy Code")
+        self.copy_button.setObjectName("copy_button")
+        self.copy_button.setProperty("class", "code_section")
+        self.copy_button.setFixedWidth(80)
+
+        self.apply_theme_button = QPushButton("Apply Theme")
+        self.apply_theme_button.setObjectName("apply_them_button")
+        self.apply_theme_button.setProperty("class", "code_section")
+        self.apply_theme_button.setFixedWidth(100)
+
+        self.switch_background_button = QPushButton("Dark Background")
+        self.switch_background_button.setObjectName("switch_background_button")
+        self.switch_background_button.setProperty("class", "code_section")
+        self.switch_background_button.setFixedWidth(120)
+
+        self.more_button = QPushButton("⋮")
+        self.more_button.setObjectName("more_button")
+        self.more_button.setProperty("class", "code_section")
+        self.more_button.setFixedWidth(24)
+
+        code_section_top_bar_layout = QHBoxLayout(self.code_preview_section_top_bar)
+        code_section_top_bar_layout.addWidget(
+            self.code_preview_button, alignment=Qt.AlignmentFlag.AlignLeft
+        )
+        code_section_top_bar_layout.addStretch()
+        code_section_top_bar_layout.addWidget(self.copy_button)
+        code_section_top_bar_layout.addWidget(self.apply_theme_button)
+        code_section_top_bar_layout.addWidget(self.switch_background_button)
+        code_section_top_bar_layout.addWidget(self.more_button)
+        code_section_top_bar_layout.setContentsMargins(0, 0, 0, 0)
+        code_section_top_bar_layout.setSpacing(3)
+
+    def create_code_preview_section(self):
+        code_preview_section_layout = QVBoxLayout(self.code_preview_section)
+
+        self.code_preview = QTextBrowser()
+        self.code_preview.setObjectName("code_browser")
+        self.code_preview.setReadOnly(True)
+        self.code_preview.setOpenExternalLinks(False)
+        self.code_preview.setMinimumHeight(300)
+        self.code_preview.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
+        self.code_preview.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
+        self.code_preview.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
+        self.code_preview.setStyleSheet("""
+            QTextBrowser#code_browser{
+                border: none;
+            }
+        """)
+
+        self.formatter = HtmlFormatter(
+            style=self.theme, noclasses=True, nobackground=True
+        )
+        highlighted_code = highlight(self.graph_code, PythonLexer(), self.formatter)
+        self.code_preview.setHtml(highlighted_code)
+
+        code_preview_section_layout.addWidget(self.code_preview_section_top_bar)
+        code_preview_section_layout.addWidget(self.code_preview)
+        code_preview_section_layout.setContentsMargins(5, 5, 5, 5)
+        code_preview_section_layout.setSpacing(5)
+
+    def change_current_theme(self, index):
+        self.theme = self.theme_selection_model.data(index, Qt.ItemDataRole.DisplayRole)
+
+        scroll_pos = self.code_preview.verticalScrollBar().value()
+
+        self.formatter = HtmlFormatter(
+            style=self.theme, noclasses=True, nobackground=True
+        )
+        highlighted_code = highlight(self.graph_code, PythonLexer(), self.formatter)
+        self.code_preview.setHtml(highlighted_code)
+
+        self.code_preview.verticalScrollBar().setValue(scroll_pos)
+
+    def change_current_theme_keyboard(self, direction):
+        # Add one from the column index
+        # Divide the index by the total amount to ensure it goes in a loop
+        self.idx += direction
+        self.idx %= len(self.styles)
+
+        # Set the new column index with the one just calculated
+        # Scroll to that column and update the selected column
+        new_idx = self.theme_selection_model.index(self.idx)
+        self.theme_selection_list_view.setCurrentIndex(new_idx)
+        self.theme_selection_list_view.scrollTo(
+            new_idx, QAbstractItemView.ScrollHint.PositionAtCenter
+        )
+        self.theme = self.styles[self.idx]
+
+        self.change_current_theme(new_idx)
+
+    def update_graph_code(self, new_graph_code):
+        self.graph_code = new_graph_code
+        self.formatter = HtmlFormatter(
+            style=self.theme, noclasses=True, nobackground=True
+        )
+        highlighted_code = highlight(self.graph_code, PythonLexer(), self.formatter)
+        self.code_preview.setHtml(highlighted_code)
+
+    def get_current_theme(self):
+        return self.theme
+
+    def showEvent(self, event):
+        super().showEvent(event)
+
+        # Fade animation
+        self.fade_anim = QPropertyAnimation(self, b"windowOpacity")
+        self.fade_anim.setDuration(200)
+        self.fade_anim.setStartValue(0)
+        self.fade_anim.setEndValue(1)
+        self.fade_anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
+
+        # Slight scale effect (resize)
+        start_rect = self.geometry()
+        self.setGeometry(
+            start_rect.adjusted(20, 20, -20, -20)  # slightly smaller
+        )
+
+        self.scale_anim = QPropertyAnimation(self, b"geometry")  # noqa: F405
+        self.scale_anim.setDuration(200)
+        self.scale_anim.setStartValue(self.geometry())
+        self.scale_anim.setEndValue(start_rect)
+        self.scale_anim.setEasingCurve(QEasingCurve.Type.OutBack)
+
+        # Start animations
+        self.fade_anim.start()
+        self.scale_anim.start()
+
 
 class Code_Section(QWidget):
     def __init__(self):
@@ -22,6 +278,8 @@ class Code_Section(QWidget):
         self.setMinimumHeight(150)
 
         self.setProperty("class", "adjustment_section")
+
+        self.code_theme_preview = code_theme_preview(self)
 
         self.code_section_top_bar = QWidget()
         self.create_code_section()
@@ -35,8 +293,12 @@ class Code_Section(QWidget):
         self.code_preview_section.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
         )
-        self.code_preview_section.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.code_preview_section.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.code_preview_section.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
+        self.code_preview_section.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
         self.code_preview_section.hide()
 
         self.formatter = HtmlFormatter(style="abap", noclasses=True, nobackground=True)
@@ -74,26 +336,34 @@ class Code_Section(QWidget):
 
     def create_code_section(self):
         self.code_preview_button = QPushButton("Code Preview")
+        self.code_preview_button.setObjectName("code_preview_button")
         self.code_preview_button.setProperty("class", "code_section")
         self.code_preview_button.setFixedWidth(100)
         self.code_preview_button.setEnabled(False)
 
         self.copy_button = QPushButton("Copy Code")
+        self.copy_button.setObjectName("copy_button")
         self.copy_button.setProperty("class", "code_section")
         self.copy_button.setFixedWidth(80)
         self.copy_button.clicked.connect(self.copy_python_code)
 
         self.full_screen_button = QPushButton("Full Screen")
+        self.full_screen_button.setObjectName("full_screen_button")
         self.full_screen_button.setProperty("class", "code_section")
         self.full_screen_button.setFixedWidth(80)
+        self.full_screen_button.clicked.connect(self.switch_to_full_screen)
 
         self.theme_button = QPushButton("Theme")
-        self.theme_button.setProperty("class","code_section")
-        self.theme_button.setFixedWidth(55)
+        self.theme_button.setObjectName("theme_button")
+        self.theme_button.setProperty("class", "code_section")
+        self.theme_button.setFixedWidth(80)
+        self.theme_button.clicked.connect(self.switch_theme)
 
         self.settings_button = QPushButton("Settings")
+        self.settings_button.setObjectName("settings_button")
         self.settings_button.setProperty("class", "code_section")
-        self.settings_button.setFixedWidth(65)
+        self.settings_button.setFixedWidth(80)
+        self.settings_button.clicked.connect(self.open_setting)
 
         code_section_top_bar_layout = QHBoxLayout(self.code_section_top_bar)
         code_section_top_bar_layout.addWidget(
@@ -178,6 +448,9 @@ class Code_Section(QWidget):
         plot_adjustment = ""
 
         for adjustment in list(self.plot_config.keys()):
+            if (adjustment == "legend" and not self.plot_config[adjustment].get("visible",True)):
+                continue
+
             plot_adjustment_line = self.matplotlib_plot_code_statements[adjustment]
 
             for parameter, argument in self.plot_config[adjustment].items():
@@ -196,6 +469,9 @@ class Code_Section(QWidget):
             + self.show_graph_statement
         )
 
+        self.update_code()
+
+    def update_code(self):
         scroll_pos = self.code_preview_section.verticalScrollBar().value()
 
         highlighted_code = highlight(self.full_code, PythonLexer(), self.formatter)
@@ -205,16 +481,24 @@ class Code_Section(QWidget):
 
     def copy_python_code(self):
         clipboard = QApplication.clipboard()
-        clipboard.setText(self.full_code) 
+        clipboard.setText(self.full_code)
 
-        self.copy_button.setText("Copied") 
-        QTimer.singleShot(500, lambda: self.copy_button.setText("Copy Code"))  
+        self.copy_button.setText("Copied")
+        QTimer.singleShot(500, lambda: self.copy_button.setText("Copy Code"))
 
     def switch_to_full_screen(self):
         pass
 
     def switch_theme(self):
-        pass
+        self.code_theme_preview.update_graph_code(self.full_code)
+
+        for d in QApplication.topLevelWidgets():
+            if isinstance(d, QDialog) and d.isVisible():
+                d.close()
+
+        self.code_theme_preview.show()
+        self.code_theme_preview.activateWindow()
+        self.code_theme_preview.raise_()
 
     def open_setting(self):
         pass
