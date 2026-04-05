@@ -99,7 +99,9 @@ class graph_generator(QWidget):
             self.grid_parameters["dashes"] = (grid_offset, *grid_sequence)
 
         self.legend_parameters = self.new_plot_config.pop("legend", {})
-        self.seaborn_legends_parameters = self.new_plot_config.pop("seaborn_legends", {})
+        self.seaborn_legends_parameters = self.new_plot_config.pop(
+            "seaborn_legends", {}
+        )
 
         self.hue = self.new_plot_config.get("hue", None)
         self.hue_mapping = self.hue[1] if self.hue is not None else None
@@ -189,7 +191,7 @@ class graph_generator(QWidget):
     def set_legend(self, graph):
         graph_legend_parameter_copy = self.legend_parameters.copy()
         graph_label = graph_legend_parameter_copy.pop("label")
-        legend_visibility = graph_legend_parameter_copy.pop("visible")
+        legend_visibility = graph_legend_parameter_copy.pop("visible", True)
 
         legend = graph.get_legend()
 
@@ -214,7 +216,7 @@ class graph_generator(QWidget):
     def set_seaborn_legend(self, graph):
         graph_legend_parameter_copy = self.legend_parameters.copy()
         graph_label = graph_legend_parameter_copy.pop("label")
-        legend_visibility = graph_legend_parameter_copy.pop("visible")
+        legend_visibility = graph_legend_parameter_copy.pop("visible", True)
 
         legend = graph.get_legend()
 
@@ -276,17 +278,18 @@ class graph_generator(QWidget):
                 graph.grid(False)
 
         if self.legend_parameters != dict():
-            graph_label = self.legend_parameters["label"]
-            legend_visibility = self.legend_parameters["visible"]
-            if (
-                self.graph_parameters.get("hue", None) is None
-                and self.graph_parameters.get("style", None) is None
-                and self.graph_parameters.get("size", None) is None
-            ):
-                if not legend_visibility and graph_label != "__nolegend__":
-                    self.set_legend(graph)
-            else:
-                self.set_seaborn_legend(graph)
+            graph_label = self.legend_parameters.get("label", None)
+            legend_visibility = self.legend_parameters.get("visible", True)
+            if not(graph_label is None or not legend_visibility):
+                if (
+                    self.graph_parameters.get("hue", None) is None
+                    and self.graph_parameters.get("style", None) is None
+                    and self.graph_parameters.get("size", None) is None
+                ):
+                    if graph_label != "__nolegend__":
+                        self.set_legend(graph)
+                else:
+                    self.set_seaborn_legend(graph)
 
         fig = graph.get_figure()
         buf = BytesIO()
