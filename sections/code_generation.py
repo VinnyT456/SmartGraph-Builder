@@ -1,12 +1,11 @@
 from PyQt6.QtCore import (
     QEasingCurve,
-    QKeyCombination,
     QPropertyAnimation,
     QStringListModel,
     QTimer,
     Qt,
 )
-from PyQt6.QtGui import QFont, QKeySequence, QShortcut, QShowEvent
+from PyQt6.QtGui import QFont, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -17,7 +16,7 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QSizePolicy,
     QStyledItemDelegate,
-    QTextBrowser,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -39,9 +38,30 @@ class code_theme_preview(QDialog):
         self.setWindowTitle("Code Theme Preview")
 
         self.styles = list(get_all_styles())
-
         self.theme = self.styles[0]
+
+        self.code_section = code_section
         self.graph_code = graph_code
+
+        self.current_background = "Light"
+        self.code_preview_backgrounds = {
+            "Light": """
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+            """,
+            "Dark": """
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #1e1e2f,
+                    stop:0.5 #232336,
+                    stop:1 #1a1a2b
+                );
+            """,
+        }
 
         self.idx = 0
 
@@ -139,21 +159,25 @@ class code_theme_preview(QDialog):
         self.copy_button.setObjectName("copy_button")
         self.copy_button.setProperty("class", "code_section")
         self.copy_button.setFixedWidth(80)
+        self.copy_button.clicked.connect(self.copy_python_code)
 
         self.apply_theme_button = QPushButton("Apply Theme")
         self.apply_theme_button.setObjectName("apply_them_button")
         self.apply_theme_button.setProperty("class", "code_section")
         self.apply_theme_button.setFixedWidth(100)
+        self.apply_theme_button.clicked.connect(self.apply_theme_to_code)
 
         self.switch_background_button = QPushButton("Dark Background")
         self.switch_background_button.setObjectName("switch_background_button")
         self.switch_background_button.setProperty("class", "code_section")
         self.switch_background_button.setFixedWidth(120)
+        self.switch_background_button.clicked.connect(self.switch_current_background)
 
         self.more_button = QPushButton("⋮")
         self.more_button.setObjectName("more_button")
         self.more_button.setProperty("class", "code_section")
         self.more_button.setFixedWidth(24)
+        self.more_button.clicked.connect(self.open_more_settings)
 
         code_section_top_bar_layout = QHBoxLayout(self.code_preview_section_top_bar)
         code_section_top_bar_layout.addWidget(
@@ -170,25 +194,19 @@ class code_theme_preview(QDialog):
     def create_code_preview_section(self):
         code_preview_section_layout = QVBoxLayout(self.code_preview_section)
 
-        self.code_preview = QTextBrowser()
+        self.code_preview = QTextEdit()
         self.code_preview.setObjectName("code_browser")
         self.code_preview.setReadOnly(True)
-        self.code_preview.setOpenExternalLinks(False)
         self.code_preview.setMinimumHeight(300)
         self.code_preview.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
         )
         self.code_preview.setVerticalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
         )
         self.code_preview.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
         )
-        self.code_preview.setStyleSheet("""
-            QTextBrowser#code_browser{
-                border: none;
-            }
-        """)
 
         self.formatter = HtmlFormatter(
             style=self.theme, noclasses=True, nobackground=True
@@ -230,6 +248,35 @@ class code_theme_preview(QDialog):
         self.theme = self.styles[self.idx]
 
         self.change_current_theme(new_idx)
+
+    def copy_python_code(self):
+        clipboard = QApplication.clipboard()
+        clipboard.setText(self.graph_code)
+
+        self.copy_button.setText("Copied")
+        QTimer.singleShot(500, lambda: self.copy_button.setText("Copy Code"))
+
+    def apply_theme_to_code(self):
+        self.code_section.current_background = self.current_background
+        self.code_section.update_code(self.theme)
+
+        self.apply_theme_button.setText("Applied")
+
+        QTimer.singleShot(500, lambda: self.apply_theme_button.setText("Apply Theme"))
+
+    def switch_current_background(self):
+        self.current_background = self.switch_background_button.text().split(" ")[0]
+        if self.switch_background_button.text() == "Dark Background":
+            self.switch_background_button.setText("Light Background")
+        else:
+            self.switch_background_button.setText("Dark Background")
+
+        self.code_preview.setStyleSheet(
+            self.code_preview_backgrounds[self.current_background]
+        )
+
+    def open_more_settings(self):
+        pass
 
     def update_graph_code(self, new_graph_code):
         self.graph_code = new_graph_code
@@ -281,31 +328,55 @@ class Code_Section(QWidget):
 
         self.code_theme_preview = code_theme_preview(self)
 
+        self.current_background = "Light"
+        self.code_preview_backgrounds = {
+            "Light": """
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+            """,
+            "Dark": """
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #1e1e2f,
+                    stop:0.5 #232336,
+                    stop:1 #1a1a2b
+                );
+            """,
+        }
+
         self.code_section_top_bar = QWidget()
         self.create_code_section()
         self.code_section_top_bar.hide()
 
-        self.code_preview_section = QTextBrowser()
+        self.code_preview_container = QWidget()
+        self.code_preview_container.setProperty("class", "adjustment_section")
+
+        self.code_preview_section = QTextEdit()
         self.code_preview_section.setObjectName("code_browser")
         self.code_preview_section.setReadOnly(True)
-        self.code_preview_section.setOpenExternalLinks(False)
         self.code_preview_section.setMinimumHeight(100)
         self.code_preview_section.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
         )
         self.code_preview_section.setVerticalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
         )
         self.code_preview_section.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
         )
         self.code_preview_section.hide()
 
-        self.formatter = HtmlFormatter(style="abap", noclasses=True, nobackground=True)
+        code_preview_container_layout = QVBoxLayout(self.code_preview_container)
+        code_preview_container_layout.addWidget(self.code_preview_section)
+        code_preview_container_layout.setContentsMargins(0, 0, 0, 0)
 
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.code_section_top_bar)
-        main_layout.addWidget(self.code_preview_section)
+        main_layout.addWidget(self.code_preview_container)
         main_layout.addStretch()
         main_layout.setContentsMargins(10, 10, 10, 10)
         main_layout.setSpacing(5)
@@ -448,7 +519,9 @@ class Code_Section(QWidget):
         plot_adjustment = ""
 
         for adjustment in list(self.plot_config.keys()):
-            if (adjustment == "legend" and not self.plot_config[adjustment].get("visible",True)):
+            if adjustment == "legend" and not self.plot_config[adjustment].get(
+                "visible", True
+            ):
                 continue
 
             plot_adjustment_line = self.matplotlib_plot_code_statements[adjustment]
@@ -471,9 +544,14 @@ class Code_Section(QWidget):
 
         self.update_code()
 
-    def update_code(self):
+    def update_code(self, style="abap"):
+        self.code_preview_container.setStyleSheet(
+            self.code_preview_backgrounds[self.current_background]
+        )
+
         scroll_pos = self.code_preview_section.verticalScrollBar().value()
 
+        self.formatter = HtmlFormatter(style=style, noclasses=True, nobackground=True)
         highlighted_code = highlight(self.full_code, PythonLexer(), self.formatter)
         self.code_preview_section.setHtml(highlighted_code)
 
