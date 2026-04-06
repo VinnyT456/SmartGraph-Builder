@@ -1459,7 +1459,7 @@ class legend_visible_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.legend_visibility_button.setMinimumHeight(60)
+        self.legend_visibility_button.setMinimumHeight(50)
 
         # -----Connect the button to automatically change the visibility state-----
         self.legend_visibility_button.clicked.connect(self.change_legend_visibility)
@@ -1693,7 +1693,7 @@ class legend_loc_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-        self.legend_loc_search_bar.setMinimumHeight(60)
+        self.legend_loc_search_bar.setMinimumHeight(50)
 
         # Add the search bar to the layout and add spacing to it
         legend_loc_adjustment_section_layout.addWidget(self.legend_loc_search_bar)
@@ -2058,7 +2058,7 @@ class legend_bbox_to_anchor_adjustment_section(QWidget):
             }
         """)
         self.reset_bbox_anchor_button.clicked.connect(self.reset_bbox_anchor)
-        self.reset_bbox_anchor_button.setMinimumHeight(60)
+        self.reset_bbox_anchor_button.setMinimumHeight(50)
 
         # Add the label onto the button
         reset_bbox_anchor_button_layout = QVBoxLayout(self.reset_bbox_anchor_button)
@@ -2461,7 +2461,7 @@ class legend_ncol_adjustment_section(QWidget):
             }
         """)
         self.reset_ncol_button.clicked.connect(self.reset_ncol)
-        self.reset_ncol_button.setMinimumHeight(60)
+        self.reset_ncol_button.setMinimumHeight(50)
 
         # Add the label onto the button
         reset_ncol_button_layout = QVBoxLayout(self.reset_ncol_button)
@@ -3076,7 +3076,7 @@ class legend_fontsize_adjustment_section(QWidget):
             }
         """)
         self.reset_custom_fontsize_button.clicked.connect(self.reset_fontsize)
-        self.reset_custom_fontsize_button.setMinimumHeight(60)
+        self.reset_custom_fontsize_button.setMinimumHeight(50)
 
         # Add the label onto the button
         reset_custom_fontsize_button_layout = QVBoxLayout(
@@ -3165,7 +3165,7 @@ class legend_fontsize_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_fontsize_button.setMinimumHeight(60)
+        self.reset_fontsize_button.setMinimumHeight(50)
 
         # Connect the button to automatically reset the face color when clicked on
         self.reset_fontsize_button.clicked.connect(self.reset_fontsize)
@@ -3932,7 +3932,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
         self.reset_custom_title_fontsize_button.clicked.connect(
             self.reset_title_fontsize
         )
-        self.reset_custom_title_fontsize_button.setMinimumHeight(60)
+        self.reset_custom_title_fontsize_button.setMinimumHeight(50)
 
         # Add the label onto the button
         reset_custom_title_fontsize_button_layout = QVBoxLayout(
@@ -4023,7 +4023,7 @@ class legend_title_fontsize_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_fontsize_button.setMinimumHeight(60)
+        self.reset_fontsize_button.setMinimumHeight(50)
 
         # Connect the button to automatically reset the face color when clicked on
         self.reset_fontsize_button.clicked.connect(self.reset_title_fontsize)
@@ -4244,7 +4244,7 @@ class legend_frameon_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.frameon_button.setMinimumHeight(60)
+        self.frameon_button.setMinimumHeight(50)
 
         # Put the label on top of the button we created for control frameon
         legend_frameon_button_layout = QVBoxLayout(self.frameon_button)
@@ -4914,7 +4914,7 @@ class legend_face_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-        self.color_search_bar.setMinimumHeight(60)
+        self.color_search_bar.setMinimumHeight(50)
 
         # Add the search bar to the layout and control the spacing for it
         named_color_section_layout.addWidget(self.color_search_bar)
@@ -5048,7 +5048,7 @@ class legend_face_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-        self.hex_code_input.setMinimumHeight(60)
+        self.hex_code_input.setMinimumHeight(50)
 
         # Connect the hex code input widget to automatically update when the text changes
         self.hex_code_input.textChanged.connect(self.change_hex_code_color)
@@ -5111,7 +5111,7 @@ class legend_face_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_hex_code_value_button.setMinimumHeight(60)
+        self.reset_hex_code_value_button.setMinimumHeight(50)
         self.reset_hex_code_value_button.clicked.connect(self.reset_face_color)
 
         # Add the label onto the button
@@ -5262,7 +5262,7 @@ class legend_face_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_rgb_value_button.setMinimumHeight(60)
+        self.reset_rgb_value_button.setMinimumHeight(50)
         self.reset_rgb_value_button.clicked.connect(self.reset_face_color)
 
         # Add the label to the button
@@ -5308,7 +5308,7 @@ class legend_face_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-        self.grayscale_color_input.setMinimumHeight(60)
+        self.grayscale_color_input.setMinimumHeight(50)
 
         # Let the grayscale automatically change when the user enters something
         self.grayscale_color_input.textChanged.connect(self.change_grayscale_color)
@@ -5371,7 +5371,7 @@ class legend_face_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_grayscale_value_button.setMinimumHeight(60)
+        self.reset_grayscale_value_button.setMinimumHeight(50)
         self.reset_grayscale_value_button.clicked.connect(self.reset_face_color)
 
         # Add the label to the button
@@ -5559,7 +5559,7 @@ class legend_face_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_face_color_button.setMinimumHeight(60)
+        self.reset_face_color_button.setMinimumHeight(50)
 
         # Connect the button to automatically reset the face color when clicked on
         self.reset_face_color_button.clicked.connect(self.reset_face_color)
@@ -6697,7 +6697,7 @@ class legend_edge_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_hex_code_value_button.setMinimumHeight(60)
+        self.reset_hex_code_value_button.setMinimumHeight(50)
         self.reset_hex_code_value_button.clicked.connect(self.reset_edge_color)
 
         # Add the label onto the button
@@ -6868,7 +6868,7 @@ class legend_edge_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_rgba_value_button.setMinimumHeight(60)
+        self.reset_rgba_value_button.setMinimumHeight(50)
         self.reset_rgba_value_button.clicked.connect(self.reset_edge_color)
 
         # Add the label to the button
@@ -6914,7 +6914,7 @@ class legend_edge_color_adjustment_section(QWidget):
                 border-radius: 16px;
             }
         """)
-        self.grayscale_color_input.setMinimumHeight(60)
+        self.grayscale_color_input.setMinimumHeight(50)
 
         # Let the grayscale automatically change when the user enters something
         self.grayscale_color_input.textChanged.connect(self.change_grayscale_color)
@@ -6977,7 +6977,7 @@ class legend_edge_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_grayscale_value_button.setMinimumHeight(60)
+        self.reset_grayscale_value_button.setMinimumHeight(50)
         self.reset_grayscale_value_button.clicked.connect(self.reset_edge_color)
 
         # Add the label to the button
@@ -7165,7 +7165,7 @@ class legend_edge_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_edge_color_button.setMinimumHeight(60)
+        self.reset_edge_color_button.setMinimumHeight(50)
 
         # Connect the button to automatically reset the edge color when clicked on
         self.reset_edge_color_button.clicked.connect(self.reset_edge_color)
@@ -7739,7 +7739,7 @@ class legend_framealpha_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_framealpha_button.setMinimumHeight(60)
+        self.reset_framealpha_button.setMinimumHeight(50)
         self.reset_framealpha_button.clicked.connect(self.reset_framealpha)
 
         # Add the label onto the button
@@ -7922,7 +7922,7 @@ class legend_shadow_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.shadow_button.setMinimumHeight(60)
+        self.shadow_button.setMinimumHeight(50)
 
         # Put the label on top of the button we created for control frameon
         legend_shadow_button_layout = QVBoxLayout(self.shadow_button)
@@ -8074,7 +8074,7 @@ class legend_fancybox_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.fancybox_button.setMinimumHeight(60)
+        self.fancybox_button.setMinimumHeight(50)
 
         # Put the label on top of the button we created for control frameon
         fancybox_button_layout = QVBoxLayout(self.fancybox_button)
@@ -8346,7 +8346,7 @@ class legend_borderpad_adjustment_section(QWidget):
             }
         """)
         self.reset_borderpad_button.clicked.connect(self.reset_borderpad)
-        self.reset_borderpad_button.setMinimumHeight(60)
+        self.reset_borderpad_button.setMinimumHeight(50)
 
         # Add the label onto the button
         reset_borderpad_button_layout = QVBoxLayout(self.reset_borderpad_button)
@@ -9240,7 +9240,7 @@ class legend_label_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_hex_code_value_button.setMinimumHeight(60)
+        self.reset_hex_code_value_button.setMinimumHeight(50)
         self.reset_hex_code_value_button.clicked.connect(self.reset_label_color)
 
         # Add the label onto the button
@@ -9411,7 +9411,7 @@ class legend_label_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_rgba_value_button.setMinimumHeight(60)
+        self.reset_rgba_value_button.setMinimumHeight(50)
         self.reset_rgba_value_button.clicked.connect(self.reset_label_color)
 
         # Add the label to the button
@@ -9520,7 +9520,7 @@ class legend_label_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_grayscale_value_button.setMinimumHeight(60)
+        self.reset_grayscale_value_button.setMinimumHeight(50)
         self.reset_grayscale_value_button.clicked.connect(self.reset_label_color)
 
         # Add the label to the button
@@ -9708,7 +9708,7 @@ class legend_label_color_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_label_color_button.setMinimumHeight(60)
+        self.reset_label_color_button.setMinimumHeight(50)
 
         # Connect the button to automatically reset the edge color when clicked on
         self.reset_label_color_button.clicked.connect(self.reset_label_color)
@@ -10453,7 +10453,7 @@ class legend_columnspacing_adjustment_section(QWidget):
             }
         """)
         self.reset_columnspacing_button.clicked.connect(self.reset_columnsapcing)
-        self.reset_columnspacing_button.setMinimumHeight(60)
+        self.reset_columnspacing_button.setMinimumHeight(50)
 
         # Add the label onto the button
         reset_columnspacing_button_layout = QVBoxLayout(self.reset_columnspacing_button)
@@ -10766,7 +10766,7 @@ class legend_handletextpad_adjustment_section(QWidget):
             }
         """)
         self.reset_handletextpad_button.clicked.connect(self.reset_handletextpad)
-        self.reset_handletextpad_button.setMinimumHeight(60)
+        self.reset_handletextpad_button.setMinimumHeight(50)
 
         # Add the label onto the button
         reset_handletextpad_button_layout = QVBoxLayout(self.reset_handletextpad_button)
@@ -11080,7 +11080,7 @@ class legend_borderaxespad_adjustment_section(QWidget):
             }
         """)
         self.reset_borderaxespad_button.clicked.connect(self.reset_borderaxespad)
-        self.reset_borderaxespad_button.setMinimumHeight(60)
+        self.reset_borderaxespad_button.setMinimumHeight(50)
 
         # Add the label onto the button
         reset_borderaxespad_button_layout = QVBoxLayout(self.reset_borderaxespad_button)
@@ -11392,7 +11392,7 @@ class legend_handlelength_adjustment_section(QWidget):
             }
         """)
         self.reset_handlelength_button.clicked.connect(self.reset_handlelength)
-        self.reset_handlelength_button.setMinimumHeight(60)
+        self.reset_handlelength_button.setMinimumHeight(50)
 
         # Add the label onto the button
         reset_handlelength_button_layout = QVBoxLayout(self.reset_handlelength_button)
@@ -11700,7 +11700,7 @@ class legend_handleheight_adjustment_section(QWidget):
             }
         """)
         self.reset_handleheight_button.clicked.connect(self.reset_handleheight)
-        self.reset_handleheight_button.setMinimumHeight(60)
+        self.reset_handleheight_button.setMinimumHeight(50)
 
         # Add the label onto the button
         reset_handleheight_button_layout = QVBoxLayout(self.reset_handleheight_button)
@@ -11886,7 +11886,7 @@ class legend_markerfirst_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.legend_markerfirst_button.setMinimumHeight(60)
+        self.legend_markerfirst_button.setMinimumHeight(50)
 
         # -----Connect the button to automatically change the markerfirst state-----
         self.legend_markerfirst_button.clicked.connect(self.change_legend_markerfist)
@@ -12210,7 +12210,7 @@ class seaborn_legend_off_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.sns_legend_off_button.setMinimumHeight(60)
+        self.sns_legend_off_button.setMinimumHeight(50)
 
         # Put the label on top of the button we created for control frameon
         sns_legend_off_button_layout = QVBoxLayout(self.sns_legend_off_button)
@@ -13444,7 +13444,7 @@ class seaborn_legend_markers_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_markers_button.setMinimumHeight(60)
+        self.reset_markers_button.setMinimumHeight(50)
 
         # Connect the button to automatically reset the face color when clicked on
         self.reset_markers_button.clicked.connect(self.reset_markers)
@@ -13804,8 +13804,8 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
         invalid_single_custom_dashes_widget_layout.setSpacing(0)
 
         # -----Set the Height of both widgets and hide them-----
-        self.valid_single_custom_dashes_widget.setMinimumHeight(60)
-        self.invalid_single_custom_dashes_widget.setMinimumHeight(60)
+        self.valid_single_custom_dashes_widget.setMinimumHeight(50)
+        self.invalid_single_custom_dashes_widget.setMinimumHeight(50)
 
         self.valid_single_custom_dashes_widget.hide()
         self.invalid_single_custom_dashes_widget.hide()
@@ -13905,8 +13905,8 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
         invalid_multiple_custom_dashes_widget_layout.setSpacing(0)
 
         # -----Set the Height of both widgets and hide them-----
-        self.valid_multiple_custom_dashes_widget.setMinimumHeight(60)
-        self.invalid_multiple_custom_dashes_widget.setMinimumHeight(60)
+        self.valid_multiple_custom_dashes_widget.setMinimumHeight(50)
+        self.invalid_multiple_custom_dashes_widget.setMinimumHeight(50)
 
         self.valid_multiple_custom_dashes_widget.hide()
         self.invalid_multiple_custom_dashes_widget.hide()
@@ -14006,8 +14006,8 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
         invalid_dictionary_custom_dashes_widget_layout.setSpacing(0)
 
         # -----Set the Height of both widgets and hide them-----
-        self.valid_dictionary_custom_dashes_widget.setMinimumHeight(60)
-        self.invalid_dictionary_custom_dashes_widget.setMinimumHeight(60)
+        self.valid_dictionary_custom_dashes_widget.setMinimumHeight(50)
+        self.invalid_dictionary_custom_dashes_widget.setMinimumHeight(50)
 
         self.valid_dictionary_custom_dashes_widget.hide()
         self.invalid_dictionary_custom_dashes_widget.hide()
@@ -14504,18 +14504,16 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.select_dashes_state_button.setMinimumHeight(60)
+        self.select_dashes_state_button.setMinimumHeight(50)
 
         # Connect the button to automatically reset the face color when clicked on
         self.select_dashes_state_button.clicked.connect(self.change_dashes_state)
 
         # Add the label onto the button
-        select_dashes_state_section_layout = QVBoxLayout(
-            self.select_dashes_state_button
-        )
-        select_dashes_state_section_layout.addWidget(self.select_dashes_state_label)
-        select_dashes_state_section_layout.setContentsMargins(0, 0, 0, 0)
-        select_dashes_state_section_layout.setSpacing(0)
+        select_dashes_state_button_layout = QVBoxLayout(self.select_dashes_state_button)
+        select_dashes_state_button_layout.addWidget(self.select_dashes_state_label)
+        select_dashes_state_button_layout.setContentsMargins(0, 0, 0, 0)
+        select_dashes_state_button_layout.setSpacing(0)
 
         # Add the button created to the reset face color section
         select_dashes_state_section_layout.addWidget(self.select_dashes_state_button)
@@ -15764,16 +15762,16 @@ class seaborn_legend_dashes_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.reset_dashes_button.setMinimumHeight(60)
+        self.reset_dashes_button.setMinimumHeight(50)
 
         # Connect the button to automatically reset the face color when clicked on
         self.reset_dashes_button.clicked.connect(self.reset_dashes)
 
         # Add the label onto the button
-        reset_dashes_section_layout = QVBoxLayout(self.reset_dashes_button)
-        reset_dashes_section_layout.addWidget(self.reset_dashes_label)
-        reset_dashes_section_layout.setContentsMargins(0, 0, 0, 0)
-        reset_dashes_section_layout.setSpacing(0)
+        reset_dashes_button_layout = QVBoxLayout(self.reset_dashes_button)
+        reset_dashes_button_layout.addWidget(self.reset_dashes_label)
+        reset_dashes_button_layout.setContentsMargins(0, 0, 0, 0)
+        reset_dashes_button_layout.setSpacing(0)
 
         # Add the button created to the reset face color section
         reset_dashes_section_layout.addWidget(self.reset_dashes_button)
@@ -16420,7 +16418,7 @@ class seaborn_legend_hue_order_adjustment_section(QWidget):
         hue_order_warning_layout.setSpacing(0)
         hue_order_warning_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.hue_order_warning_widget.setMinimumHeight(60)
+        self.hue_order_warning_widget.setMinimumHeight(50)
         self.hue_order_warning_widget.hide()
 
         # -----Get the Hue Values-----
@@ -17102,7 +17100,7 @@ class grid_visible_adjustment_section(QWidget):
                 color: black;
             }
         """)
-        self.grid_visibility_button.setMinimumHeight(60)
+        self.grid_visibility_button.setMinimumHeight(50)
 
         # Put the label on top of the button we created for control grid visibility
         grid_visibility_button_layout = QVBoxLayout(self.grid_visibility_button)
@@ -18845,11 +18843,11 @@ class grid_linestyle_adjustment_section(QWidget):
         invalid_on_off_sequence_widget_layout.setSpacing(0)
 
         # -----Control the Widget Size and hide them-----
-        self.valid_offset_widget.setMinimumHeight(60)
-        self.invalid_offset_widget.setMinimumHeight(60)
+        self.valid_offset_widget.setMinimumHeight(50)
+        self.invalid_offset_widget.setMinimumHeight(50)
 
-        self.valid_on_off_sequence_widget.setMinimumHeight(60)
-        self.invalid_on_off_sequence_widget.setMinimumHeight(60)
+        self.valid_on_off_sequence_widget.setMinimumHeight(50)
+        self.invalid_on_off_sequence_widget.setMinimumHeight(50)
 
         self.valid_offset_widget.hide()
         self.invalid_offset_widget.hide()
@@ -19471,8 +19469,8 @@ class grid_linewidth_adjustment_section(QWidget):
         self.invalid_linewidth_widget.hide()
 
         # -----Set the size for both Validitiy Check Widgets-----
-        self.valid_linewidth_widget.setMinimumHeight(60)
-        self.invalid_linewidth_widget.setMinimumHeight(60)
+        self.valid_linewidth_widget.setMinimumHeight(50)
+        self.invalid_linewidth_widget.setMinimumHeight(50)
 
         # -----Grid Linewidth Adjustment Screen-----
         self.grid_linewidth_adjustment_screen = QWidget()
@@ -19660,8 +19658,8 @@ class grid_alpha_adjustment_section(QWidget):
         self.invalid_alpha_widget.hide()
 
         # -----Set the size for both Validitiy Check Widgets-----
-        self.valid_alpha_widget.setMinimumHeight(60)
-        self.invalid_alpha_widget.setMinimumHeight(60)
+        self.valid_alpha_widget.setMinimumHeight(50)
+        self.invalid_alpha_widget.setMinimumHeight(50)
 
         # -----Grid Linewidth Adjustment Screen-----
         self.grid_alpha_adjustment_screen = QWidget()
@@ -19845,8 +19843,8 @@ class grid_zorder_adjustment_section(QWidget):
         self.invalid_zorder_widget.hide()
 
         # -----Set the size for both Validitiy Check Widgets-----
-        self.valid_zorder_widget.setMinimumHeight(60)
-        self.invalid_zorder_widget.setMinimumHeight(60)
+        self.valid_zorder_widget.setMinimumHeight(50)
+        self.invalid_zorder_widget.setMinimumHeight(50)
 
         # -----Grid Zorder Adjustment Screen-----
         self.grid_zorder_adjustment_screen = QWidget()
@@ -20110,10 +20108,10 @@ class grid_dashes_adjustment_section(QWidget):
         self.invalid_offset_widget.hide()
         self.invalid_sequence_widget.hide()
 
-        self.valid_offset_widget.setMinimumHeight(60)
-        self.valid_sequence_widget.setMinimumHeight(60)
-        self.invalid_offset_widget.setMinimumHeight(60)
-        self.invalid_sequence_widget.setMinimumHeight(60)
+        self.valid_offset_widget.setMinimumHeight(50)
+        self.valid_sequence_widget.setMinimumHeight(50)
+        self.invalid_offset_widget.setMinimumHeight(50)
+        self.invalid_sequence_widget.setMinimumHeight(50)
 
         # -----Store all the valid/invalid widgets in a list-----
         self.validity_check_widgets = [
@@ -22647,7 +22645,7 @@ class hue_button(QDialog):
                 color: black;
             }
         """)
-        self.instructions_widget.setMinimumHeight(60)
+        self.instructions_widget.setMinimumHeight(50)
 
         self.instructions_label = QLabel("Seperate values by space")
         self.instructions_label.setWordWrap(True)
@@ -22874,7 +22872,7 @@ class hue_button(QDialog):
                 color: black;
             }
         """)
-        self.none_hue_button.setMinimumHeight(60)
+        self.none_hue_button.setMinimumHeight(50)
 
         self.none_hue_button.clicked.connect(self.change_hue_to_none)
 
@@ -24002,7 +24000,7 @@ class style_button(QDialog):
                 color: black;
             }
         """)
-        self.none_style_button.setMinimumHeight(60)
+        self.none_style_button.setMinimumHeight(50)
 
         self.none_style_button.clicked.connect(self.change_style_to_none)
 
@@ -24333,11 +24331,11 @@ class size_button(QDialog):
         self.invalid_interval_size_widget.hide()
 
         # -----Set the size for Validitiy Check Widgets-----
-        self.valid_list_size_widget.setMinimumHeight(60)
-        self.invalid_list_size_widget.setMinimumHeight(60)
+        self.valid_list_size_widget.setMinimumHeight(50)
+        self.invalid_list_size_widget.setMinimumHeight(50)
 
-        self.valid_interval_size_widget.setMinimumHeight(60)
-        self.invalid_interval_size_widget.setMinimumHeight(60)
+        self.valid_interval_size_widget.setMinimumHeight(50)
+        self.invalid_interval_size_widget.setMinimumHeight(50)
 
         # -----Create the Size Home Screen-----
         self.size_parameter_section = QWidget()
@@ -24878,7 +24876,7 @@ class size_button(QDialog):
                 color: black;
             }
         """)
-        self.none_size_button.setMinimumHeight(60)
+        self.none_size_button.setMinimumHeight(50)
 
         self.none_size_button.clicked.connect(self.change_size_to_none)
 
@@ -25601,14 +25599,14 @@ class palette_button(QDialog):
         self.invalid_grayscale_value_widget.hide()
 
         # -----Set the size for All Validitiy Check Widgets-----
-        self.valid_hex_code_widget.setMinimumHeight(60)
-        self.invalid_hex_code_widget.setMinimumHeight(60)
+        self.valid_hex_code_widget.setMinimumHeight(50)
+        self.invalid_hex_code_widget.setMinimumHeight(50)
 
-        self.valid_rgba_value_widget.setMinimumHeight(60)
-        self.invalid_rgba_value_widget.setMinimumHeight(60)
+        self.valid_rgba_value_widget.setMinimumHeight(50)
+        self.invalid_rgba_value_widget.setMinimumHeight(50)
 
-        self.valid_grayscale_value_widget.setMinimumHeight(60)
-        self.invalid_grayscale_value_widget.setMinimumHeight(60)
+        self.valid_grayscale_value_widget.setMinimumHeight(50)
+        self.invalid_grayscale_value_widget.setMinimumHeight(50)
 
         # -----Create the Palette Home Screen-----
         self.palette_parameter_screen = QWidget()
@@ -26084,7 +26082,7 @@ class palette_button(QDialog):
                 border-radius: 16px;
             }
         """)
-        self.single_palette_search_bar.setMinimumHeight(60)
+        self.single_palette_search_bar.setMinimumHeight(50)
 
         single_palette_selection_screen_layout.addWidget(self.single_palette_search_bar)
         single_palette_selection_screen_layout.addSpacing(15)
@@ -27217,7 +27215,7 @@ class palette_button(QDialog):
                 color: black;
             }
         """)
-        self.none_palette_button.setMinimumHeight(60)
+        self.none_palette_button.setMinimumHeight(50)
 
         self.none_palette_button.clicked.connect(self.change_palette_state)
 
@@ -27351,6 +27349,12 @@ class palette_button(QDialog):
         self.palette = self.single_palette_selection_model.data(
             source_index, Qt.ItemDataRole.DisplayRole
         )
+
+        if self.palette in self.xkcd_colors:
+            self.palette = "xkcd:" + self.palette
+        if self.palette in self.tableau_colors:
+            self.palette = "tab:" + self.palette
+
         self.update_palette()
 
     def change_list_palette_selection(self):
@@ -27523,7 +27527,7 @@ class palette_button(QDialog):
     def update_palette(self):
         db = self.plot_manager.get_db()
         if db != [] and self.palette_state:
-            if self.palette in list(mcolors.CSS4_COLORS.keys()):
+            if self.palette in list(mcolors.get_named_colors_mapping().keys())[:-8]: 
                 self.plot_manager.update_palette([self.palette])
             else:
                 self.plot_manager.update_palette(self.palette)
@@ -27531,7 +27535,7 @@ class palette_button(QDialog):
             self.plot_manager.update_palette(None)
         else:
             plot_parameter = plot_json[self.selected_graph].copy()
-            if self.palette in list(mcolors.CSS4_COLORS.keys()):
+            if self.palette in list(mcolors.get_named_colors_mapping().keys())[:-8]:
                 plot_parameter["palette"] = [self.palette]
             else:
                 plot_parameter["palette"] = self.palette
@@ -27754,8 +27758,8 @@ class alpha_button(QDialog):
         invalid_float_alpha_widget_layout.setContentsMargins(0, 0, 0, 0)
         invalid_float_alpha_widget_layout.setSpacing(0)
 
-        self.valid_float_alpha_widget.setMinimumHeight(60)
-        self.invalid_float_alpha_widget.setMinimumHeight(60)
+        self.valid_float_alpha_widget.setMinimumHeight(50)
+        self.invalid_float_alpha_widget.setMinimumHeight(50)
 
         self.valid_float_alpha_widget.hide()
         self.invalid_float_alpha_widget.hide()
@@ -27964,7 +27968,7 @@ class alpha_button(QDialog):
             }
         """)
 
-        self.float_alpha_value_input.setMinimumHeight(60)
+        self.float_alpha_value_input.setMinimumHeight(50)
         self.float_alpha_value_input.textChanged.connect(self.change_float_alpha_value)
 
         float_alpha_adjustment_section_layout.addWidget(self.float_alpha_value_input)
@@ -28035,7 +28039,7 @@ class alpha_button(QDialog):
                 color: black;
             }
         """)
-        self.none_alpha_button.setMinimumHeight(60)
+        self.none_alpha_button.setMinimumHeight(50)
 
         self.none_alpha_button.clicked.connect(self.change_none_alpha_value)
 
@@ -28495,7 +28499,7 @@ class marker_button(QDialog):
                 color: black;
             }
         """)
-        self.none_marker_button.setMinimumHeight(60)
+        self.none_marker_button.setMinimumHeight(50)
 
         self.none_marker_button.clicked.connect(self.change_none_marker_value)
 
@@ -28743,11 +28747,11 @@ class s_button(QDialog):
         invalid_list_s_value_widget_layout.setContentsMargins(0, 0, 0, 0)
         invalid_list_s_value_widget_layout.setSpacing(0)
 
-        self.valid_single_s_value_widget.setMinimumHeight(60)
-        self.invalid_single_s_value_widget.setMinimumHeight(60)
+        self.valid_single_s_value_widget.setMinimumHeight(50)
+        self.invalid_single_s_value_widget.setMinimumHeight(50)
 
-        self.valid_list_s_value_widget.setMinimumHeight(60)
-        self.invalid_list_s_value_widget.setMinimumHeight(60)
+        self.valid_list_s_value_widget.setMinimumHeight(50)
+        self.invalid_list_s_value_widget.setMinimumHeight(50)
 
         self.valid_single_s_value_widget.hide()
         self.invalid_single_s_value_widget.hide()
@@ -29123,7 +29127,7 @@ class s_button(QDialog):
                 color: black;
             }
         """)
-        self.none_s_button.setMinimumHeight(60)
+        self.none_s_button.setMinimumHeight(50)
 
         self.none_s_button.clicked.connect(self.change_none_s_value)
 
@@ -29460,11 +29464,11 @@ class edgecolor_button(QDialog):
         self.invalid_rgba_value_widget.hide()
 
         # -----Set the size for All Validitiy Check Widgets-----
-        self.valid_hex_code_widget.setMinimumHeight(60)
-        self.invalid_hex_code_widget.setMinimumHeight(60)
+        self.valid_hex_code_widget.setMinimumHeight(50)
+        self.invalid_hex_code_widget.setMinimumHeight(50)
 
-        self.valid_rgba_value_widget.setMinimumHeight(60)
-        self.invalid_rgba_value_widget.setMinimumHeight(60)
+        self.valid_rgba_value_widget.setMinimumHeight(50)
+        self.invalid_rgba_value_widget.setMinimumHeight(50)
 
         # -----Create the Parameter Home Screen-----
         self.edgecolor_parameter_section = QWidget()
@@ -29781,7 +29785,7 @@ class edgecolor_button(QDialog):
                 border-radius: 16px;
             }
         """)
-        self.named_color_search_bar.setMinimumHeight(60)
+        self.named_color_search_bar.setMinimumHeight(50)
 
         named_color_adjustment_section_layout.addWidget(self.named_color_search_bar)
         named_color_adjustment_section_layout.addSpacing(15)
@@ -30182,7 +30186,7 @@ class edgecolor_button(QDialog):
                 color: black;
             }
         """)
-        self.face_edgecolor_button.setMinimumHeight(60)
+        self.face_edgecolor_button.setMinimumHeight(50)
 
         self.face_edgecolor_button.clicked.connect(self.change_face_edgecolor)
 
@@ -30257,7 +30261,7 @@ class edgecolor_button(QDialog):
                 color: black;
             }
         """)
-        self.none_edgecolor_button.setMinimumHeight(60)
+        self.none_edgecolor_button.setMinimumHeight(50)
 
         self.none_edgecolor_button.clicked.connect(self.change_none_edgecolor)
 
@@ -30332,7 +30336,7 @@ class edgecolor_button(QDialog):
                 color: black;
             }
         """)
-        self.reset_edgecolor_button.setMinimumHeight(60)
+        self.reset_edgecolor_button.setMinimumHeight(50)
 
         self.reset_edgecolor_button.clicked.connect(self.reset_edgecolor)
 
