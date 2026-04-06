@@ -498,9 +498,14 @@ class Code_Section(QWidget):
             self.seaborn_plot_code_statements[graph_type] + f"\n{indent}data=df,"
         )
 
-        def format_value(value):
+        def format_value(parameter, value):
             if isinstance(value, str):
                 return f'"{value}"'
+            elif parameter == "palette" and isinstance(value, list):
+                if (len(value) == 1):
+                    return f'["{value[0]}"]'
+                else:
+                    return f'["{value[0]}","{value[1]}","{value[2]}"]'
             elif isinstance(value, list):
                 return format_value(value[0])
             elif value is None:
@@ -509,7 +514,7 @@ class Code_Section(QWidget):
                 return str(value)
 
         for parameter, argument in self.plot_config["graph_data"].items():
-            argument = format_value(argument)
+            argument = format_value(parameter, argument)
             new_line = f"\n{indent}{parameter}={argument},"
             plot_code_statement += new_line
         plot_code_statement += "\n)\n"
@@ -528,9 +533,9 @@ class Code_Section(QWidget):
 
             for parameter, argument in self.plot_config[adjustment].items():
                 if parameter == "label":
-                    plot_adjustment_line += format_value(argument)
+                    plot_adjustment_line += format_value(parameter, argument)
                 else:
-                    plot_adjustment_line += f"{parameter}={format_value(argument)}"
+                    plot_adjustment_line += f"{parameter}={format_value(parameter, argument)}"
                 plot_adjustment_line += ", "
             plot_adjustment_line = plot_adjustment_line[:-2] + ")"
             plot_adjustment += plot_adjustment_line + "\n"
