@@ -27,6 +27,172 @@ from pygments.styles import get_all_styles
 import textwrap
 
 
+class full_screen_code_preview(QDialog):
+    def __init__(self, code_section, graph_code=""):
+        super().__init__()
+
+        self.setFixedSize(800, 500)
+        self.setProperty("class", "dialog_window")
+        self.setObjectName("full_screen_code_preview")
+
+        self.setWindowTitle("Full Screen Code Preview")
+
+        self.code_section = code_section
+        self.graph_code = graph_code
+
+        self.code_preview_backgrounds = {
+            "Light": """
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #f5f5ff,
+                    stop:0.5 #f7f5fc,
+                    stop:1 #f0f0ff
+                );
+            """,
+            "Dark": """
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #1e1e2f,
+                    stop:0.5 #232336,
+                    stop:1 #1a1a2b
+                );
+            """,
+        }
+
+        self.style = code_section.style
+        self.background = code_section.current_background
+
+        self.code_preview_section_top_bar = QWidget()
+        self.create_code_preview_section_top_bar()
+
+        self.code_preview_section = QWidget()
+        self.code_preview_section.setProperty("class", "dialog_section")
+        self.code_preview_section.setObjectName("code_preview_section")
+        self.create_code_preview_section()
+
+        main_layout = QHBoxLayout(self)
+        main_layout.addWidget(self.code_preview_section)
+
+        # Create shortcuts for the user to exit
+        esc_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape), self)
+        esc_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
+        esc_shortcut.activated.connect(lambda: self.close())
+
+    def create_code_preview_section_top_bar(self):
+        self.code_preview_button = QPushButton("Code Preview")
+        self.code_preview_button.setObjectName("code_preview_button")
+        self.code_preview_button.setProperty("class", "code_section")
+        self.code_preview_button.setFixedWidth(100)
+        self.code_preview_button.setEnabled(False)
+
+        self.copy_button = QPushButton("Copy Code")
+        self.copy_button.setObjectName("copy_button")
+        self.copy_button.setProperty("class", "code_section")
+        self.copy_button.setFixedWidth(80)
+        self.copy_button.clicked.connect(self.copy_python_code)
+
+        self.switch_background_button = QPushButton("Dark Background")
+        self.switch_background_button.setObjectName("switch_background_button")
+        self.switch_background_button.setProperty("class", "code_section")
+        self.switch_background_button.setFixedWidth(120)
+        self.switch_background_button.clicked.connect(self.switch_current_background)
+
+        self.more_button = QPushButton("⋮")
+        self.more_button.setObjectName("more_button")
+        self.more_button.setProperty("class", "code_section")
+        self.more_button.setFixedWidth(24)
+        self.more_button.clicked.connect(self.open_more_settings)
+
+        code_section_top_bar_layout = QHBoxLayout(self.code_preview_section_top_bar)
+        code_section_top_bar_layout.addWidget(
+            self.code_preview_button, alignment=Qt.AlignmentFlag.AlignLeft
+        )
+        code_section_top_bar_layout.addStretch()
+        code_section_top_bar_layout.addWidget(self.copy_button)
+        code_section_top_bar_layout.addWidget(self.switch_background_button)
+        code_section_top_bar_layout.addWidget(self.more_button)
+        code_section_top_bar_layout.setContentsMargins(0, 0, 0, 0)
+        code_section_top_bar_layout.setSpacing(3)
+
+    def create_code_preview_section(self):
+        code_preview_section_layout = QVBoxLayout(self.code_preview_section)
+
+        self.code_preview = QTextEdit()
+        self.code_preview.setObjectName("code_browser")
+        self.code_preview.setReadOnly(True)
+        self.code_preview.setMinimumHeight(300)
+        self.code_preview.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
+        self.code_preview.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.code_preview.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+
+        self.formatter = HtmlFormatter(
+            style=self.style, noclasses=True, nobackground=True
+        )
+        highlighted_code = highlight(self.graph_code, PythonLexer(), self.formatter)
+        self.code_preview.setHtml(highlighted_code)
+
+        code_preview_section_layout.addWidget(self.code_preview_section_top_bar)
+        code_preview_section_layout.addWidget(self.code_preview)
+        code_preview_section_layout.setContentsMargins(5, 5, 5, 5)
+        code_preview_section_layout.setSpacing(5)
+
+    def copy_python_code(self):
+        pass
+
+    def switch_current_background(self):
+        pass
+
+    def open_more_settings(self):
+        pass
+
+    def update_style(self, style): 
+        self.style = style
+
+    def update_background(self, background):
+        self.background = background
+        self.code_preview.setStyleSheet(self.code_preview_backgrounds[self.background])
+
+    def update_graph_code(self, graph_code):
+        self.graph_code = graph_code
+        self.formatter = HtmlFormatter(
+            style=self.style, noclasses=True, nobackground=True
+        )
+        highlighted_code = highlight(self.graph_code, PythonLexer(), self.formatter)
+        self.code_preview.setHtml(highlighted_code)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+
+        # Fade animation
+        self.fade_anim = QPropertyAnimation(self, b"windowOpacity")
+        self.fade_anim.setDuration(200)
+        self.fade_anim.setStartValue(0)
+        self.fade_anim.setEndValue(1)
+        self.fade_anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
+
+        # Slight scale effect (resize)
+        start_rect = self.geometry()
+        self.setGeometry(
+            start_rect.adjusted(20, 20, -20, -20)  # slightly smaller
+        )
+
+        self.scale_anim = QPropertyAnimation(self, b"geometry")  # noqa: F405
+        self.scale_anim.setDuration(200)
+        self.scale_anim.setStartValue(self.geometry())
+        self.scale_anim.setEndValue(start_rect)
+        self.scale_anim.setEasingCurve(QEasingCurve.Type.OutBack)
+
+        # Start animations
+        self.fade_anim.start()
+        self.scale_anim.start()
+
+
 class code_theme_preview(QDialog):
     def __init__(self, code_section, graph_code=""):
         super().__init__()
@@ -258,7 +424,8 @@ class code_theme_preview(QDialog):
 
     def apply_theme_to_code(self):
         self.code_section.current_background = self.current_background
-        self.code_section.update_code(self.theme)
+        self.code_section.update_style(self.theme)
+        self.code_section.update_code()
 
         self.apply_theme_button.setText("Applied")
 
@@ -326,8 +493,6 @@ class Code_Section(QWidget):
 
         self.setProperty("class", "adjustment_section")
 
-        self.code_theme_preview = code_theme_preview(self)
-
         self.current_background = "Light"
         self.code_preview_backgrounds = {
             "Light": """
@@ -347,6 +512,11 @@ class Code_Section(QWidget):
                 );
             """,
         }
+
+        self.style = "abap"
+
+        self.code_theme_preview = code_theme_preview(self)
+        self.full_screen_code_preview = full_screen_code_preview(self)
 
         self.code_section_top_bar = QWidget()
         self.create_code_section()
@@ -502,7 +672,7 @@ class Code_Section(QWidget):
             if isinstance(value, str):
                 return f'"{value}"'
             elif parameter == "palette" and isinstance(value, list):
-                if (len(value) == 1):
+                if len(value) == 1:
                     return f'["{value[0]}"]'
                 else:
                     return f'["{value[0]}","{value[1]}","{value[2]}"]'
@@ -535,7 +705,9 @@ class Code_Section(QWidget):
                 if parameter == "label":
                     plot_adjustment_line += format_value(parameter, argument)
                 else:
-                    plot_adjustment_line += f"{parameter}={format_value(parameter, argument)}"
+                    plot_adjustment_line += (
+                        f"{parameter}={format_value(parameter, argument)}"
+                    )
                 plot_adjustment_line += ", "
             plot_adjustment_line = plot_adjustment_line[:-2] + ")"
             plot_adjustment += plot_adjustment_line + "\n"
@@ -549,14 +721,17 @@ class Code_Section(QWidget):
 
         self.update_code()
 
-    def update_code(self, style="abap"):
+    def update_style(self, style):
+        self.style = style
+
+    def update_code(self):
         self.code_preview_container.setStyleSheet(
             self.code_preview_backgrounds[self.current_background]
         )
 
         scroll_pos = self.code_preview_section.verticalScrollBar().value()
 
-        self.formatter = HtmlFormatter(style=style, noclasses=True, nobackground=True)
+        self.formatter = HtmlFormatter(style=self.style, noclasses=True, nobackground=True)
         highlighted_code = highlight(self.full_code, PythonLexer(), self.formatter)
         self.code_preview_section.setHtml(highlighted_code)
 
@@ -570,7 +745,17 @@ class Code_Section(QWidget):
         QTimer.singleShot(500, lambda: self.copy_button.setText("Copy Code"))
 
     def switch_to_full_screen(self):
-        pass
+        self.full_screen_code_preview.update_style(self.style)
+        self.full_screen_code_preview.update_background(self.current_background)
+        self.full_screen_code_preview.update_graph_code(self.full_code)
+
+        for d in QApplication.topLevelWidgets():
+            if isinstance(d, QDialog) and d.isVisible():
+                d.close()
+
+        self.full_screen_code_preview.show()
+        self.full_screen_code_preview.activateWindow()
+        self.full_screen_code_preview.raise_()
 
     def switch_theme(self):
         self.code_theme_preview.update_graph_code(self.full_code)
