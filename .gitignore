@@ -1,0 +1,78 @@
+# =========================
+# macOS
+# =========================
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# =========================
+# Pytest
+# =========================
+.pytest_cache/
+.cache/
+htmlcov/
+.coverage
+coverage.xml
+*.cover
+.hypothesis/
+
+# =========================
+# IDEs / Editors
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+# PyQt / Qt stuff
+# =========================
+# (usually safe to ignore compiled UI/Py files if generated)
+*.py.ui~
+*.qmlc
+*.jsc
+
+# If you compile Qt Designer files:
+ui_*.py
+*_ui.py
+
+# =========================
+# Logs / runtime
+# =========================
+*.log
+logs/
+
+# =========================
+# OS / misc
+# =========================
+Thumbs.db
+ehthumbs.db
