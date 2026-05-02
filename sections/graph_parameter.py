@@ -653,7 +653,7 @@ class select_graph_window(QDialog):
 
         enter_key_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Return), self)
         enter_key_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
-        enter_key_shortcut.activated.connect(lambda: self.close())
+        enter_key_shortcut.activated.connect(self.close)
 
     def create_select_graph_widget(self):
         select_graph_section_layout = QHBoxLayout(self.select_graph_section)

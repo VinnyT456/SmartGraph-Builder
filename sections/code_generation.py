@@ -10,9 +10,10 @@ from PyQt6.QtWidgets import (
     QAbstractItemView,
     QApplication,
     QDialog,
+    QFileDialog,
     QHBoxLayout,
     QListView,
-    QMenu,
+    QMessageBox,
     QPushButton,
     QSizePolicy,
     QStyledItemDelegate,
@@ -91,6 +92,12 @@ class full_screen_code_preview(QDialog):
         self.copy_button.setFixedWidth(80)
         self.copy_button.clicked.connect(self.copy_python_code)
 
+        self.export_code_button = QPushButton("Export Code")
+        self.export_code_button.setObjectName("export_code_button")
+        self.export_code_button.setProperty("class", "code_section")
+        self.export_code_button.setFixedWidth(100)
+        self.export_code_button.clicked.connect(self.export_python_code)
+
         self.switch_background_button = QPushButton("Dark Background")
         self.switch_background_button.setObjectName("switch_background_button")
         self.switch_background_button.setProperty("class", "code_section")
@@ -109,6 +116,7 @@ class full_screen_code_preview(QDialog):
         )
         code_section_top_bar_layout.addStretch()
         code_section_top_bar_layout.addWidget(self.copy_button)
+        code_section_top_bar_layout.addWidget(self.export_code_button)
         code_section_top_bar_layout.addWidget(self.switch_background_button)
         code_section_top_bar_layout.addWidget(self.more_button)
         code_section_top_bar_layout.setContentsMargins(0, 0, 0, 0)
@@ -143,10 +151,54 @@ class full_screen_code_preview(QDialog):
         code_preview_section_layout.setSpacing(5)
 
     def copy_python_code(self):
-        pass
+        clipboard = QApplication.clipboard()
+        clipboard.setText(self.full_code)
+
+        self.copy_button.setText("Copied")
+        QTimer.singleShot(500, lambda: self.copy_button.setText("Copy Code"))
+
+    def export_python_code(self):
+        dialog = QFileDialog(self)
+        dialog.setWindowTitle("Export Python File")
+        dialog.setFileMode(QFileDialog.FileMode.AnyFile)
+        dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
+        dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
+        dialog.setNameFilter("Python Files (*.py)")
+
+        if not dialog.exec():
+            return  # user cancelled safely
+
+        file_path = dialog.selectedFiles()[0]
+
+        if not file_path.endswith(".py"):
+            file_path += ".py"
+
+        self.raise_()
+        self.activateWindow()
+        self.show()
+
+        try:
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(self.graph_code)
+            self.export_code_button.setText("Exported")
+
+        except Exception as e:
+            self.export_code_button.setText("Failed")
+
+        QTimer.singleShot(
+            1000,
+            lambda: self.export_code_button.setText("Export Code")
+        )
 
     def switch_current_background(self):
-        pass
+        if self.switch_background_button.text() == "Dark Background":
+            self.switch_background_button.setText("Light Background")
+            self.code_section.code_preview_section.setStyleSheet(self.code_preview_backgrounds["Dark"])
+            self.code_preview.setStyleSheet(self.code_preview_backgrounds["Dark"])
+        else:
+            self.switch_background_button.setText("Dark Background")
+            self.code_section.code_preview_section.setStyleSheet(self.code_preview_backgrounds["Light"])
+            self.code_preview.setStyleSheet(self.code_preview_backgrounds["Light"])
 
     def open_more_settings(self):
         pass
@@ -209,7 +261,7 @@ class code_theme_preview(QDialog):
         self.code_section = code_section
         self.graph_code = graph_code
 
-        self.current_background = "Light"
+        self.current_background = code_section.current_background
         self.code_preview_backgrounds = {
             "Light": """
                 background: qlineargradient(
@@ -243,6 +295,7 @@ class code_theme_preview(QDialog):
         self.code_preview_section.setProperty("class", "dialog_section")
         self.code_preview_section.setObjectName("code_preview_section")
         self.create_code_preview_section()
+        self.code_preview.setStyleSheet(self.code_preview_backgrounds[self.current_background])
 
         main_layout = QHBoxLayout(self)
         main_layout.addWidget(self.theme_selection_section, stretch=3)
