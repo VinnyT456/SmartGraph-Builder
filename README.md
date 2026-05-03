@@ -1,256 +1,173 @@
-# SmartGraph-Builder
+# SmartGraph Builder
 
-<div align="center">
+PyQt6 desktop app for exploring a CSV dataset, previewing a plot (currently **Scatter Plot** end-to-end), and generating reproducible Seaborn/Matplotlib code from the same UI configuration.
 
-**A powerful PyQt6-based data visualization assistant for automated graph creation and Seaborn code generation**
-
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![PyQt6](https://img.shields.io/badge/PyQt6-Latest-green.svg)](https://www.riverbankcomputing.com/software/pyqt/)
+[![Python](https://img.shields.io/badge/Python-3.12%20tested-blue.svg)](https://www.python.org/downloads/)
+[![PyQt6](https://img.shields.io/badge/PyQt6-6.10-green.svg)](https://www.riverbankcomputing.com/software/pyqt/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[Features](#features) • [Installation](#installation) • [Usage](#usage) • [Sample Graphs](#sample-visualizations) • [Documentation](#project-structure) • [Contributing](#contributing)
+[Features](#features-current) • [Install](#installation) • [Run](#run) • [Roadmap](#roadmap-near-term) • [Contributing](#contributing)
 
-</div>
+## Project status
 
----
+- **Implemented today**: Scatter Plot live preview + code generation, plus shared styling controls (titles, legend, grid).
+- **In progress / roadmap**: Other plot types appear in the catalog UI, but runtime rendering and code generation are not yet wired for them.
 
-## Overview
+The catalog of intended plot types lives in [`sections/graph_parameter.py`](sections/graph_parameter.py) (`SEABORN_PLOTS`), while the runtime rendering and codegen dispatch are currently Scatter-only ([`sections/graph.py`](sections/graph.py), [`sections/code_generation.py`](sections/code_generation.py)).
 
-SmartGraph-Builder is a professional data visualization tool designed to streamline the creation of publication-quality graphs. Built with PyQt6, it combines an intuitive graphical interface with powerful analysis capabilities, enabling users to generate appropriate visualizations for their datasets and export production-ready Seaborn code.
+## Features (current)
 
-### Key Capabilities
+- **CSV dataset loading and preview**: Load a CSV, inspect columns, and feed the selected dataset into plotting.
+- **Scatter Plot preview**: Configure x/y and common aesthetics (e.g. hue/palette/marker/alpha) and see the plot update.
+- **Code generation**: Produce Seaborn + Matplotlib code for the current plot configuration and copy/export it.
+- **Styling helpers**: Title, axis titles, legend, and grid controls.
 
-- 📊 **Intelligent Visualization** - Smart analysis recommends optimal graph types based on your data characteristics
-- 🎨 **Customizable Graphs** - Fine-tune every aspect of your visualizations with an intuitive parameter interface
-- 💾 **Code Export** - Generate clean, reusable Seaborn code ready for your Python projects
-- 🔧 **Data Preprocessing** - Built-in tools for cleaning, transforming, and preparing datasets
-- 🖥️ **Modern GUI** - Professional PyQt6 interface designed for efficiency and ease of use
+Notes:
 
----
-
-## Features
-
-### Data Management
-- Import data from CSV, Excel, and other common formats
-- Automated data type detection and validation
-- Missing value handling and data cleaning utilities
-- Dataset preview and summary statistics
-
-### Visualization Engine
-- Support for multiple graph types:
-  - Scatter plots
-  - Line charts
-  - Bar charts
-  - Histograms
-  - Box plots
-  - Heatmaps
-  - And more...
-- Real-time preview of visualizations
-- Interactive parameter adjustment
-- Professional styling options
-
-### Code Generation
-- Export production-ready Seaborn code
-- Clean, documented, and reproducible code
-- Customizable templates
-- Copy-paste ready for immediate use
-
----
+- **CSV only** at the moment (no Excel import yet).
+- The **AI Summary** and **Data Preprocessing** panels are present as UI sections, but their “assistant” logic is not yet implemented.
 
 ## Installation
 
-### Prerequisites
+This repo is tested in CI with **Python 3.12** on Linux ([`.github/workflows/main.yml`](.github/workflows/main.yml)).
 
-- Python 3.8 or higher
-- pip package manager
+From the repository root (recommended; the folder name contains a space: `SmartGraph Builder/`):
 
-### Setup
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/VinnyT456/SmartGraph-Builder.git
-   cd SmartGraph-Builder
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Launch the application**
-   ```bash
-   python main.py
-   ```
-
-### Required Dependencies
-
-```
-PyQt6>=6.0.0
-pandas>=1.3.0
-matplotlib>=3.4.0
-seaborn>=0.11.0
-numpy>=1.21.0
+```bash
+python -m pip install -r requirements.txt
 ```
 
----
+Developer dependencies (tests):
 
-## Usage
-
-### Quick Start
-
-1. **Launch Application**
-   ```bash
-   python main.py
-   ```
-
-2. **Load Your Data**
-   - Click "Load Dataset" to import your CSV or Excel file
-   - Review the data preview and summary statistics
-
-3. **Select Visualization Type**
-   - Browse recommended graph types
-   - Choose the visualization that best suits your data
-
-4. **Customize Parameters**
-   - Adjust colors, labels, titles, and styling
-   - Configure axes and scales
-   - Set legends and annotations
-
-5. **Generate & Export**
-   - Preview your visualization
-   - Export the graph as an image
-   - Copy the generated Seaborn code
-
-### Example Workflow
-
-```python
-# Example of generated code from SmartGraph-Builder
-
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-
-# Load dataset
-df = pd.read_csv('dataset.csv')
-
-# Create visualization
-plt.figure(figsize=(10, 6))
-sns.scatterplot(
-    data=df,
-    x='feature_1',
-    y='feature_2',
-    hue='category',
-    palette='viridis',
-    s=100
-)
-
-plt.title('Feature Comparison by Category', fontsize=16, fontweight='bold')
-plt.xlabel('Feature 1', fontsize=12)
-plt.ylabel('Feature 2', fontsize=12)
-plt.legend(title='Category', bbox_to_anchor=(1.05, 1), loc='upper left')
-plt.show()
+```bash
+python -m pip install -r requirements-dev.txt
 ```
 
----
+## Run
 
-## Project Structure
+Run from the **repository root** so relative paths resolve (e.g. `styles.qss`, runtime config files):
 
-```
-SmartGraph-Builder/
-├── main.py                    # Application entry point and main window
-├── requirements.txt           # Python package dependencies
-├── LICENSE                    # MIT License
-├── sections/                  # Core application modules
-│   ├── ai_summary.py         # Data analysis and visualization recommendations
-│   ├── buttons.py            # UI button components and event handlers
-│   ├── code_generation.py    # Seaborn code generation engine
-│   ├── data_preprocessing.py # Data cleaning and transformation utilities
-│   ├── dataset.py            # Dataset loading and management
-│   ├── graph.py              # Core graph generation logic
-│   ├── graph_parameter.py    # Graph customization and parameter controls
-│   └── plot_manager.py       # Plot rendering and display management
-└── sample_graphs/             # Example visualizations and output samples
+```bash
+python main.py
 ```
 
-### Module Descriptions
+On startup, `main.py` clears files under `dataset/`. If you keep anything important there, move it elsewhere first.
 
-| Module | Purpose |
-|--------|---------|
-| `main.py` | Initializes the PyQt6 application and coordinates all components |
-| `ai_summary.py` | Analyzes dataset characteristics and recommends optimal visualizations |
-| `data_preprocessing.py` | Handles data cleaning, normalization, and preprocessing operations |
-| `dataset.py` | Manages dataset import, validation, and storage |
-| `graph.py` | Core visualization engine using Matplotlib and Seaborn |
-| `graph_parameter.py` | User interface for customizing graph properties and styling |
-| `code_generation.py` | Generates clean, exportable Seaborn code from user configurations |
-| `plot_manager.py` | Manages plot rendering, updates, and display in the GUI |
-| `buttons.py` | Implements GUI controls and user interaction handlers |
+## Usage (Scatter Plot path)
 
----
+1. Launch: `python main.py`.
+2. Load a CSV dataset.
+3. Select **Scatter Plot**.
+4. Pick x/y columns and adjust parameters.
+5. Use **Code Preview** / **Copy Code** to export the generated Seaborn/Matplotlib code.
 
-## Sample Visualizations
+## Roadmap (near-term)
 
-Explore examples of visualizations created with SmartGraph-Builder, demonstrating various graph types and styling options.
+The most important next steps are to make the catalog, runtime rendering, and code generation use the same canonical plot keys, so more plot types can be implemented incrementally.
+
+- **Unify dispatch for multiple plot types**: Extend runtime rendering and codegen beyond Scatter.
+
+- **Make plot type + parameter definitions a single source of truth**: Extract `SEABORN_PLOTS` into a catalog module and introduce a registry for parameter dialogs.
+
+- **Split the UI monolith**: Break up `sections/buttons.py` into a package so adding new plot families is low-conflict.
+
+- **Stabilize persistence/config lifecycle**: Remove risky config side effects and align DB keys with the catalog.
+
+- **Product polish**: Restore/generate missing `sample_graphs/` thumbnails referenced by the plot catalog; add clearer user-facing docs inside the UI; consider Excel import once CSV flow is solid.
+
+## Repository layout
+
+This project is moving toward a more modular structure as more plot types are implemented.
+
+### Current (today)
+
+```text
+SmartGraph Builder/
+  main.py
+  styles.qss
+  requirements.txt
+  requirements-dev.txt
+
+  sections/
+    ai_summary.py
+    buttons.py
+    code_generation.py
+    data_preprocessing.py
+    dataset.py
+    graph.py
+    graph_parameter.py
+    plot_manager.py
+
+  dataset/
+  sample_graphs/
+```
+
+### Target (planned)
+
+```text
+SmartGraph Builder/
+  main.py
+  requirements.txt
+  styles.qss
+
+  assets/
+    sample_graphs/
+    icons/
+
+  dataset/
+    user_dataset.csv
+
+  sections/
+    __init__.py
+
+    catalog/
+      __init__.py
+      plots.py
+      parameter_ids.py
+      registry.py
+
+    config/
+      plot_defaults.py
+
+    plot_manager.py
+
+    buttons/
+      __init__.py
+      axis.py
+      titles.py
+      shared/
+      legend/
+      grid/
+      aesthetics.py
+      specific/
+        lineplot.py
+        regression.py
+        distribution.py
+        categorical.py
+        matrix.py
+        relational.py
+
+    graph_parameter.py
+    graph.py
+    code_generation.py
+    dataset.py
+    data_preprocessing.py
+    ai_summary.py
+
+  tests/
+    test_app.py
+    test_catalog.py
+    test_registry.py
+```
+
+## Screenshots
+
+The plot catalog expects thumbnails under `sample_graphs/` (configured in `SEABORN_PLOTS`). Only a single thumbnail is currently present in the repo:
 
 <div align="center">
-
-### Scatter Plot
-<img src="sample_graphs/scatter_plot.png" width="600" alt="Scatter Plot Example">
-
-### Line Plot
-<img src="sample_graphs/line_plot.png" width="600" alt="Line Plot Example">
-
-### Joint Plot
-<img src="sample_graphs/joint_plot.png" width="600" alt="Joint Plot Example">
-
-### Pairplot
-<img src="sample_graphs/pair_plot.png" width="600" alt="Pairplot Example">
-
-
+  <img src="sample_graphs/relational_plot.png" width="600" alt="Plot catalog thumbnail">
 </div>
-
-*More examples available in the `sample_graphs/` directory*
-
----
-
-## Contributing
-
-Contributions are welcome! Feel free to submit a Pull Request or open an issue for bug reports and feature requests.
-
----
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for full details.
-
----
-
-## Acknowledgments
-
-SmartGraph-Builder is built with powerful open-source technologies:
-
-- **[PyQt6](https://www.riverbankcomputing.com/software/pyqt/)** - Professional cross-platform GUI framework
-- **[Seaborn](https://seaborn.pydata.org/)** - Statistical data visualization library
-- **[Matplotlib](https://matplotlib.org/)** - Comprehensive plotting library
-- **[Pandas](https://pandas.pydata.org/)** - Data manipulation and analysis
-- **[NumPy](https://numpy.org/)** - Numerical computing foundation
-
----
-
-## Support & Contact
-
-**Repository**: [github.com/VinnyT456/SmartGraph-Builder](https://github.com/VinnyT456/SmartGraph-Builder)
-
-**Issues**: Found a bug or have a feature request? [Open an issue](https://github.com/VinnyT456/SmartGraph-Builder/issues)
-
-**Discussions**: Have questions or ideas? Start a [discussion](https://github.com/VinnyT456/SmartGraph-Builder/discussions)
-
----
-
-<div align="center">
-
-**Built for streamlined data visualization and analysis**
-
-⭐ Star this repository if you find it helpful!
-
-</div>
+This project is licensed under the MIT License. See [`LICENSE`](LICENSE).
