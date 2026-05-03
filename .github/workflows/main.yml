@@ -9,6 +9,11 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    env:
+      QT_QPA_PLATFORM: xcb
+      QT_OPENGL: software
+      QT_XCB_GL_INTEGRATION: none
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,11 +35,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             xvfb \
+            libegl1 \
+            libgl1 \
+            libopengl0 \
             libxcb-xinerama0 \
             libxkbcommon-x11-0 \
-            libegl1-mesa \
-            libgl1-mesa-glx \
-            libglu1-mesa
+            libxcb-cursor0
 
       - name: Run tests (with virtual display)
         run: |
