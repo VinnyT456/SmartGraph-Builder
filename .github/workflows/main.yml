@@ -44,4 +44,4 @@ jobs:
 
       - name: Run tests (with virtual display)
         run: |
-          xvfb-run -a pytest -q
+          PYTHONPATH=. xvfb-run -a pytest -q
