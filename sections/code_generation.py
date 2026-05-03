@@ -5,7 +5,7 @@ from PyQt6.QtCore import (
     QTimer,
     Qt,
 )
-from PyQt6.QtGui import QFont, QKeySequence, QShortcut
+from PyQt6.QtGui import QAction, QCursor, QFont, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
     QListView,
-    QMessageBox,
+    QMenu,
     QPushButton,
     QSizePolicy,
     QStyledItemDelegate,
@@ -26,6 +26,80 @@ from pygments.lexers import PythonLexer
 from pygments.formatters import HtmlFormatter
 from pygments.styles import get_all_styles
 import textwrap
+
+
+def export_python_code(file_path, python_code):
+    try:
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(python_code)
+    except Exception as e:
+        return False
+    return True
+
+
+class Theme_Preview(QWidget):
+    def __init__(self, items, on_select, parent=None, current_theme=None):
+        super().__init__(parent)
+
+        self.on_select = on_select
+        self.current_theme = current_theme
+
+        self.setWindowFlags(Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+
+        class CustomDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.displayAlignment = Qt.AlignmentFlag.AlignCenter
+                font = QFont("SF Pro Display", 16)
+                font.setWeight(600)
+                option.font = font
+                super().paint(painter, option, index)
+
+        self.model = QStringListModel(items)
+        self.view = QListView()
+        self.view.setProperty("class", "menu_list_view")
+        self.view.setModel(self.model)
+        self.view.setItemDelegate(CustomDelegate())
+        self.view.viewport().setMouseTracking(True)
+        self.view.viewport().installEventFilter(self)
+        self.view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.view.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+        self.view.clicked.connect(self.item_clicked)
+
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.view)
+        self.setLayout(layout)
+
+        self.setFixedSize(150, 400)
+
+    def item_clicked(self, index):
+        value = self.model.data(index, Qt.ItemDataRole.DisplayRole)
+        self.current_theme = value
+        self.on_select(value)
+        self.close()
+
+    def eventFilter(self, obj, event):
+        if obj == self.view.viewport():
+            if event.type() == event.Type.MouseMove:
+                index = self.view.indexAt(event.pos())
+                if index.isValid():
+                    value = self.model.data(index, Qt.ItemDataRole.DisplayRole)
+                    self.view.setCurrentIndex(index)
+                    self.on_select(value)
+        return super().eventFilter(obj, event)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+
+        if self.current_theme in self.model.stringList():
+            row = self.model.stringList().index(self.current_theme)
+            index = self.model.index(row, 0)
+
+            self.view.scrollTo(index, QAbstractItemView.ScrollHint.PositionAtCenter)
 
 
 class full_screen_code_preview(QDialog):
@@ -98,17 +172,17 @@ class full_screen_code_preview(QDialog):
         self.export_code_button.setFixedWidth(100)
         self.export_code_button.clicked.connect(self.export_python_code)
 
+        self.theme_button = QPushButton("Theme")
+        self.theme_button.setObjectName("theme_button")
+        self.theme_button.setProperty("class", "code_section")
+        self.theme_button.setFixedWidth(80)
+        self.theme_button.clicked.connect(self.open_theme_preview)
+
         self.switch_background_button = QPushButton("Dark Background")
         self.switch_background_button.setObjectName("switch_background_button")
         self.switch_background_button.setProperty("class", "code_section")
         self.switch_background_button.setFixedWidth(120)
         self.switch_background_button.clicked.connect(self.switch_current_background)
-
-        self.more_button = QPushButton("⋮")
-        self.more_button.setObjectName("more_button")
-        self.more_button.setProperty("class", "code_section")
-        self.more_button.setFixedWidth(24)
-        self.more_button.clicked.connect(self.open_more_settings)
 
         code_section_top_bar_layout = QHBoxLayout(self.code_preview_section_top_bar)
         code_section_top_bar_layout.addWidget(
@@ -118,7 +192,7 @@ class full_screen_code_preview(QDialog):
         code_section_top_bar_layout.addWidget(self.copy_button)
         code_section_top_bar_layout.addWidget(self.export_code_button)
         code_section_top_bar_layout.addWidget(self.switch_background_button)
-        code_section_top_bar_layout.addWidget(self.more_button)
+        code_section_top_bar_layout.addWidget(self.theme_button)
         code_section_top_bar_layout.setContentsMargins(0, 0, 0, 0)
         code_section_top_bar_layout.setSpacing(3)
 
@@ -168,47 +242,61 @@ class full_screen_code_preview(QDialog):
         if not dialog.exec():
             return  # user cancelled safely
 
-        file_path = dialog.selectedFiles()[0]
-
-        if not file_path.endswith(".py"):
-            file_path += ".py"
-
         self.raise_()
         self.activateWindow()
         self.show()
 
-        try:
-            with open(file_path, "w", encoding="utf-8") as f:
-                f.write(self.graph_code)
-            self.export_code_button.setText("Exported")
+        file_path = dialog.selectedFiles()[0]
+        if not file_path.endswith(".py"):
+            file_path += ".py"
 
-        except Exception as e:
+        success = export_python_code(file_path, self.graph_code)
+        if success:
+            self.export_code_button.setText("Exported")
+        else:
             self.export_code_button.setText("Failed")
 
-        QTimer.singleShot(
-            1000,
-            lambda: self.export_code_button.setText("Export Code")
-        )
+        QTimer.singleShot(1000, lambda: self.export_code_button.setText("Export Code"))
 
     def switch_current_background(self):
+        self.code_section.current_background = self.switch_background_button.text().split(" ")[0]
+        self.update_background(self.code_section.current_background)
+
         if self.switch_background_button.text() == "Dark Background":
             self.switch_background_button.setText("Light Background")
-            self.code_section.code_preview_section.setStyleSheet(self.code_preview_backgrounds["Dark"])
-            self.code_preview.setStyleSheet(self.code_preview_backgrounds["Dark"])
         else:
             self.switch_background_button.setText("Dark Background")
-            self.code_section.code_preview_section.setStyleSheet(self.code_preview_backgrounds["Light"])
-            self.code_preview.setStyleSheet(self.code_preview_backgrounds["Light"])
 
-    def open_more_settings(self):
-        pass
+    def open_theme_preview(self):
+        def on_select(theme):
+            self.update_style(theme)
 
-    def update_style(self, style): 
+        self.styles = list(get_all_styles())
+
+        self.popup = Theme_Preview(self.styles, on_select, self, self.style)
+
+        # Position under cursor (like a menu)
+        pos = QCursor.pos()
+        self.popup.move(pos)
+
+        self.popup.show()
+
+    def update_style(self, style):
         self.style = style
+
+        self.formatter = HtmlFormatter(
+            style=self.style, noclasses=True, nobackground=True
+        )
+        highlighted_code = highlight(self.graph_code, PythonLexer(), self.formatter)
+        self.code_preview.setHtml(highlighted_code)
+
+        self.code_section.update_style(self.style)
+        self.code_section.update_code()
 
     def update_background(self, background):
         self.background = background
         self.code_preview.setStyleSheet(self.code_preview_backgrounds[self.background])
+        self.code_section.code_preview_section.setStyleSheet(self.code_preview_backgrounds[self.background])
 
     def update_graph_code(self, graph_code):
         self.graph_code = graph_code
@@ -295,7 +383,9 @@ class code_theme_preview(QDialog):
         self.code_preview_section.setProperty("class", "dialog_section")
         self.code_preview_section.setObjectName("code_preview_section")
         self.create_code_preview_section()
-        self.code_preview.setStyleSheet(self.code_preview_backgrounds[self.current_background])
+        self.code_preview.setStyleSheet(
+            self.code_preview_backgrounds[self.current_background]
+        )
 
         main_layout = QHBoxLayout(self)
         main_layout.addWidget(self.theme_selection_section, stretch=3)
@@ -650,14 +740,14 @@ class Code_Section(QWidget):
         self.theme_button = QPushButton("Theme")
         self.theme_button.setObjectName("theme_button")
         self.theme_button.setProperty("class", "code_section")
-        self.theme_button.setFixedWidth(80)
+        self.theme_button.setFixedWidth(60)
         self.theme_button.clicked.connect(self.switch_theme)
 
-        self.settings_button = QPushButton("Settings")
-        self.settings_button.setObjectName("settings_button")
-        self.settings_button.setProperty("class", "code_section")
-        self.settings_button.setFixedWidth(80)
-        self.settings_button.clicked.connect(self.open_setting)
+        self.export_code_button = QPushButton("Export Code")
+        self.export_code_button.setObjectName("export_code_button")
+        self.export_code_button.setProperty("class", "code_section")
+        self.export_code_button.setFixedWidth(100)
+        self.export_code_button.clicked.connect(self.export_python_code)
 
         code_section_top_bar_layout = QHBoxLayout(self.code_section_top_bar)
         code_section_top_bar_layout.addWidget(
@@ -665,9 +755,9 @@ class Code_Section(QWidget):
         )
         code_section_top_bar_layout.addStretch()
         code_section_top_bar_layout.addWidget(self.copy_button)
+        code_section_top_bar_layout.addWidget(self.export_code_button)
         code_section_top_bar_layout.addWidget(self.full_screen_button)
         code_section_top_bar_layout.addWidget(self.theme_button)
-        code_section_top_bar_layout.addWidget(self.settings_button)
         code_section_top_bar_layout.setContentsMargins(0, 0, 0, 0)
         code_section_top_bar_layout.setSpacing(3)
 
@@ -784,7 +874,9 @@ class Code_Section(QWidget):
 
         scroll_pos = self.code_preview_section.verticalScrollBar().value()
 
-        self.formatter = HtmlFormatter(style=self.style, noclasses=True, nobackground=True)
+        self.formatter = HtmlFormatter(
+            style=self.style, noclasses=True, nobackground=True
+        )
         highlighted_code = highlight(self.full_code, PythonLexer(), self.formatter)
         self.code_preview_section.setHtml(highlighted_code)
 
@@ -821,5 +913,29 @@ class Code_Section(QWidget):
         self.code_theme_preview.activateWindow()
         self.code_theme_preview.raise_()
 
-    def open_setting(self):
-        pass
+    def export_python_code(self):
+        dialog = QFileDialog(self)
+        dialog.setWindowTitle("Export Python File")
+        dialog.setFileMode(QFileDialog.FileMode.AnyFile)
+        dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
+        dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
+        dialog.setNameFilter("Python Files (*.py)")
+
+        if not dialog.exec():
+            return  # user cancelled safely
+
+        self.raise_()
+        self.activateWindow()
+        self.show()
+
+        file_path = dialog.selectedFiles()[0]
+        if not file_path.endswith(".py"):
+            file_path += ".py"
+
+        success = export_python_code(file_path, self.full_code)
+        if success:
+            self.export_code_button.setText("Exported")
+        else:
+            self.export_code_button.setText("Failed")
+
+        QTimer.singleShot(1000, lambda: self.export_code_button.setText("Export Code"))
