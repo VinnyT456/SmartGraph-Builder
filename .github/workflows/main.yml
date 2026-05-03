@@ -1,44 +1,40 @@
 name: CI
-
 on:
   push:
   pull_request:
   workflow_dispatch:
-
 jobs:
   test:
     runs-on: ubuntu-latest
-
     env:
-      QT_QPA_PLATFORM: xcb
+      QT_QPA_PLATFORM: offscreen
       QT_OPENGL: software
-
+      LIBGL_ALWAYS_SOFTWARE: "1"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             xvfb \
+            libegl1 \
+            libgl1-mesa-dri \
+            libgl1 \
             libxcb-xinerama0 \
             libxkbcommon-x11-0 \
             libxcb-cursor0
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
-
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-
       - name: Run tests
         run: |
           export PYTHONPATH=$GITHUB_WORKSPACE
-          xvfb-run -a pytest -q
+          pytest -q
