@@ -28,6 +28,7 @@ from PyQt6.QtWidgets import (
 from sections import plot_manager
 from sections.dataset import PrepareDataset, displayDataset
 from sections.plot_manager import PlotManager
+from sections.catalog.plots import get_plot_spec
 from collections import deque
 import matplotlib.colors as mcolors
 import pandas as pd
@@ -478,9 +479,7 @@ class x_axis_button(QDialog):
 
     def find_usable_columns(self):
         # Get the needed data type from the dictionary
-        x_axis_data_type = self.plot_parameters[self.selected_graph].get(
-            "x-axis_data_type"
-        )
+        x_axis_data_type = get_plot_spec(self.selected_graph).x_axis_data_type
         if x_axis_data_type:
             # Return the columns in the dataset that match the data type and set the column name with the first column
             columns = self.dataset.select_dtypes(include=x_axis_data_type).columns
@@ -808,9 +807,7 @@ class y_axis_button(QDialog):
 
     def find_usable_columns(self):
         # Get the needed data type from the dictionary
-        y_axis_data_type = self.plot_parameters[self.selected_graph].get(
-            "y-axis_data_type"
-        )
+        y_axis_data_type = get_plot_spec(self.selected_graph).y_axis_data_type
         if y_axis_data_type:
             # Return the columns in the dataset that match the data type and set the column name with the first column
             columns = self.dataset.select_dtypes(include=y_axis_data_type).columns

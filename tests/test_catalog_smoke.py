@@ -1,4 +1,4 @@
-from sections.graph_parameter import SEABORN_PLOTS
+from sections.catalog.plots import SEABORN_PLOTS
 
 
 def test_seaborn_plots_catalog_has_scatter_plot():
