@@ -198,10 +198,6 @@ plot_json = {
     }
 }
 
-if os.path.exists("plot_config.json"):
-    os.remove("plot_config.json")
-
-
 class x_axis_button(QDialog):
     def __init__(self, plot_parameters, selected_graph, graph_display):
         super().__init__()
