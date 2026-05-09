@@ -18,8 +18,6 @@ from PyQt6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QPushButton,
-    QStyle,
-    QTableView,
     QWidget,
     QVBoxLayout,
     QStyledItemDelegate,
@@ -197,6 +195,12 @@ plot_json = {
         "edgecolors": "w",
     }
 }
+
+
+def reset_plot_parameters():
+    if os.path.exists("plot_config.json"):
+        os.remove("plot_config.json")
+
 
 class x_axis_button(QDialog):
     def __init__(self, plot_parameters, selected_graph, graph_display):
